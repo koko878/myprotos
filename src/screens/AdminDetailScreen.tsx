@@ -14,6 +14,9 @@ export default function AdminDetailScreen({ useCaseId }: { useCaseId: string }) 
   const [uc, setUc] = useState<UseCase | null>(null);
   const [loading, setLoading] = useState(false);
   const [erreur, setErreur] = useState<string | null>(null);
+  // Quel moteur a produit le dernier prototype + diag si Claude a échoué.
+  const [moteur, setMoteur] = useState<'claude' | 'gemini' | null>(null);
+  const [diag, setDiag] = useState<string | null>(null);
 
   useEffect(() => {
     trouverUseCase(useCaseId).then((u) => setUc(u ?? null));
@@ -22,18 +25,25 @@ export default function AdminDetailScreen({ useCaseId }: { useCaseId: string }) 
   async function generer() {
     if (!uc || loading) return;
     setErreur(null);
+    setMoteur(null);
+    setDiag(null);
     if (!iaDisponible() && !backendDisponible()) {
       setErreur('Aucun moteur de génération configuré (backend ou IA).');
       return;
     }
     setLoading(true);
-    const html = await genererPrototypeHtml(uc);
+    const res = await genererPrototypeHtml(uc);
     setLoading(false);
-    if (!html) {
-      setErreur('La génération a échoué (IA surchargée ou réponse invalide). Réessayez.');
+    if (!res) {
+      setErreur('La génération a échoué (moteur indisponible ou réponse invalide). Réessayez.');
       return;
     }
-    const liste = await enregistrerPrototype(useCaseId, html);
+    setMoteur(res.moteur);
+    if (res.moteur === 'gemini' && res.backendErreur) {
+      // Important : on voulait Claude mais le backend a échoué -> on l'affiche.
+      setDiag('Backend Claude indisponible (' + res.backendErreur + ') → repli Gemini.');
+    }
+    const liste = await enregistrerPrototype(useCaseId, res.html);
     setUc(liste.find((u) => u.id === useCaseId) ?? null);
   }
 
@@ -94,6 +104,15 @@ export default function AdminDetailScreen({ useCaseId }: { useCaseId: string }) 
           </Text>
 
           {erreur && <Text style={styles.erreur}>⚠️ {erreur}</Text>}
+
+          {moteur && (
+            <Text style={[styles.moteur, { color: moteur === 'claude' ? colors.success : colors.warn }]}>
+              {moteur === 'claude'
+                ? '✨ Généré par l’agent Claude (qualité maximale)'
+                : '⚡ Généré par Gemini (repli rapide)'}
+            </Text>
+          )}
+          {diag && <Text style={styles.diag}>ℹ️ {diag}</Text>}
 
           {loading ? (
             <View style={styles.loadingBox}>
@@ -161,6 +180,8 @@ const styles = StyleSheet.create({
   remarqueTxt: { color: colors.text, fontSize: font.small, fontStyle: 'italic', lineHeight: 20 },
   remarqueMeta: { color: colors.textMuted, fontSize: font.tiny, marginTop: 4 },
   erreur: { color: colors.danger, fontSize: font.small, lineHeight: 19 },
+  moteur: { fontSize: font.small, fontWeight: '800' },
+  diag: { color: colors.textMuted, fontSize: font.tiny, lineHeight: 16, fontStyle: 'italic' },
   loadingBox: { flexDirection: 'row', alignItems: 'center', gap: spacing.md, paddingVertical: spacing.sm },
   loadingTxt: { color: colors.textMuted, fontSize: font.small },
   preview: { height: 480, borderRadius: radius.md, overflow: 'hidden', backgroundColor: '#fff' },

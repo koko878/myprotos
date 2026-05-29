@@ -647,35 +647,64 @@ export function backendDisponible(): boolean {
   return BACKEND_URL.length > 0;
 }
 
-// Appelle le backend agentique. Renvoie le HTML ou `null` (le caller gère le repli).
-async function genererViaBackend(uc: UseCase): Promise<string | null> {
-  if (!BACKEND_URL) return null;
+export type MoteurProto = 'claude' | 'gemini';
+
+export interface ResultatProto {
+  html: string;
+  moteur: MoteurProto; // qui a réellement produit le prototype
+  backendErreur?: string; // message si le backend Claude a échoué (diagnostic)
+}
+
+// Appelle le backend agentique. Renvoie le HTML, ou lève avec un message clair
+// (pour distinguer "backend down" de "Gemini repli" côté admin).
+async function genererViaBackend(uc: UseCase): Promise<string> {
+  // Le backend agentique peut prendre 30 s à 3 min (et réveil Render). Timeout large.
+  const ctrl = new AbortController();
+  const minuteur = setTimeout(() => ctrl.abort(), 240000);
   try {
     const reponse = await fetch(`${BACKEND_URL}/generate`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ useCase: uc }),
+      signal: ctrl.signal,
     });
-    if (!reponse.ok) return null;
+    if (!reponse.ok) {
+      let detail = `HTTP ${reponse.status}`;
+      try {
+        const j = await reponse.json();
+        if (j?.error) detail = String(j.error);
+      } catch {
+        /* ignore */
+      }
+      throw new Error(detail);
+    }
     const data = await reponse.json();
     const html = data?.html;
-    return typeof html === 'string' && /<html[\s>]/i.test(html) ? html : null;
-  } catch {
-    return null;
+    if (typeof html === 'string' && /<html[\s>]/i.test(html)) return html;
+    throw new Error('Réponse backend invalide (pas de HTML).');
+  } finally {
+    clearTimeout(minuteur);
   }
 }
 
 /**
  * Génère le prototype HTML auto-porté pour un use case (action admin).
- * Priorité au backend agentique (vrai Claude Code) ; repli sur l'appel LLM
- * direct (Gemini). Renvoie le HTML, ou `null` si tout échoue.
+ * Priorité au backend agentique Claude (qualité supérieure) ; repli sur l'appel
+ * LLM direct (Gemini). Renvoie le HTML + le moteur réellement utilisé, ou `null`.
  */
-export async function genererPrototypeHtml(uc: UseCase): Promise<string | null> {
+export async function genererPrototypeHtml(uc: UseCase): Promise<ResultatProto | null> {
   // 1) Backend agentique Claude (qualité supérieure) si configuré.
-  const viaBackend = await genererViaBackend(uc);
-  if (viaBackend) return viaBackend;
+  let backendErreur: string | undefined;
+  if (BACKEND_URL) {
+    try {
+      const html = await genererViaBackend(uc);
+      return { html, moteur: 'claude' };
+    } catch (e: any) {
+      backendErreur = String(e?.message || e);
+    }
+  }
 
-  // 2) Repli : génération directe par LLM (un seul appel).
+  // 2) Repli : génération directe par LLM (un seul appel, qualité moindre).
   if (!iaDisponible()) return null;
   const brut = await chatGemini(
     SYSTEM_PROTOTYPE,
@@ -683,7 +712,9 @@ export async function genererPrototypeHtml(uc: UseCase): Promise<string | null> 
     { temperature: 0.7 }
   );
   if (!brut) return null;
-  return extraireHtml(brut);
+  const html = extraireHtml(brut);
+  if (!html) return null;
+  return { html, moteur: 'gemini', backendErreur };
 }
 
 // ============================================================================
