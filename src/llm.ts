@@ -7,7 +7,7 @@
 // passer par un backend proxy pour ne JAMAIS exposer la clé dans l'app mobile.
 
 const GEMINI_KEY = process.env.EXPO_PUBLIC_GEMINI_API_KEY;
-const MODELE = process.env.EXPO_PUBLIC_GEMINI_MODEL || 'gemini-2.0-flash';
+const MODELE = process.env.EXPO_PUBLIC_GEMINI_MODEL || 'gemini-2.5-flash';
 
 export function iaDisponible(): boolean {
   return typeof GEMINI_KEY === 'string' && GEMINI_KEY.length > 0;
