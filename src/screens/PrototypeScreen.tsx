@@ -11,6 +11,7 @@ import {
 } from 'react-native';
 import HtmlPreview from '../components/HtmlPreview';
 import { Bouton, Carte } from '../components/ui';
+import { iaDisponible } from '../llm';
 import { useNav } from '../navigation';
 import { ajouterRemarque, mettreAJourStatut, trouverUseCase } from '../storage';
 import { colors, font, radius, spacing } from '../theme';
@@ -124,9 +125,17 @@ export default function PrototypeScreen({ useCaseId }: { useCaseId: string }) {
         {!dejaValide ? (
           <View style={styles.footer}>
             <Bouton titre="✅ Valider le prototype" onPress={valider} />
-            <Pressable onPress={() => setChallenge((c) => !c)} style={styles.lien}>
-              <Text style={styles.lienTxt}>{challenge ? 'Annuler' : '✏️ Demander des ajustements'}</Text>
-            </Pressable>
+            {iaDisponible() ? (
+              // Assistant IA qui aide à formuler le challenge.
+              <Pressable onPress={() => aller({ nom: 'challenge', useCaseId })} style={styles.lien}>
+                <Text style={styles.lienTxt}>✏️ Challenger / demander des ajustements</Text>
+              </Pressable>
+            ) : (
+              // Repli sans IA : champ libre.
+              <Pressable onPress={() => setChallenge((c) => !c)} style={styles.lien}>
+                <Text style={styles.lienTxt}>{challenge ? 'Annuler' : '✏️ Demander des ajustements'}</Text>
+              </Pressable>
+            )}
           </View>
         ) : (
           <View style={styles.footer}>

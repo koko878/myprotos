@@ -73,25 +73,36 @@ export async function enregistrerPrototype(
   }));
 }
 
-// Le client challenge le prototype : ajoute une remarque/besoin et renvoie le
-// projet en révision côté admin.
+// Le client challenge le prototype : ajoute une ou plusieurs remarques/besoins
+// et renvoie le projet en révision côté admin.
+export async function ajouterRemarques(
+  useCaseId: string,
+  textes: string[]
+): Promise<UseCase[]> {
+  const propres = textes.map((t) => t.trim()).filter(Boolean);
+  if (propres.length === 0) return modifierUseCase(useCaseId, (u) => u);
+  return modifierUseCase(useCaseId, (u) => {
+    const base = Date.now();
+    const nouvelles: RemarqueClient[] = propres.map((texte, i) => ({
+      id: 'r_' + (base + i).toString(36),
+      texte,
+      versionPrototype: u.prototypeVersion ?? 1,
+      creeLe: base + i,
+    }));
+    return {
+      ...u,
+      remarques: [...(u.remarques ?? []), ...nouvelles],
+      statut: 'revision_demandee',
+    };
+  });
+}
+
+// Variante simple : une seule remarque.
 export async function ajouterRemarque(
   useCaseId: string,
   texte: string
 ): Promise<UseCase[]> {
-  return modifierUseCase(useCaseId, (u) => {
-    const remarque: RemarqueClient = {
-      id: 'r_' + Date.now().toString(36),
-      texte,
-      versionPrototype: u.prototypeVersion ?? 1,
-      creeLe: Date.now(),
-    };
-    return {
-      ...u,
-      remarques: [...(u.remarques ?? []), remarque],
-      statut: 'revision_demandee',
-    };
-  });
+  return ajouterRemarques(useCaseId, [texte]);
 }
 
 // Enregistre le résultat du cadrage technique (infra + plan de packaging).

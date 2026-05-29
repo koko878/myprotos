@@ -801,3 +801,81 @@ export async function tourArchitecteIA(
     return null;
   }
 }
+
+// ============================================================================
+// CHALLENGE DU PROTOTYPE — IA qui aide le client à formuler ses retours
+// ============================================================================
+
+const SYSTEM_CHALLENGE = `Tu es un product designer qui aide un client (souvent non technique) à formuler des RETOURS clairs et actionnables sur un prototype qu'il vient de voir.
+
+Le client veut faire évoluer le prototype mais s'exprime souvent de façon vague ("c'est pas terrible", "il manque un truc", "j'aime pas trop"). Ton rôle : creuser pour transformer ça en demandes PRÉCISES et RÉALISABLES qu'un développeur pourra appliquer directement.
+
+Règles :
+- Réponds en français, ton bienveillant et concret.
+- UNE seule question à la fois, courte. Reformule ce que tu comprends pour confirmer.
+- Aide à préciser : QUEL écran/élément ? QUOI changer (couleur, texte, disposition, ajouter/retirer une fonctionnalité, comportement) ? POURQUOI (l'objectif derrière) ?
+- Propose jusqu'à 3 suggestions de retours concrets et plausibles pour aider le client à répondre vite.
+- Reste réaliste : on parle d'ajustements d'un prototype web, pas de l'impossible.
+- Quand tu as assez d'éléments (en général 2 à 4 échanges), TERMINE : mets "done": true et produis la liste structurée des remarques.
+
+Réponds TOUJOURS en JSON strict, sans texte autour :
+{
+  "reply": "ton message (reformulation + question ; ou récapitulatif si done=true)",
+  "suggestions": ["...", "...", "..."],
+  "done": false,
+  "remarques": null
+}
+
+Quand "done" vaut true, "remarques" est un tableau de chaînes : chaque entrée = UNE demande d'amélioration claire et actionnable (ex: "Sur l'écran d'accueil, remplacer le bandeau bleu par les couleurs de la marque (rouge/noir)"). 1 à 6 entrées.`;
+
+export interface TourChallenge {
+  reply: string;
+  suggestions: string[];
+  done: boolean;
+  remarques?: string[];
+}
+
+/**
+ * Un tour de l'entretien de "challenge" du prototype (l'IA aide le client à
+ * préciser ses retours). `contexte` décrit le projet pour ancrer la discussion.
+ * Renvoie `null` en cas d'échec (le caller gère le repli).
+ */
+export async function tourChallengeIA(
+  contexte: string,
+  messages: Message[],
+  forceFinish: boolean
+): Promise<TourChallenge | null> {
+  if (!iaDisponible()) return null;
+  const premierUser = messages.findIndex((m) => m.role === 'user');
+  if (premierUser === -1) return null;
+
+  const historique = messages.slice(premierUser).map((m) => ({
+    role: (m.role === 'assistant' ? 'model' : 'user') as 'model' | 'user',
+    text: m.texte,
+  }));
+
+  const sys =
+    SYSTEM_CHALLENGE +
+    `\n\nContexte du projet (pour t'aider à comprendre) : ${contexte}` +
+    (forceFinish
+      ? '\n\nIMPORTANT : tu as assez d\'éléments. Termine maintenant ("done": true) en produisant la liste des remarques.'
+      : '');
+
+  const brut = await chatGemini(sys, historique, { json: true, temperature: 0.5 });
+  if (!brut) return null;
+
+  try {
+    const j = JSON.parse(brut);
+    const tour: TourChallenge = {
+      reply: s(j?.reply, 'Pouvez-vous préciser ce que vous aimeriez ajuster ?'),
+      suggestions: Array.isArray(j?.suggestions) ? j.suggestions.slice(0, 3).map(String) : [],
+      done: j?.done === true,
+    };
+    if (tour.done) {
+      tour.remarques = liste(j?.remarques, []).slice(0, 6);
+    }
+    return tour;
+  } catch {
+    return null;
+  }
+}

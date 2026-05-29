@@ -10,6 +10,7 @@ export type Route =
   | { nom: 'liste' }
   | { nom: 'detail'; useCaseId: string }
   | { nom: 'prototype'; useCaseId: string } // aperçu du prototype HTML (client)
+  | { nom: 'challenge'; useCaseId: string } // IA aide le client à formuler ses retours
   | { nom: 'technique'; useCaseId: string } // cadrage technique (IA architecte)
   | { nom: 'admin' } // espace admin : génération des prototypes
   | { nom: 'adminDetail'; useCaseId: string };

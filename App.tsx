@@ -4,6 +4,7 @@ import { NavigationProvider, useNav } from './src/navigation';
 import AdminDetailScreen from './src/screens/AdminDetailScreen';
 import AdminScreen from './src/screens/AdminScreen';
 import CadrageScreen from './src/screens/CadrageScreen';
+import ChallengeScreen from './src/screens/ChallengeScreen';
 import DetailScreen from './src/screens/DetailScreen';
 import HomeScreen from './src/screens/HomeScreen';
 import ListeScreen from './src/screens/ListeScreen';
@@ -26,6 +27,8 @@ function Routeur() {
       return <DetailScreen useCaseId={route.useCaseId} />;
     case 'prototype':
       return <PrototypeScreen useCaseId={route.useCaseId} />;
+    case 'challenge':
+      return <ChallengeScreen useCaseId={route.useCaseId} />;
     case 'technique':
       return <TechniqueScreen useCaseId={route.useCaseId} />;
     case 'admin':
