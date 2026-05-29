@@ -35,9 +35,11 @@ const GEMINI_MODELES = Array.from(
   )
 );
 
-// Disponibilité de chaque fournisseur selon le mode.
+// Disponibilité de chaque fournisseur. Groq : via proxy (clé cachée) ou clé
+// directe. Gemini : clé directe (Google joignable) ou proxy en dernier recours.
 const groqDispo = UTILISE_PROXY || (typeof GROQ_KEY === 'string' && GROQ_KEY.length > 0);
-const geminiDispo = UTILISE_PROXY || (typeof GEMINI_KEY === 'string' && GEMINI_KEY.length > 0);
+const GEMINI_DIRECT = typeof GEMINI_KEY === 'string' && GEMINI_KEY.length > 0;
+const geminiDispo = GEMINI_DIRECT || UTILISE_PROXY;
 
 export function iaDisponible(): boolean {
   return groqDispo || geminiDispo;
@@ -139,9 +141,10 @@ async function essayerGeminiModele(modele: string, req: Requete): Promise<Result
     },
   };
 
-  const url = UTILISE_PROXY
-    ? `${PROXY_URL}/gemini?model=${encodeURIComponent(modele)}`
-    : `https://generativelanguage.googleapis.com/v1beta/models/${modele}:generateContent?key=${GEMINI_KEY}`;
+  // Clé directe en priorité (Google joignable côté client), proxy en repli.
+  const url = GEMINI_DIRECT
+    ? `https://generativelanguage.googleapis.com/v1beta/models/${modele}:generateContent?key=${GEMINI_KEY}`
+    : `${PROXY_URL}/gemini?model=${encodeURIComponent(modele)}`;
 
   const res = await postJson(url, corps, {}, 3);
   if (!res) return { ok: false, transitoire: true };
