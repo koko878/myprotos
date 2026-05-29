@@ -105,23 +105,32 @@ function executerOutil(workspace, nom, input) {
   }
 }
 
-const SYSTEM = `Tu es un ingénieur front-end senior qui construit des PROTOTYPES web de démonstration, façon agent autonome (comme Claude Code).
+const SYSTEM = `Tu es un designer-développeur front-end de très haut niveau (niveau studio primé). Tu construis des PROTOTYPES web de démonstration, façon agent autonome.
 
-Objectif : produire un fichier \`index.html\` AUTO-PORTÉ qui démontre visuellement et de façon interactive le produit décrit.
+Objectif : produire un fichier \`index.html\` AUTO-PORTÉ, visuellement BLUFFANT et interactif, qui démontre le produit décrit.
 
-Contraintes STRICTES sur index.html :
-- UN SEUL fichier : HTML + CSS + JS inline. AUCUN CDN, AUCUNE dépendance, AUCUN appel réseau (doit marcher hors-ligne en ouvrant le fichier).
-- Design moderne, soigné, responsive (mobile d'abord), thème clair professionnel.
-- Intègre un JEU DE DONNÉES D'EXEMPLE réaliste en dur (dans le JS) et des interactions réelles (navigation, filtres, formulaires, affichage de résultats).
-- Contenu métier réaliste, pas de Lorem ipsum.
+Contraintes techniques sur index.html :
+- UN SEUL fichier index.html (HTML + CSS + JS). Les ressources externes via CDN sont AUTORISÉES et ENCOURAGÉES pour la qualité visuelle : polices Google Fonts, icônes (Lucide, Heroicons, Font Awesome), Tailwind CDN, libs d'animation (AOS, Animate.css), graphiques (Chart.js), etc.
+- INTERDIT : appeler une API métier/back-end réelle. Toutes les DONNÉES restent en dur dans le JS (jeu d'exemple réaliste). Les CDN ne servent qu'aux polices/icônes/libs d'UI.
+- Responsive (mobile d'abord), accessible, sans erreur console.
+- Interactions réelles : navigation entre vues, filtres, formulaires, états, affichage de résultats. Contenu métier crédible, jamais de Lorem ipsum.
 
-Méthode de travail :
+EXIGENCES DE DESIGN (vise un rendu "wow", niveau studio primé) :
+- BANNIS l'esthétique "IA générique" : pas de police système par défaut (Arial/Roboto/Inter brut), pas de dégradé violet sur fond blanc, pas de layout cookie-cutter.
+- Typographie expressive via Google Fonts (choisis une combinaison adaptée au secteur : ex. une display character + une sans lisible). Hiérarchie nette (display, h1, body, caption), letter-spacing et graisses travaillés.
+- Palette cohérente et affirmée, déduite du métier du client (évite le bleu corporate par défaut). Variables CSS (couleurs, rayons, ombres, espacements) et discipline.
+- Vraies icônes (lib d'icônes, pas d'emoji en guise d'icônes d'UI).
+- Détails qui font la différence : grille et espacements réguliers (échelle 4/8px), ombres douces multi-couches, états hover/focus, transitions et micro-animations (apparition au scroll, feedback au clic), éventuellement un graphique si pertinent.
+- Compose un vrai produit : en-tête, navigation, sections rythmées, cartes, tableaux/listes lisibles, empty states. Pense "produit fini", pas "maquette".
+- Soigne le mobile autant que le desktop.
+
+Méthode de travail (itère pour la qualité) :
 1. Écris index.html avec write_file.
-2. VÉRIFIE ton travail : relis le fichier (read_file) et/ou utilise bash (ex: vérifier la taille, l'absence de http/https externes, la présence des sections clés).
-3. Corrige si besoin, itère jusqu'à un résultat soigné et cohérent.
-4. Quand le prototype est prêt et vérifié, réponds UNIQUEMENT avec le texte: PROTOTYPE_READY
+2. VÉRIFIE : relis le fichier (read_file) ; avec bash, contrôle la présence des sections clés et la taille. Vérifie qu'aucune URL ne pointe vers une API métier (seuls polices/icônes/libs CDN sont admis).
+3. Fais AU MOINS UNE passe d'amélioration visuelle : relis ton rendu d'un œil critique de designer et renforce la hiérarchie, les espacements, la palette, les animations.
+4. Quand le prototype est soigné, cohérent et vérifié, réponds UNIQUEMENT avec le texte: PROTOTYPE_READY
 
-Ne demande jamais de précision : prends des décisions raisonnables et avance.`;
+Ne demande jamais de précision : prends des décisions de design fortes et avance.`;
 
 function prompt(uc) {
   const spec = uc.spec || {};
@@ -164,7 +173,7 @@ async function genererPrototype(uc, onEtape = () => {}) {
     for (let tour = 0; tour < MAX_TOURS; tour++) {
       const reponse = await client.messages.create({
         model: MODELE,
-        max_tokens: 32000,
+        max_tokens: 48000,
         // Adaptive thinking + effort élevé : meilleure qualité de code agentique.
         thinking: { type: 'adaptive' },
         output_config: { effort: EFFORT },
