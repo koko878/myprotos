@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { Pressable, SafeAreaView, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { Carte, Etiquette } from '../components/ui';
-import { LIBELLE_STATUT } from '../components/UseCaseView';
+import { libelleStatut } from '../components/UseCaseView';
 import { useNav } from '../navigation';
 import { chargerUseCases } from '../storage';
 import { colors, font, spacing } from '../theme';
@@ -51,7 +51,7 @@ export default function AdminScreen() {
         )}
 
         {liste?.map((uc) => {
-          const st = LIBELLE_STATUT[uc.statut];
+          const st = libelleStatut(uc.statut);
           const aGenerer = uc.statut === 'soumis';
           return (
             <Carte

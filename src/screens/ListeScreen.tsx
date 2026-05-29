@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { Pressable, SafeAreaView, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { Bouton, Carte, Etiquette, couleurComplexite } from '../components/ui';
-import { LIBELLE_STATUT } from '../components/UseCaseView';
+import { libelleStatut } from '../components/UseCaseView';
 import { useNav } from '../navigation';
 import { chargerUseCases } from '../storage';
 import { colors, font, spacing } from '../theme';
@@ -44,7 +44,7 @@ export default function ListeScreen() {
             onPress={() => aller({ nom: 'detail', useCaseId: uc.id })}
           >
             <View style={styles.cardTop}>
-              <Etiquette texte={LIBELLE_STATUT[uc.statut].texte} couleur={LIBELLE_STATUT[uc.statut].couleur} />
+              <Etiquette texte={libelleStatut(uc.statut).texte} couleur={libelleStatut(uc.statut).couleur} />
               <Text style={[styles.score, { color: scoreCouleur(uc.scoreCadrage) }]}>
                 {uc.scoreCadrage}/100
               </Text>

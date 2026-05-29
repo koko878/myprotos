@@ -17,8 +17,19 @@ export const LIBELLE_STATUT: Record<StatutUseCase, { texte: string; couleur: str
   certifie: { texte: 'Certifié', couleur: colors.success },
 };
 
+// Accès sûr au libellé : tolère d'anciens statuts (projets créés par d'anciennes
+// versions) sans planter — renvoie une étiquette neutre par défaut.
+export function libelleStatut(statut: string): { texte: string; couleur: string } {
+  return (
+    (LIBELLE_STATUT as Record<string, { texte: string; couleur: string }>)[statut] ?? {
+      texte: statut || 'Projet',
+      couleur: colors.textMuted,
+    }
+  );
+}
+
 export default function UseCaseView({ uc }: { uc: UseCase }) {
-  const statut = LIBELLE_STATUT[uc.statut];
+  const statut = libelleStatut(uc.statut);
   return (
     <View style={{ gap: spacing.lg }}>
       <View style={{ gap: spacing.sm }}>
