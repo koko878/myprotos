@@ -171,7 +171,10 @@ async function genererPrototype(uc, onEtape = () => {}) {
     const MAX_TOURS = 20;
 
     for (let tour = 0; tour < MAX_TOURS; tour++) {
-      const reponse = await client.messages.create({
+      // Streaming OBLIGATOIRE : avec un gros max_tokens + raisonnement, le SDK
+      // exige le streaming (sinon "Streaming is required..."). On agrège le
+      // message final via .finalMessage().
+      const stream = client.messages.stream({
         model: MODELE,
         max_tokens: 48000,
         // Adaptive thinking + effort élevé : meilleure qualité de code agentique.
@@ -181,6 +184,7 @@ async function genererPrototype(uc, onEtape = () => {}) {
         tools: TOOLS,
         messages,
       });
+      const reponse = await stream.finalMessage();
 
       messages.push({ role: 'assistant', content: reponse.content });
 
