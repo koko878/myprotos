@@ -1,5 +1,6 @@
 import React from 'react';
 import { Pressable, SafeAreaView, ScrollView, StyleSheet, Text, View } from 'react-native';
+import Logo from '../components/Logo';
 import { Bouton, Carte } from '../components/ui';
 import { useNav } from '../navigation';
 import { colors, font, radius, spacing } from '../theme';
@@ -10,8 +11,7 @@ export default function HomeScreen() {
     <SafeAreaView style={styles.safe}>
       <ScrollView contentContainerStyle={styles.content}>
         <View style={styles.logoRow}>
-          <View style={styles.logoDot} />
-          <Text style={styles.marque}>GetExp</Text>
+          <Logo size="lg" />
         </View>
 
         <Text style={styles.h1}>De l’idée à l’application, clé en main.</Text>

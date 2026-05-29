@@ -1,20 +1,20 @@
-// Tokens de design partagés. Thème sombre "tech", accent violet/cyan.
+// Tokens de design partagés. Charte GetExp : rouge de marque sur fond sombre.
 
 export const colors = {
-  bg: '#0B0F1A',
-  surface: '#141A2A',
-  surfaceAlt: '#1C2438',
-  border: '#2A3349',
-  primary: '#7C5CFF',
-  primarySoft: '#2A2350',
-  accent: '#22D3EE',
-  text: '#F2F4FA',
-  textMuted: '#9AA4BF',
+  bg: '#0E0E11',
+  surface: '#17171C',
+  surfaceAlt: '#202028',
+  border: '#33333D',
+  primary: '#FF3B3B', // rouge de marque (logo)
+  primarySoft: '#2A1417', // rouge très sombre, fonds de blocs
+  accent: '#FF6B6B', // rouge clair, accents & liens
+  text: '#F5F5F7',
+  textMuted: '#9B9BA8',
   success: '#34D399',
   warn: '#FBBF24',
   danger: '#F87171',
-  bubbleUser: '#7C5CFF',
-  bubbleAssistant: '#1C2438',
+  bubbleUser: '#FF3B3B',
+  bubbleAssistant: '#202028',
 };
 
 export const radius = {
