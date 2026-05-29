@@ -1,0 +1,16 @@
+# Blueprint Render — à la RACINE du repo (Render le cherche ici par défaut).
+# Le service vit dans backend/ (rootDir). Renseigne ANTHROPIC_API_KEY en secret.
+services:
+  - type: web
+    name: getexp-backend
+    runtime: node
+    rootDir: backend
+    plan: free
+    buildCommand: npm install
+    startCommand: npm start
+    healthCheckPath: /health
+    envVars:
+      - key: ANTHROPIC_API_KEY
+        sync: false
+      - key: ANTHROPIC_MODEL
+        value: claude-opus-4-8
