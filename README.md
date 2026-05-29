@@ -47,8 +47,20 @@ npm install
 npm run start   # puis 'a' (Android), 'i' (iOS), 'w' (web)
 ```
 
-## Intégration d'une IA réelle
+## Intégration IA — Google Gemini (gratuit)
 
-Le moteur de cadrage fonctionne 100 % hors-ligne (mode prototype). Pour brancher
-un LLM, implémenter `maybeCallLLM` dans `src/cadrageAssistant.ts`. Plusieurs
-fournisseurs proposent un palier gratuit (voir discussion projet).
+Le moteur de cadrage fonctionne 100 % hors-ligne (heuristique locale). Pour
+activer une vraie IA sur la **synthèse du use case** (reformulation, KPIs,
+approche, complexité, budget) :
+
+1. Récupérer une clé gratuite sur https://aistudio.google.com/apikey
+2. `cp .env.example .env` puis renseigner `EXPO_PUBLIC_GEMINI_API_KEY`
+3. Relancer `npm run start`
+
+Sans clé, l'app retombe automatiquement sur le moteur local — aucune
+régression. Le branchement est dans `src/llm.ts` (appel Gemini) et
+`synthetiserUseCaseIA` dans `src/cadrageAssistant.ts`.
+
+> ⚠️ La clé `EXPO_PUBLIC_*` est embarquée côté client (OK pour un prototype).
+> En production, router les appels via un backend proxy pour ne jamais exposer
+> la clé dans le binaire mobile.

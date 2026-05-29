@@ -14,8 +14,9 @@ import {
   CadrageReponses,
   ETAPES,
   reactionAssistant,
-  synthetiserUseCase,
+  synthetiserUseCaseIA,
 } from '../cadrageAssistant';
+import { iaDisponible } from '../llm';
 import { useNav } from '../navigation';
 import { ajouterUseCase } from '../storage';
 import { colors, font, radius, spacing } from '../theme';
@@ -96,21 +97,23 @@ export default function CadrageScreen() {
       ]);
       setIndexEtape(suivant);
     } else {
-      // Fin du parcours : on synthétise et on propose un récap.
+      // Fin du parcours : on synthétise (IA si dispo) et on propose un récap.
+      setTermine(true);
       setMessages([
         ...apresUser,
         {
           id: uid(),
           role: 'assistant',
-          texte:
-            'Votre use case est prêt ✅ J’ai estimé le domaine, les KPIs, la complexité et un budget indicatif. Voyons le récapitulatif.',
+          texte: iaDisponible()
+            ? '⏳ L’IA structure votre use case (domaine, KPIs, complexité, budget)…'
+            : '⏳ Je structure votre use case…',
         },
       ]);
-      setTermine(true);
-      const uc = synthetiserUseCase(nouvellesReponses);
-      ajouterUseCase(uc).then(() => {
-        setTimeout(() => aller({ nom: 'recap', useCaseId: uc.id }), 600);
-      });
+      synthetiserUseCaseIA(nouvellesReponses).then((uc) =>
+        ajouterUseCase(uc).then(() =>
+          aller({ nom: 'recap', useCaseId: uc.id })
+        )
+      );
     }
   }
 

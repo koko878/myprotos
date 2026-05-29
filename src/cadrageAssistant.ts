@@ -9,6 +9,7 @@
 // L'adaptateur `maybeCallLLM` permet de brancher l'API Claude quand une clé
 // est disponible ; sinon on tourne en "IA simulée" 100% locale (mode prototype).
 
+import { appelerGemini, iaDisponible } from './llm';
 import { Complexite, UseCase } from './types';
 
 export interface CadrageEtape {
@@ -230,14 +231,73 @@ export function reactionAssistant(etape: CadrageEtape, reponse: string): string 
   }
 }
 
-// Adaptateur LLM optionnel. Branché automatiquement si une clé API est fournie
-// (via expo extra / variable d'environnement). En mode prototype : non utilisé,
-// l'expérience reste 100% fonctionnelle grâce au moteur local ci-dessus.
-export async function maybeCallLLM(_prompt: string): Promise<string | null> {
-  // TODO (prod) : appeler l'API Claude pour une reformulation/synthèse plus fine.
-  // Exemple d'intégration :
-  //   const key = process.env.EXPO_PUBLIC_ANTHROPIC_API_KEY;
-  //   if (!key) return null;
-  //   const res = await fetch('https://api.anthropic.com/v1/messages', { ... });
-  return null;
+// ---- Synthèse enrichie par LLM (Gemini) -------------------------------------
+
+const CHAMPS_LLM: Complexite[] = ['Faible', 'Moyenne', 'Élevée'];
+
+function construirePrompt(reponses: CadrageReponses): string {
+  return `Tu es un consultant senior en data/IA. À partir des réponses brutes d'un client, produis un use case structuré, clair et crédible pour des experts data/IA.
+
+Réponds UNIQUEMENT en JSON valide avec ce schéma exact :
+{
+  "titre": "titre court et percutant (max 70 caractères)",
+  "domaine": "un domaine métier (ex: Marketing & Ventes, Industrie, Finance...)",
+  "probleme": "reformulation claire du problème métier (1-2 phrases)",
+  "objectif": "objectif business mesurable (1 phrase)",
+  "kpis": ["3 KPIs de succès concrets"],
+  "approcheSuggeree": "piste technique recommandée (1 phrase)",
+  "complexite": "Faible | Moyenne | Élevée",
+  "budgetEstime": "fourchette en euros (ex: 12 000 € – 30 000 €)"
+}
+
+Réponses du client :
+- Idée : ${reponses.idee}
+- Problème : ${reponses.probleme}
+- Objectif : ${reponses.objectif}
+- Données disponibles : ${reponses.donnees}
+- Utilisateurs : ${reponses.utilisateurs}
+- Contraintes : ${reponses.contraintes}`;
+}
+
+/**
+ * Synthèse du use case. Tente d'abord Gemini pour une qualité de cadrage
+ * supérieure (reformulation, KPIs, approche). Retombe automatiquement sur le
+ * moteur heuristique local si l'IA est indisponible ou répond mal.
+ */
+export async function synthetiserUseCaseIA(
+  reponses: CadrageReponses
+): Promise<UseCase> {
+  const base = synthetiserUseCase(reponses); // moteur local = socle + fallback
+
+  if (!iaDisponible()) return base;
+
+  const brut = await appelerGemini(construirePrompt(reponses), { json: true });
+  if (!brut) return base;
+
+  try {
+    const j = JSON.parse(brut);
+    const complexite: Complexite = CHAMPS_LLM.includes(j.complexite)
+      ? j.complexite
+      : base.complexite;
+    return {
+      ...base,
+      titre: typeof j.titre === 'string' && j.titre.trim() ? j.titre.trim() : base.titre,
+      domaine: typeof j.domaine === 'string' && j.domaine.trim() ? j.domaine.trim() : base.domaine,
+      probleme: typeof j.probleme === 'string' && j.probleme.trim() ? j.probleme.trim() : base.probleme,
+      objectif: typeof j.objectif === 'string' && j.objectif.trim() ? j.objectif.trim() : base.objectif,
+      kpis: Array.isArray(j.kpis) && j.kpis.length ? j.kpis.slice(0, 4).map(String) : base.kpis,
+      approcheSuggeree:
+        typeof j.approcheSuggeree === 'string' && j.approcheSuggeree.trim()
+          ? j.approcheSuggeree.trim()
+          : base.approcheSuggeree,
+      complexite,
+      budgetEstime:
+        typeof j.budgetEstime === 'string' && j.budgetEstime.trim()
+          ? j.budgetEstime.trim()
+          : base.budgetEstime,
+      // Le score de maturité reste calculé localement (cohérence garantie).
+    };
+  } catch {
+    return base;
+  }
 }
