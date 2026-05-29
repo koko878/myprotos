@@ -1,0 +1,17 @@
+# Blueprint Render pour le backend GetExp.
+# Sur https://render.com : New + → Blueprint → choisis le repo → Render lit ce fichier.
+# Pense à renseigner le secret ANTHROPIC_API_KEY (sync: false => saisi à la main).
+services:
+  - type: web
+    name: getexp-backend
+    runtime: node
+    rootDir: backend
+    plan: free
+    buildCommand: npm install
+    startCommand: npm start
+    healthCheckPath: /health
+    envVars:
+      - key: ANTHROPIC_API_KEY
+        sync: false
+      - key: ANTHROPIC_MODEL
+        value: claude-opus-4-8
