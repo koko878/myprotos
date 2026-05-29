@@ -14,6 +14,9 @@ const Anthropic = require('@anthropic-ai/sdk');
 const client = new Anthropic(); // lit ANTHROPIC_API_KEY
 
 const MODELE = process.env.ANTHROPIC_MODEL || 'claude-opus-4-8';
+// Effort = profondeur de raisonnement/agentivité. "xhigh" est le réglage
+// recommandé pour le code sur Opus 4.8 (et le défaut de Claude Code).
+const EFFORT = process.env.ANTHROPIC_EFFORT || 'xhigh';
 
 // --- Définition des outils (côté client, exécutés dans le workspace) ---------
 
@@ -162,6 +165,9 @@ async function genererPrototype(uc, onEtape = () => {}) {
       const reponse = await client.messages.create({
         model: MODELE,
         max_tokens: 32000,
+        // Adaptive thinking + effort élevé : meilleure qualité de code agentique.
+        thinking: { type: 'adaptive' },
+        output_config: { effort: EFFORT },
         system: SYSTEM,
         tools: TOOLS,
         messages,
@@ -221,4 +227,4 @@ async function genererPrototype(uc, onEtape = () => {}) {
   }
 }
 
-module.exports = { genererPrototype };
+module.exports = { genererPrototype, MODELE, EFFORT };

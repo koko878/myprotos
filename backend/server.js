@@ -8,7 +8,7 @@
 
 const express = require('express');
 const cors = require('cors');
-const { genererPrototype } = require('./agent');
+const { genererPrototype, MODELE, EFFORT } = require('./agent');
 
 const app = express();
 app.use(express.json({ limit: '1mb' }));
@@ -32,8 +32,32 @@ app.get('/health', (_req, res) => {
     ok: true,
     service: 'getexp-backend',
     anthropicKeyConfigured: !!process.env.ANTHROPIC_API_KEY,
-    model: process.env.ANTHROPIC_MODEL || 'claude-opus-4-8',
+    model: MODELE, // modèle Claude réellement utilisé
+    effort: EFFORT, // profondeur de raisonnement (xhigh recommandé pour le code)
   });
+});
+
+// Vérifie que le modèle configuré existe vraiment et expose ses capacités
+// (fenêtre de contexte, sortie max). Permet de confirmer "la meilleure version".
+app.get('/model', async (_req, res) => {
+  if (!process.env.ANTHROPIC_API_KEY) {
+    return res.status(500).json({ error: 'ANTHROPIC_API_KEY non configurée.' });
+  }
+  try {
+    const Anthropic = require('@anthropic-ai/sdk');
+    const client = new Anthropic();
+    const m = await client.models.retrieve(MODELE);
+    res.json({
+      requested: MODELE,
+      resolved: m.id,
+      display_name: m.display_name,
+      max_input_tokens: m.max_input_tokens,
+      max_tokens: m.max_tokens,
+      effort: EFFORT,
+    });
+  } catch (e) {
+    res.status(500).json({ error: String(e.message || e), requested: MODELE });
+  }
 });
 
 app.post('/generate', async (req, res) => {
