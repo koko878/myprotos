@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { ActivityIndicator, Pressable, SafeAreaView, ScrollView, StyleSheet, Text, View } from 'react-native';
-import { genererPrototypeHtml } from '../cadrageAssistant';
+import { backendDisponible, genererPrototypeHtml } from '../cadrageAssistant';
 import HtmlPreview from '../components/HtmlPreview';
 import { Bouton, Carte } from '../components/ui';
 import { iaDisponible } from '../llm';
@@ -22,8 +22,8 @@ export default function AdminDetailScreen({ useCaseId }: { useCaseId: string }) 
   async function generer() {
     if (!uc || loading) return;
     setErreur(null);
-    if (!iaDisponible()) {
-      setErreur('Aucun fournisseur IA configuré : impossible de générer le prototype.');
+    if (!iaDisponible() && !backendDisponible()) {
+      setErreur('Aucun moteur de génération configuré (backend ou IA).');
       return;
     }
     setLoading(true);
@@ -98,7 +98,11 @@ export default function AdminDetailScreen({ useCaseId }: { useCaseId: string }) 
           {loading ? (
             <View style={styles.loadingBox}>
               <ActivityIndicator color={colors.primary} />
-              <Text style={styles.loadingTxt}>L’IA génère le prototype… (10-30 s)</Text>
+              <Text style={styles.loadingTxt}>
+                {backendDisponible()
+                  ? 'L’agent Claude code le prototype… (30 s à 2 min)'
+                  : 'L’IA génère le prototype… (10-30 s)'}
+              </Text>
             </View>
           ) : (
             <Bouton

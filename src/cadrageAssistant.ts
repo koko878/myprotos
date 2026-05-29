@@ -638,13 +638,45 @@ function extraireHtml(brut: string): string | null {
   return t.slice(debut, fin + '</html>'.length);
 }
 
+// Backend optionnel : boucle agentique Claude (façon Claude Code) qui écrit,
+// teste et corrige le prototype. Bien supérieur à un appel LLM unique. Si l'URL
+// n'est pas configurée ou échoue, on retombe sur la génération directe (Gemini).
+const BACKEND_URL = (process.env.EXPO_PUBLIC_BACKEND_URL || '').replace(/\/$/, '');
+
+export function backendDisponible(): boolean {
+  return BACKEND_URL.length > 0;
+}
+
+// Appelle le backend agentique. Renvoie le HTML ou `null` (le caller gère le repli).
+async function genererViaBackend(uc: UseCase): Promise<string | null> {
+  if (!BACKEND_URL) return null;
+  try {
+    const reponse = await fetch(`${BACKEND_URL}/generate`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ useCase: uc }),
+    });
+    if (!reponse.ok) return null;
+    const data = await reponse.json();
+    const html = data?.html;
+    return typeof html === 'string' && /<html[\s>]/i.test(html) ? html : null;
+  } catch {
+    return null;
+  }
+}
+
 /**
  * Génère le prototype HTML auto-porté pour un use case (action admin).
- * Renvoie le HTML, ou `null` si l'IA est indisponible / réponse invalide.
+ * Priorité au backend agentique (vrai Claude Code) ; repli sur l'appel LLM
+ * direct (Gemini). Renvoie le HTML, ou `null` si tout échoue.
  */
 export async function genererPrototypeHtml(uc: UseCase): Promise<string | null> {
+  // 1) Backend agentique Claude (qualité supérieure) si configuré.
+  const viaBackend = await genererViaBackend(uc);
+  if (viaBackend) return viaBackend;
+
+  // 2) Repli : génération directe par LLM (un seul appel).
   if (!iaDisponible()) return null;
-  // Température un peu plus haute pour la créativité visuelle, gros budget tokens.
   const brut = await chatGemini(
     SYSTEM_PROTOTYPE,
     [{ role: 'user', text: promptPrototype(uc) }],
