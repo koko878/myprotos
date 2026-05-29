@@ -2,7 +2,7 @@
 // En production : remplacer par une API / base de données.
 
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { CadrageTechnique, RemarqueClient, StatutUseCase, UseCase } from './types';
+import { CadrageTechnique, PieceJointe, RemarqueClient, StatutUseCase, UseCase } from './types';
 
 const CLE = 'usecases_v1';
 
@@ -114,5 +114,41 @@ export async function enregistrerCadrageTechnique(
     ...u,
     cadrageTechnique: cadrage,
     statut: 'pret_a_packager',
+  }));
+}
+
+// Ajoute des pièces jointes (logo, charte, docs…) à un projet.
+export async function ajouterPiecesJointes(
+  useCaseId: string,
+  pieces: PieceJointe[]
+): Promise<UseCase[]> {
+  if (pieces.length === 0) return modifierUseCase(useCaseId, (u) => u);
+  return modifierUseCase(useCaseId, (u) => ({
+    ...u,
+    piecesJointes: [...(u.piecesJointes ?? []), ...pieces],
+  }));
+}
+
+export async function supprimerPieceJointe(
+  useCaseId: string,
+  pieceId: string
+): Promise<UseCase[]> {
+  return modifierUseCase(useCaseId, (u) => ({
+    ...u,
+    piecesJointes: (u.piecesJointes ?? []).filter((p) => p.id !== pieceId),
+  }));
+}
+
+// Dépose manuellement le HTML du prototype (généré hors-app par Claude ici).
+export async function deposerPrototypeHtml(
+  useCaseId: string,
+  html: string
+): Promise<UseCase[]> {
+  return modifierUseCase(useCaseId, (u) => ({
+    ...u,
+    prototypeHtml: html,
+    prototypeGenereLe: Date.now(),
+    prototypeVersion: (u.prototypeVersion ?? 0) + 1,
+    statut: 'prototype_genere',
   }));
 }

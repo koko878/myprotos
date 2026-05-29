@@ -1,19 +1,21 @@
-// Tokens de design partagés. Charte GetExp : rouge de marque sur fond sombre.
+// Tokens de design partagés. Charte GetExp : identité marocaine — rouge du
+// drapeau + vert, sur fond sombre. L'étoile verte est la signature.
 
 export const colors = {
   bg: '#0E0E11',
   surface: '#17171C',
   surfaceAlt: '#202028',
   border: '#33333D',
-  primary: '#FF3B3B', // rouge de marque (logo)
-  primarySoft: '#2A1417', // rouge très sombre, fonds de blocs
-  accent: '#FF6B6B', // rouge clair, accents & liens
+  primary: '#C1272D', // rouge du drapeau marocain (marque)
+  primarySoft: '#2A1416', // rouge très sombre, fonds de blocs
+  accent: '#1F9E5A', // vert marocain, accents & liens
+  marocVert: '#0E7A45', // vert profond (étoile, détails)
   text: '#F5F5F7',
   textMuted: '#9B9BA8',
   success: '#34D399',
   warn: '#FBBF24',
   danger: '#F87171',
-  bubbleUser: '#FF3B3B',
+  bubbleUser: '#C1272D',
   bubbleAssistant: '#202028',
 };
 

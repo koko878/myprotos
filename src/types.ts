@@ -29,6 +29,19 @@ export interface RemarqueClient {
 }
 
 /**
+ * Pièce jointe fournie par le client (logo, charte graphique, doc, image…).
+ * Stockée en base64 (data URL) pour rester 100% local, sans backend.
+ */
+export interface PieceJointe {
+  id: string;
+  nom: string; // nom de fichier
+  type: string; // MIME type (image/png, application/pdf…)
+  taille: number; // octets
+  dataUrl: string; // contenu encodé (data:...;base64,...)
+  creeLe: number;
+}
+
+/**
  * Estimation du retour sur investissement, produite par l'IA à partir des
  * volumes et coûts actuels collectés pendant le cadrage métier.
  */
@@ -97,6 +110,7 @@ export interface UseCase {
   prototypeGenereLe?: number; // timestamp de génération
   prototypeVersion?: number; // n° de version du prototype (incrémenté à chaque révision)
   remarques?: RemarqueClient[]; // remarques/besoins du client pour challenger le prototype
+  piecesJointes?: PieceJointe[]; // logo, charte, docs fournis par le client
   cadrageTechnique?: CadrageTechnique; // résultat du cadrage technique infra
   statut: StatutUseCase;
   creeLe: number;

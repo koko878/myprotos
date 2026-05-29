@@ -13,6 +13,7 @@ import {
 import { useNav } from '../navigation';
 import { colors, font, radius, spacing } from '../theme';
 import { Message } from '../types';
+import { demarrerDictee, dicteeDisponible, SessionDictee } from '../voix';
 
 let compteur = 0;
 export const uidMessage = () => `m_${Date.now()}_${compteur++}`;
@@ -48,12 +49,41 @@ export default function ChatIA({ titre, ouverture, jouerTour, onTermine, progres
   const [termine, setTermine] = useState(false);
   const [loading, setLoading] = useState(false);
   const [echec, setEchec] = useState<{ base: Message[] } | null>(null);
+  const [dictee, setDictee] = useState(false); // micro actif
   const verrou = useRef(false);
   const scrollRef = useRef<ScrollView>(null);
+  const sessionDictee = useRef<SessionDictee | null>(null);
+  const baseSaisie = useRef(''); // texte déjà saisi avant la dictée en cours
 
   useEffect(() => {
     scrollRef.current?.scrollToEnd({ animated: true });
   }, [messages, loading]);
+
+  // Arrête proprement la dictée au démontage.
+  useEffect(() => () => sessionDictee.current?.stop(), []);
+
+  // Démarre/arrête la dictée vocale (web). Le texte reconnu s'ajoute à la saisie.
+  function basculerDictee() {
+    if (dictee) {
+      sessionDictee.current?.stop();
+      return;
+    }
+    baseSaisie.current = saisie ? saisie + ' ' : '';
+    const session = demarrerDictee(
+      (texte, fin) => {
+        setSaisie(baseSaisie.current + texte);
+        if (fin) baseSaisie.current = baseSaisie.current + texte + ' ';
+      },
+      () => {
+        setDictee(false);
+        sessionDictee.current = null;
+      }
+    );
+    if (session) {
+      sessionDictee.current = session;
+      setDictee(true);
+    }
+  }
 
   async function tour(base: Message[]) {
     setEchec(null);
@@ -88,6 +118,7 @@ export default function ChatIA({ titre, ouverture, jouerTour, onTermine, progres
   function envoyer(texteBrut: string) {
     const texte = texteBrut.trim();
     if (!texte || termine || loading || verrou.current) return;
+    sessionDictee.current?.stop(); // coupe le micro à l'envoi
     setSaisie('');
     const base: Message[] = [...messages, { id: uidMessage(), role: 'user', texte }];
     setMessages(base);
@@ -136,9 +167,20 @@ export default function ChatIA({ titre, ouverture, jouerTour, onTermine, progres
 
         {!termine && (
           <View style={styles.saisieZone}>
+            {dicteeDisponible() && (
+              <Pressable
+                style={[styles.micro, dictee && styles.microActif]}
+                onPress={basculerDictee}
+                disabled={loading}
+              >
+                <Text style={styles.microTxt}>{dictee ? '⏺' : '🎤'}</Text>
+              </Pressable>
+            )}
             <TextInput
               style={styles.input}
-              placeholder={loading ? 'L’assistant réfléchit…' : 'Votre réponse…'}
+              placeholder={
+                dictee ? 'Parlez…' : loading ? 'L’assistant réfléchit…' : 'Votre réponse…'
+              }
               placeholderTextColor={colors.textMuted}
               value={saisie}
               onChangeText={setSaisie}
@@ -277,4 +319,16 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   envoyerTxt: { color: '#fff', fontSize: 22, fontWeight: '800' },
+  micro: {
+    width: 44,
+    height: 44,
+    borderRadius: radius.pill,
+    backgroundColor: colors.surfaceAlt,
+    borderWidth: 1,
+    borderColor: colors.border,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  microActif: { backgroundColor: colors.danger, borderColor: colors.danger },
+  microTxt: { fontSize: 18 },
 });
