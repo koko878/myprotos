@@ -8,7 +8,9 @@ export type Route =
   | { nom: 'cadrage' }
   | { nom: 'recap'; useCaseId: string }
   | { nom: 'liste' }
-  | { nom: 'detail'; useCaseId: string };
+  | { nom: 'detail'; useCaseId: string }
+  | { nom: 'expert' } // espace expert : besoins publiés
+  | { nom: 'expertDetail'; useCaseId: string }; // un expert consulte un besoin
 
 interface NavContext {
   route: Route;

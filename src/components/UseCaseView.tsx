@@ -1,8 +1,11 @@
-import React from 'react';
-import { StyleSheet, Text, View } from 'react-native';
+import React, { useState } from 'react';
+import { Platform, Pressable, StyleSheet, Text, View } from 'react-native';
+import { copier } from '../clipboard';
 import { colors, font, radius, spacing } from '../theme';
-import { StatutUseCase, UseCase } from '../types';
+import { EstimationROI, SpecPrototype, StatutUseCase, UseCase } from '../types';
 import { Carte, Etiquette, ScoreCadrage, couleurComplexite } from './ui';
+
+const eur = (n: number) => n.toLocaleString('fr-FR') + ' €';
 
 const LIBELLE_STATUT: Record<StatutUseCase, { texte: string; couleur: string }> = {
   brouillon: { texte: 'Brouillon', couleur: colors.textMuted },
@@ -54,7 +57,100 @@ export default function UseCaseView({ uc }: { uc: UseCase }) {
           <Text style={styles.budgetVal}>{uc.budgetEstime}</Text>
         </View>
       </Carte>
+
+      {uc.roi && <RoiBloc roi={uc.roi} />}
+      {uc.spec && <SpecBloc spec={uc.spec} />}
     </View>
+  );
+}
+
+// Bloc ROI : indicateurs chiffrés pour juger la rentabilité avant d'investir.
+function RoiBloc({ roi }: { roi: EstimationROI }) {
+  const positif = roi.roiAn1Pct >= 0;
+  return (
+    <Carte style={{ borderColor: colors.success + '55', gap: spacing.md }}>
+      <Text style={styles.blocTitre}>💸 Retour sur investissement estimé</Text>
+      <View style={styles.roiGrid}>
+        <Kpi label="Gain / an" valeur={eur(roi.gainAnnuelEur)} couleur={colors.success} />
+        <Kpi label="Investissement" valeur={eur(roi.investissementEur)} />
+        <Kpi
+          label="ROI an 1"
+          valeur={(positif ? '+' : '') + roi.roiAn1Pct + ' %'}
+          couleur={positif ? colors.success : colors.danger}
+        />
+        <Kpi label="Retour en" valeur={roi.retourMois + ' mois'} couleur={colors.accent} />
+      </View>
+      <Text style={styles.roiDetail}>{roi.detail}</Text>
+      <Text style={styles.roiHypo}>Hypothèses : {roi.hypotheses}</Text>
+    </Carte>
+  );
+}
+
+function Kpi({ label, valeur, couleur }: { label: string; valeur: string; couleur?: string }) {
+  return (
+    <View style={styles.kpiBox}>
+      <Text style={[styles.kpiVal, couleur ? { color: couleur } : null]}>{valeur}</Text>
+      <Text style={styles.kpiLabel}>{label}</Text>
+    </View>
+  );
+}
+
+// Bloc spécification + prompt prêt à coller dans Claude Code.
+function SpecBloc({ spec }: { spec: SpecPrototype }) {
+  const [copie, setCopie] = useState(false);
+  async function copierPrompt() {
+    const ok = await copier(spec.promptClaudeCode);
+    if (ok) {
+      setCopie(true);
+      setTimeout(() => setCopie(false), 2000);
+    }
+  }
+  return (
+    <Carte style={{ gap: spacing.md }}>
+      <Text style={styles.blocTitre}>🛠️ Spécification du prototype</Text>
+      <Text style={styles.blocTexte}>{spec.resume}</Text>
+
+      <Text style={styles.specLabel}>Stack recommandée</Text>
+      <View style={styles.tagRow}>
+        {spec.stack.map((s) => (
+          <Etiquette key={s} texte={s} couleur={colors.accent} />
+        ))}
+      </View>
+
+      <Text style={styles.specLabel}>Fonctionnalités</Text>
+      {spec.fonctionnalites.map((f) => (
+        <View key={f} style={styles.kpiRow}>
+          <View style={styles.puce} />
+          <Text style={styles.kpiTxt}>{f}</Text>
+        </View>
+      ))}
+
+      <Text style={styles.specLabel}>Données d’entrée</Text>
+      <Text style={styles.blocTexte}>{spec.donneesEntree}</Text>
+      <Text style={styles.specLabel}>Sortie attendue</Text>
+      <Text style={styles.blocTexte}>{spec.sortieAttendue}</Text>
+
+      <Text style={styles.specLabel}>Critères d’acceptation</Text>
+      {spec.criteresAcceptation.map((c) => (
+        <View key={c} style={styles.kpiRow}>
+          <Text style={styles.check}>✓</Text>
+          <Text style={styles.kpiTxt}>{c}</Text>
+        </View>
+      ))}
+
+      <View style={styles.promptHeader}>
+        <Text style={styles.specLabel}>⚡ Prompt prêt pour Claude Code</Text>
+        <Pressable onPress={copierPrompt} style={[styles.copyBtn, copie && { backgroundColor: colors.success }]}>
+          <Text style={styles.copyTxt}>{copie ? '✓ Copié' : '📋 Copier'}</Text>
+        </Pressable>
+      </View>
+      <View style={styles.promptBox}>
+        <Text style={styles.promptTxt}>{spec.promptClaudeCode}</Text>
+      </View>
+      <Text style={styles.promptHint}>
+        Collez ce prompt dans Claude Code : il produit le prototype sans poser de question.
+      </Text>
+    </Carte>
   );
 }
 
@@ -86,4 +182,42 @@ const styles = StyleSheet.create({
   },
   budgetLabel: { color: colors.textMuted, fontSize: font.small },
   budgetVal: { color: colors.accent, fontSize: font.h3, fontWeight: '800' },
+  // ROI
+  roiGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm },
+  kpiBox: {
+    flexGrow: 1,
+    flexBasis: '45%',
+    backgroundColor: colors.surfaceAlt,
+    borderRadius: radius.md,
+    padding: spacing.md,
+  },
+  kpiVal: { color: colors.text, fontSize: font.h2, fontWeight: '800' },
+  kpiLabel: { color: colors.textMuted, fontSize: font.small, marginTop: 2 },
+  roiDetail: { color: colors.text, fontSize: font.small, lineHeight: 20 },
+  roiHypo: { color: colors.textMuted, fontSize: font.tiny, lineHeight: 17, fontStyle: 'italic' },
+  // Spec
+  specLabel: { color: colors.text, fontSize: font.small, fontWeight: '800', marginTop: spacing.xs },
+  check: { color: colors.success, fontWeight: '800', width: 14 },
+  promptHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: spacing.xs },
+  copyBtn: {
+    backgroundColor: colors.primary,
+    borderRadius: radius.pill,
+    paddingHorizontal: spacing.md,
+    paddingVertical: 6,
+  },
+  copyTxt: { color: '#fff', fontSize: font.small, fontWeight: '700' },
+  promptBox: {
+    backgroundColor: '#0A0E18',
+    borderRadius: radius.md,
+    borderWidth: 1,
+    borderColor: colors.border,
+    padding: spacing.md,
+  },
+  promptTxt: {
+    color: '#C9D4F0',
+    fontSize: font.small,
+    lineHeight: 19,
+    fontFamily: Platform.OS === 'ios' ? 'Menlo' : 'monospace',
+  },
+  promptHint: { color: colors.textMuted, fontSize: font.tiny, fontStyle: 'italic' },
 });

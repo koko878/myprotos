@@ -34,6 +34,18 @@ export default function HomeScreen() {
           />
         </Carte>
 
+        <Carte style={{ marginTop: spacing.md, gap: spacing.md }}>
+          <Text style={styles.cardTitre}>Vous êtes expert data/IA</Text>
+          <Text style={styles.cardTexte}>
+            Parcourez les besoins déjà cadrés (ROI + spec prête à coder) et positionnez-vous.
+          </Text>
+          <Bouton
+            titre="🧑‍💻 Accéder à l’espace expert"
+            variante="secondaire"
+            onPress={() => aller({ nom: 'expert' })}
+          />
+        </Carte>
+
         <View style={styles.etapes}>
           <Etape n="1" titre="Cadrage IA" texte="L’IA structure votre besoin en use case." />
           <Etape n="2" titre="Publication" texte="Les experts anonymes se positionnent." />

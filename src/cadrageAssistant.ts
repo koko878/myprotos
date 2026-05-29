@@ -10,7 +10,13 @@
 // est disponible ; sinon on tourne en "IA simulée" 100% locale (mode prototype).
 
 import { appelerGemini, chatGemini, iaDisponible } from './llm';
-import { Complexite, Message, UseCase } from './types';
+import {
+  Complexite,
+  EstimationROI,
+  Message,
+  SpecPrototype,
+  UseCase,
+} from './types';
 
 export interface CadrageEtape {
   cle: keyof CadrageReponses;
@@ -178,6 +184,118 @@ function calculerScoreCadrage(reponses: CadrageReponses, kpis: string[]): number
   return Math.min(100, Math.round(score));
 }
 
+// ---- ROI & spec prototype : génération locale (repli sans IA) ---------------
+
+// Milieu d'une fourchette budgétaire "x € – y €".
+function milieuBudget(budget: string): number {
+  const nums = (budget.match(/\d[\d\s]*/g) || []).map((x) => parseInt(x.replace(/\s/g, ''), 10));
+  if (nums.length >= 2) return Math.round((nums[0] + nums[1]) / 2);
+  if (nums.length === 1) return nums[0];
+  return 18000;
+}
+
+// ROI heuristique : à défaut de chiffres, on pose une économie annuelle
+// prudente indexée sur l'investissement (ordre de grandeur, à valider).
+function roiLocal(uc: {
+  titre: string;
+  approcheSuggeree: string;
+  budgetEstime: string;
+  objectif: string;
+}): EstimationROI {
+  const investissementEur = milieuBudget(uc.budgetEstime);
+  // Multiplicateur de gain selon la présence d'un objectif chiffré.
+  const facteur = /\d/.test(uc.objectif) ? 3 : 2.2;
+  const gainAnnuelEur = Math.round((investissementEur * facteur) / 1000) * 1000;
+  const roiAn1Pct = Math.round(((gainAnnuelEur - investissementEur) / investissementEur) * 100);
+  const retourMois = Math.max(1, Math.round(investissementEur / (gainAnnuelEur / 12)));
+  return {
+    hypotheses:
+      'Estimation prudente, à confirmer avec vos volumes et coûts réels (gain ≈ ' +
+      facteur +
+      '× l’investissement la 1ʳᵉ année).',
+    gainAnnuelEur,
+    investissementEur,
+    retourMois,
+    roiAn1Pct,
+    detail: `Sur la base de l’objectif visé, ${uc.approcheSuggeree.toLowerCase()} génère une économie/gain estimé de ${gainAnnuelEur.toLocaleString('fr-FR')} €/an.`,
+  };
+}
+
+// Construit un prompt Claude Code autonome à partir d'un use case.
+function promptClaudeCodeLocal(uc: {
+  titre: string;
+  probleme: string;
+  objectif: string;
+  donnees: string;
+  approcheSuggeree: string;
+  kpis: string[];
+}): string {
+  return `Tu es un ingénieur. Construis un PROTOTYPE fonctionnel (POC) sans me poser aucune question ; fais des hypothèses raisonnables et documente-les dans le README.
+
+Contexte métier : ${uc.probleme || uc.titre}
+Objectif : ${uc.objectif || 'démontrer la valeur de la solution'}
+Approche imposée : ${uc.approcheSuggeree}
+
+Données d'entrée : ${uc.donnees || 'non fournies'} — si aucune donnée réelle n'est disponible, GÉNÈRE un jeu de données synthétique réaliste (au moins 200 lignes) et documente sa structure.
+
+Livrable attendu :
+- Une application de démonstration exécutable localement (privilégie Python + Streamlit, ou Node si plus adapté).
+- Elle illustre concrètement le résultat pour un utilisateur non technique.
+- Un README avec les étapes d'installation/exécution et les hypothèses prises.
+
+Critères d'acceptation :
+- Le prototype s'exécute en une commande après installation des dépendances.
+- Il démontre les KPIs suivants : ${uc.kpis.join(', ')}.
+- Le code est lisible et commenté.
+
+Ne pose AUCUNE question : prends les décisions techniques toi-même et commence directement.`;
+}
+
+function specLocale(uc: {
+  titre: string;
+  probleme: string;
+  objectif: string;
+  donnees: string;
+  approcheSuggeree: string;
+  kpis: string[];
+}): SpecPrototype {
+  const t = uc.approcheSuggeree.toLowerCase();
+  let stack = ['Python', 'Pandas', 'Streamlit'];
+  if (/rag|assistant|chatbot|llm/.test(t)) stack = ['Python', 'LangChain', 'FAISS', 'Streamlit'];
+  else if (/vision|image/.test(t)) stack = ['Python', 'PyTorch', 'OpenCV', 'Streamlit'];
+  else if (/tableau de bord|analytique|dashboard/.test(t)) stack = ['Python', 'Pandas', 'Plotly', 'Streamlit'];
+  return {
+    resume: `Prototype démontrant : ${uc.objectif || uc.titre}.`,
+    stack,
+    fonctionnalites: [
+      'Chargement des données (ou génération d’un jeu synthétique réaliste)',
+      `Traitement cœur : ${uc.approcheSuggeree}`,
+      'Interface de démonstration interactive',
+      'Affichage des résultats et des KPIs clés',
+    ],
+    donneesEntree:
+      uc.donnees && !/(peu|pas|aucune)/i.test(uc.donnees)
+        ? uc.donnees
+        : 'Aucune donnée fournie : génération d’un dataset synthétique réaliste.',
+    sortieAttendue: 'Application de démonstration exécutable illustrant le résultat métier.',
+    criteresAcceptation: [
+      'S’exécute en une commande après installation des dépendances.',
+      `Illustre les KPIs : ${uc.kpis.join(', ')}.`,
+    ],
+    promptClaudeCode: promptClaudeCodeLocal(uc),
+  };
+}
+
+// Complète un use case avec roi/spec s'ils manquent (utilisé par tous les
+// chemins : IA conversationnelle, synthèse LLM, et repli 100% local).
+function enrichir(uc: UseCase): UseCase {
+  return {
+    ...uc,
+    roi: uc.roi ?? roiLocal(uc),
+    spec: uc.spec ?? specLocale(uc),
+  };
+}
+
 // ---- Synthèse finale --------------------------------------------------------
 
 export function synthetiserUseCase(reponses: CadrageReponses): UseCase {
@@ -188,7 +306,7 @@ export function synthetiserUseCase(reponses: CadrageReponses): UseCase {
 
   const titre = reponses.idee.length > 60 ? reponses.idee.slice(0, 57) + '…' : reponses.idee || 'Nouveau use case';
 
-  return {
+  return enrichir({
     id: 'uc_' + Date.now().toString(36),
     titre: titre.charAt(0).toUpperCase() + titre.slice(1),
     domaine,
@@ -204,7 +322,7 @@ export function synthetiserUseCase(reponses: CadrageReponses): UseCase {
     budgetEstime: budget,
     statut: 'brouillon',
     creeLe: Date.now(),
-  };
+  });
 }
 
 // Réaction conversationnelle de l'assistant après chaque réponse de l'utilisateur.
@@ -310,13 +428,17 @@ const SYSTEM_CADRAGE = `Tu es un consultant senior en data/IA qui aide un client
 
 Contexte : tu as DÉJÀ salué le client et lui as demandé son idée en une phrase. Tu mènes maintenant l'entretien de cadrage.
 
+OBJECTIF DU CADRAGE — à la fin tu dois disposer d'assez d'éléments pour :
+1) estimer un RETOUR SUR INVESTISSEMENT (ROI) crédible, donc tu DOIS obtenir des ORDRES DE GRANDEUR CHIFFRÉS : volumes (ex. nb de dossiers/mois, nb de clients), temps ou coût actuels (ex. minutes par dossier, € perdus/an, taille d'équipe). Si le client ne sait pas, propose-lui des fourchettes plausibles à valider ;
+2) permettre à un agent de code autonome (Claude Code) de produire un PROTOTYPE SANS poser AUCUNE question : il faut donc des données d'entrée précises (format/source), une sortie attendue claire et des critères d'acceptation.
+
 Règles :
 - Réponds en français, ton chaleureux mais professionnel.
 - UNE seule question à la fois, courte (2-3 phrases max), en t'appuyant explicitement sur ce que le client vient de dire (montre que tu comprends son métier/secteur).
-- Couvre progressivement : le problème métier concret, l'objectif mesurable (chiffré si possible), les données disponibles, les utilisateurs cibles, les contraintes (budget / délai / conformité type RGPD).
-- Propose jusqu'à 3 suggestions de réponses COURTES, concrètes et adaptées à SON cas précis, pour l'aider à répondre vite.
-- Après avoir recueilli assez d'infos (en général 5 à 6 échanges), TERMINE : mets "done": true et produis le use case structuré.
-- Ne pose jamais plus de 7 questions.
+- Couvre progressivement : problème métier ; objectif mesurable ; VOLUMES & COÛTS ACTUELS (indispensables au ROI) ; données disponibles (format/source) ; utilisateurs cibles ; contraintes (budget/délai/conformité RGPD).
+- Propose jusqu'à 3 suggestions de réponses COURTES, concrètes et adaptées à SON cas précis (avec des chiffres plausibles quand c'est utile) pour l'aider à répondre vite.
+- Après avoir recueilli assez d'infos (en général 6 à 7 échanges, dont au moins un sur les volumes/coûts), TERMINE : mets "done": true et produis le use case complet.
+- Ne pose jamais plus de 8 questions.
 
 Réponds TOUJOURS en JSON strict, sans texte autour :
 {
@@ -326,21 +448,38 @@ Réponds TOUJOURS en JSON strict, sans texte autour :
   "useCase": null
 }
 
-Quand "done" vaut true, "useCase" doit valoir :
+Quand "done" vaut true, "useCase" doit valoir EXACTEMENT ce schéma (chiffres = nombres, sans symbole) :
 {
   "titre": "titre court et percutant (< 70 caractères)",
   "domaine": "domaine métier précis (ex: Marketing & Ventes, Industrie & IoT, Finance & Risque...)",
   "probleme": "problème métier reformulé clairement (1-2 phrases)",
   "objectif": "objectif business mesurable (1 phrase)",
   "kpis": ["3 KPIs de succès concrets"],
-  "donnees": "données disponibles",
+  "donnees": "données disponibles (format/source)",
   "utilisateurs": "utilisateurs cibles de la solution",
   "contraintes": "contraintes (budget/délai/conformité)",
   "approcheSuggeree": "piste technique recommandée (1 phrase)",
   "complexite": "Faible | Moyenne | Élevée",
-  "budgetEstime": "fourchette en euros, ex: 12 000 € – 30 000 €"
+  "budgetEstime": "fourchette en euros, ex: 12 000 € – 30 000 €",
+  "roi": {
+    "hypotheses": "rappel des volumes et coûts actuels utilisés pour le calcul",
+    "gainAnnuelEur": 60000,
+    "investissementEur": 20000,
+    "retourMois": 4,
+    "roiAn1Pct": 200,
+    "detail": "1-2 phrases expliquant le calcul du ROI"
+  },
+  "spec": {
+    "resume": "une phrase décrivant ce que fait le prototype",
+    "stack": ["langage/framework", "libs clés"],
+    "fonctionnalites": ["3 à 6 fonctionnalités du POC"],
+    "donneesEntree": "format et source précis des données d'entrée (génère un jeu de données synthétique réaliste si le client n'en fournit pas)",
+    "sortieAttendue": "livrable observable produit par le prototype",
+    "criteresAcceptation": ["2 à 4 conditions de réussite vérifiables"],
+    "promptClaudeCode": "Un prompt en français, AUTONOME et auto-suffisant, prêt à coller tel quel dans Claude Code pour générer le prototype SANS poser de question. Il doit inclure: le contexte métier, la stack imposée, les données d'entrée (avec consigne de générer un dataset synthétique réaliste si absent), les fonctionnalités attendues, la sortie/démo attendue, les critères d'acceptation, et la consigne explicite de ne poser AUCUNE question et de faire des hypothèses raisonnables documentées."
+  }
 }
-(dans ce cas "suggestions" peut être un tableau vide).`;
+(dans ce cas "suggestions" peut être un tableau vide). Calcule roiAn1Pct = round((gainAnnuelEur - investissementEur) / investissementEur * 100) et retourMois = round(investissementEur / (gainAnnuelEur/12)).`;
 
 export interface TourIA {
   reply: string;
@@ -372,15 +511,57 @@ function scoreDepuisUseCase(uc: {
   return Math.min(100, Math.round(score));
 }
 
+function nombre(v: unknown, defaut: number): number {
+  const n = typeof v === 'number' ? v : parseFloat(String(v ?? '').replace(/[^\d.-]/g, ''));
+  return Number.isFinite(n) ? Math.round(n) : defaut;
+}
+
+function liste(v: unknown, defaut: string[]): string[] {
+  return Array.isArray(v) && v.length ? v.map(String).filter((x) => x.trim()) : defaut;
+}
+
+// Parse le ROI renvoyé par l'IA, en recalculant les indicateurs dérivés pour
+// garantir leur cohérence (l'IA se trompe parfois dans l'arithmétique).
+function normaliserRoi(j: any, titre: string, approche: string): EstimationROI | undefined {
+  if (!j || typeof j !== 'object') return undefined;
+  const gainAnnuelEur = nombre(j.gainAnnuelEur, 0);
+  const investissementEur = Math.max(1, nombre(j.investissementEur, 0));
+  if (gainAnnuelEur <= 0) return undefined;
+  const roiAn1Pct = Math.round(((gainAnnuelEur - investissementEur) / investissementEur) * 100);
+  const retourMois = Math.max(1, Math.round(investissementEur / (gainAnnuelEur / 12)));
+  return {
+    hypotheses: s(j.hypotheses, 'Hypothèses à confirmer avec le client.'),
+    gainAnnuelEur,
+    investissementEur,
+    retourMois,
+    roiAn1Pct,
+    detail: s(j.detail, `Gain annuel estimé pour « ${titre} » via ${approche.toLowerCase()}.`),
+  };
+}
+
+function normaliserSpec(j: any): SpecPrototype | undefined {
+  if (!j || typeof j !== 'object') return undefined;
+  const promptClaudeCode = s(j.promptClaudeCode, '');
+  if (!promptClaudeCode) return undefined;
+  return {
+    resume: s(j.resume, 'Prototype de démonstration.'),
+    stack: liste(j.stack, ['Python', 'Streamlit']),
+    fonctionnalites: liste(j.fonctionnalites, ['Démo interactive du résultat']),
+    donneesEntree: s(j.donneesEntree, 'Jeu de données synthétique généré automatiquement.'),
+    sortieAttendue: s(j.sortieAttendue, 'Interface de démonstration du résultat.'),
+    criteresAcceptation: liste(j.criteresAcceptation, ['Le prototype s’exécute et illustre la valeur métier.']),
+    promptClaudeCode,
+  };
+}
+
 function normaliserUseCase(j: any): UseCase {
-  const kpis = Array.isArray(j?.kpis) && j.kpis.length
-    ? j.kpis.slice(0, 4).map(String)
-    : ['Gain de productivité (%)'];
+  const kpis = liste(j?.kpis, ['Gain de productivité (%)']).slice(0, 4);
   const complexite: Complexite = ['Faible', 'Moyenne', 'Élevée'].includes(j?.complexite)
     ? j.complexite
     : 'Moyenne';
   let titre = s(j?.titre, 'Nouveau use case');
   if (titre.length > 70) titre = titre.slice(0, 67) + '…';
+  const approche = s(j?.approcheSuggeree, 'À préciser avec un expert');
   const champs = {
     probleme: s(j?.probleme, ''),
     objectif: s(j?.objectif, ''),
@@ -389,18 +570,20 @@ function normaliserUseCase(j: any): UseCase {
     contraintes: s(j?.contraintes, ''),
     kpis,
   };
-  return {
+  return enrichir({
     id: 'uc_' + Date.now().toString(36),
     titre,
     domaine: s(j?.domaine, 'Transverse'),
     ...champs,
-    approcheSuggeree: s(j?.approcheSuggeree, 'À préciser avec un expert'),
+    approcheSuggeree: approche,
     complexite,
     scoreCadrage: scoreDepuisUseCase(champs),
     budgetEstime: s(j?.budgetEstime, 'À définir'),
+    roi: normaliserRoi(j?.roi, titre, approche),
+    spec: normaliserSpec(j?.spec),
     statut: 'brouillon',
     creeLe: Date.now(),
-  };
+  });
 }
 
 /**

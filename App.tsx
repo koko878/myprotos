@@ -3,6 +3,8 @@ import React from 'react';
 import { NavigationProvider, useNav } from './src/navigation';
 import CadrageScreen from './src/screens/CadrageScreen';
 import DetailScreen from './src/screens/DetailScreen';
+import ExpertDetailScreen from './src/screens/ExpertDetailScreen';
+import ExpertScreen from './src/screens/ExpertScreen';
 import HomeScreen from './src/screens/HomeScreen';
 import ListeScreen from './src/screens/ListeScreen';
 import RecapScreen from './src/screens/RecapScreen';
@@ -20,6 +22,10 @@ function Routeur() {
       return <ListeScreen />;
     case 'detail':
       return <DetailScreen useCaseId={route.useCaseId} />;
+    case 'expert':
+      return <ExpertScreen />;
+    case 'expertDetail':
+      return <ExpertDetailScreen useCaseId={route.useCaseId} />;
     default:
       return <HomeScreen />;
   }

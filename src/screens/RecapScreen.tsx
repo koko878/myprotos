@@ -1,9 +1,10 @@
 import React, { useEffect, useState } from 'react';
-import { Alert, Pressable, SafeAreaView, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Pressable, SafeAreaView, ScrollView, StyleSheet, Text, View } from 'react-native';
 import UseCaseView from '../components/UseCaseView';
 import { Bouton } from '../components/ui';
+import { genererPropositions } from '../experts';
 import { useNav } from '../navigation';
-import { mettreAJourStatut, trouverUseCase } from '../storage';
+import { modifierUseCase, trouverUseCase } from '../storage';
 import { colors, font, spacing } from '../theme';
 import { UseCase } from '../types';
 
@@ -15,13 +16,15 @@ export default function RecapScreen({ useCaseId }: { useCaseId: string }) {
     trouverUseCase(useCaseId).then((u) => setUc(u ?? null));
   }, [useCaseId]);
 
+  // Publie le use case et simule l'arrivée de propositions d'experts (offre).
   async function publier() {
-    await mettreAJourStatut(useCaseId, 'publié');
-    Alert.alert(
-      'Use case publié 🎉',
-      'Votre use case est maintenant visible par les experts data/IA. Vous serez notifié dès qu’un expert proposera un prototype.',
-      [{ text: 'Voir mes use cases', onPress: () => aller({ nom: 'liste' }) }]
-    );
+    if (!uc) return;
+    await modifierUseCase(useCaseId, (u) => ({
+      ...u,
+      statut: 'publié',
+      propositions: u.propositions?.length ? u.propositions : genererPropositions(u),
+    }));
+    aller({ nom: 'detail', useCaseId });
   }
 
   if (!uc) {

@@ -2,7 +2,7 @@
 // En production : remplacer par une API / base de données.
 
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { StatutUseCase, UseCase } from './types';
+import { PropositionExpert, StatutUseCase, UseCase } from './types';
 
 const CLE = 'usecases_v1';
 
@@ -44,4 +44,42 @@ export async function mettreAJourStatut(
   const nouvelle = liste.map((u) => (u.id === id ? { ...u, statut } : u));
   await sauvegarderUseCases(nouvelle);
   return nouvelle;
+}
+
+// Applique une transformation à un use case et persiste.
+export async function modifierUseCase(
+  id: string,
+  maj: (uc: UseCase) => UseCase
+): Promise<UseCase[]> {
+  const liste = await chargerUseCases();
+  const nouvelle = liste.map((u) => (u.id === id ? maj(u) : u));
+  await sauvegarderUseCases(nouvelle);
+  return nouvelle;
+}
+
+// Ajoute une proposition d'expert à un use case (côté offre).
+export async function ajouterProposition(
+  useCaseId: string,
+  proposition: PropositionExpert
+): Promise<UseCase[]> {
+  return modifierUseCase(useCaseId, (u) => ({
+    ...u,
+    propositions: [proposition, ...(u.propositions ?? [])],
+  }));
+}
+
+// Accepte une proposition : la marque acceptée (refuse les autres) et fait
+// passer le use case en "prototype_en_cours".
+export async function accepterProposition(
+  useCaseId: string,
+  propositionId: string
+): Promise<UseCase[]> {
+  return modifierUseCase(useCaseId, (u) => ({
+    ...u,
+    statut: 'prototype_en_cours',
+    propositions: (u.propositions ?? []).map((p) => ({
+      ...p,
+      statut: p.id === propositionId ? 'acceptée' : 'refusée',
+    })),
+  }));
 }
