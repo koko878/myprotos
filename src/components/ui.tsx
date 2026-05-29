@@ -7,6 +7,7 @@ import {
   StyleSheet,
   Text,
   View,
+  StyleProp,
   ViewStyle,
 } from 'react-native';
 import { colors, font, radius, spacing } from '../theme';
@@ -54,7 +55,7 @@ export function Carte({
   onPress,
 }: {
   children: React.ReactNode;
-  style?: ViewStyle;
+  style?: StyleProp<ViewStyle>;
   onPress?: () => void;
 }) {
   const contenu = <View style={[styles.carte, style]}>{children}</View>;

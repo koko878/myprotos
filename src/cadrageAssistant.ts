@@ -11,6 +11,7 @@
 
 import { appelerGemini, chatGemini, iaDisponible } from './llm';
 import {
+  CadrageTechnique,
   Complexite,
   EstimationROI,
   Message,
@@ -221,36 +222,6 @@ function roiLocal(uc: {
   };
 }
 
-// Construit un prompt Claude Code autonome à partir d'un use case.
-function promptClaudeCodeLocal(uc: {
-  titre: string;
-  probleme: string;
-  objectif: string;
-  donnees: string;
-  approcheSuggeree: string;
-  kpis: string[];
-}): string {
-  return `Tu es un ingénieur. Construis un PROTOTYPE fonctionnel (POC) sans me poser aucune question ; fais des hypothèses raisonnables et documente-les dans le README.
-
-Contexte métier : ${uc.probleme || uc.titre}
-Objectif : ${uc.objectif || 'démontrer la valeur de la solution'}
-Approche imposée : ${uc.approcheSuggeree}
-
-Données d'entrée : ${uc.donnees || 'non fournies'} — si aucune donnée réelle n'est disponible, GÉNÈRE un jeu de données synthétique réaliste (au moins 200 lignes) et documente sa structure.
-
-Livrable attendu :
-- Une application de démonstration exécutable localement (privilégie Python + Streamlit, ou Node si plus adapté).
-- Elle illustre concrètement le résultat pour un utilisateur non technique.
-- Un README avec les étapes d'installation/exécution et les hypothèses prises.
-
-Critères d'acceptation :
-- Le prototype s'exécute en une commande après installation des dépendances.
-- Il démontre les KPIs suivants : ${uc.kpis.join(', ')}.
-- Le code est lisible et commenté.
-
-Ne pose AUCUNE question : prends les décisions techniques toi-même et commence directement.`;
-}
-
 function specLocale(uc: {
   titre: string;
   probleme: string;
@@ -259,30 +230,23 @@ function specLocale(uc: {
   approcheSuggeree: string;
   kpis: string[];
 }): SpecPrototype {
-  const t = uc.approcheSuggeree.toLowerCase();
-  let stack = ['Python', 'Pandas', 'Streamlit'];
-  if (/rag|assistant|chatbot|llm/.test(t)) stack = ['Python', 'LangChain', 'FAISS', 'Streamlit'];
-  else if (/vision|image/.test(t)) stack = ['Python', 'PyTorch', 'OpenCV', 'Streamlit'];
-  else if (/tableau de bord|analytique|dashboard/.test(t)) stack = ['Python', 'Pandas', 'Plotly', 'Streamlit'];
   return {
     resume: `Prototype démontrant : ${uc.objectif || uc.titre}.`,
-    stack,
     fonctionnalites: [
-      'Chargement des données (ou génération d’un jeu synthétique réaliste)',
+      'Écran principal illustrant le parcours utilisateur clé',
       `Traitement cœur : ${uc.approcheSuggeree}`,
-      'Interface de démonstration interactive',
+      'Données d’exemple intégrées pour la démonstration',
       'Affichage des résultats et des KPIs clés',
     ],
     donneesEntree:
       uc.donnees && !/(peu|pas|aucune)/i.test(uc.donnees)
         ? uc.donnees
-        : 'Aucune donnée fournie : génération d’un dataset synthétique réaliste.',
-    sortieAttendue: 'Application de démonstration exécutable illustrant le résultat métier.',
+        : 'Aucune donnée fournie : jeu de données d’exemple intégré au prototype.',
+    sortieAttendue: 'Démonstration interactive illustrant le résultat métier.',
     criteresAcceptation: [
-      'S’exécute en une commande après installation des dépendances.',
+      'Le parcours principal est démontrable de bout en bout.',
       `Illustre les KPIs : ${uc.kpis.join(', ')}.`,
     ],
-    promptClaudeCode: promptClaudeCodeLocal(uc),
   };
 }
 
@@ -471,12 +435,10 @@ Quand "done" vaut true, "useCase" doit valoir EXACTEMENT ce schéma (chiffres = 
   },
   "spec": {
     "resume": "une phrase décrivant ce que fait le prototype",
-    "stack": ["langage/framework", "libs clés"],
-    "fonctionnalites": ["3 à 6 fonctionnalités du POC"],
-    "donneesEntree": "format et source précis des données d'entrée (génère un jeu de données synthétique réaliste si le client n'en fournit pas)",
-    "sortieAttendue": "livrable observable produit par le prototype",
-    "criteresAcceptation": ["2 à 4 conditions de réussite vérifiables"],
-    "promptClaudeCode": "Un prompt en français, AUTONOME et auto-suffisant, prêt à coller tel quel dans Claude Code pour générer le prototype SANS poser de question. Il doit inclure: le contexte métier, la stack imposée, les données d'entrée (avec consigne de générer un dataset synthétique réaliste si absent), les fonctionnalités attendues, la sortie/démo attendue, les critères d'acceptation, et la consigne explicite de ne poser AUCUNE question et de faire des hypothèses raisonnables documentées."
+    "fonctionnalites": ["3 à 6 fonctionnalités du prototype de démonstration"],
+    "donneesEntree": "données d'entrée (un jeu d'exemple réaliste sera intégré si le client n'en fournit pas)",
+    "sortieAttendue": "ce que le prototype démontre à l'écran",
+    "criteresAcceptation": ["2 à 4 conditions de réussite vérifiables"]
   }
 }
 (dans ce cas "suggestions" peut être un tableau vide). Calcule roiAn1Pct = round((gainAnnuelEur - investissementEur) / investissementEur * 100) et retourMois = round(investissementEur / (gainAnnuelEur/12)).`;
@@ -541,16 +503,14 @@ function normaliserRoi(j: any, titre: string, approche: string): EstimationROI |
 
 function normaliserSpec(j: any): SpecPrototype | undefined {
   if (!j || typeof j !== 'object') return undefined;
-  const promptClaudeCode = s(j.promptClaudeCode, '');
-  if (!promptClaudeCode) return undefined;
+  const resume = s(j.resume, '');
+  if (!resume) return undefined;
   return {
-    resume: s(j.resume, 'Prototype de démonstration.'),
-    stack: liste(j.stack, ['Python', 'Streamlit']),
+    resume,
     fonctionnalites: liste(j.fonctionnalites, ['Démo interactive du résultat']),
-    donneesEntree: s(j.donneesEntree, 'Jeu de données synthétique généré automatiquement.'),
-    sortieAttendue: s(j.sortieAttendue, 'Interface de démonstration du résultat.'),
-    criteresAcceptation: liste(j.criteresAcceptation, ['Le prototype s’exécute et illustre la valeur métier.']),
-    promptClaudeCode,
+    donneesEntree: s(j.donneesEntree, 'Jeu de données d’exemple intégré.'),
+    sortieAttendue: s(j.sortieAttendue, 'Démonstration interactive du résultat.'),
+    criteresAcceptation: liste(j.criteresAcceptation, ['Le parcours principal est démontrable.']),
   };
 }
 
@@ -620,6 +580,190 @@ export async function tourCadrageIA(
       done: j?.done === true,
     };
     if (tour.done) tour.useCase = normaliserUseCase(j?.useCase ?? {});
+    return tour;
+  } catch {
+    return null;
+  }
+}
+
+// ============================================================================
+// GÉNÉRATION DU PROTOTYPE HTML (côté admin, invisible pour le client)
+// ============================================================================
+
+const SYSTEM_PROTOTYPE = `Tu es un développeur front-end expert. Tu produis un PROTOTYPE HTML AUTO-PORTÉ (un seul fichier .html) qui démontre visuellement et de façon interactive le use case décrit.
+
+Contraintes STRICTES :
+- UN SEUL fichier HTML complet : HTML + CSS + JavaScript inline. AUCUNE dépendance externe, AUCUN CDN, AUCun appel réseau (tout doit fonctionner hors-ligne en ouvrant le fichier).
+- Design moderne, soigné, responsive (mobile d'abord), thème clair et professionnel.
+- Intègre un JEU DE DONNÉES D'EXEMPLE réaliste en dur (dans le JS) pour rendre la démo crédible et interactive.
+- Le prototype doit illustrer concrètement le parcours utilisateur principal et les fonctionnalités clés, avec des interactions réelles (clics, filtres, formulaires, affichage de résultats).
+- Pas de Lorem ipsum : utilise un contenu réaliste lié au métier du client.
+- Le code doit être valide et s'afficher correctement dès l'ouverture.
+
+Réponds UNIQUEMENT avec le code HTML complet, commençant par <!DOCTYPE html> et finissant par </html>. AUCUN texte avant ou après, AUCUN bloc markdown (pas de \`\`\`).`;
+
+function promptPrototype(uc: UseCase): string {
+  const spec = uc.spec;
+  // Remarques du client (révisions) : on les intègre comme exigences prioritaires.
+  const remarques = (uc.remarques ?? []).map((r) => r.texte);
+  const blocRemarques = remarques.length
+    ? `\n\nREMARQUES & BESOINS DU CLIENT À PRENDRE EN COMPTE EN PRIORITÉ (nouvelle version) :\n${remarques.map((r, i) => `${i + 1}. ${r}`).join('\n')}\nIntègre impérativement ces demandes dans cette nouvelle version du prototype.`
+    : '';
+  return `Génère le prototype HTML pour ce projet :
+
+TITRE : ${uc.titre}
+DOMAINE : ${uc.domaine}
+PROBLÈME : ${uc.probleme}
+OBJECTIF : ${uc.objectif}
+UTILISATEURS CIBLES : ${uc.utilisateurs}
+APPROCHE : ${uc.approcheSuggeree}
+KPIS À METTRE EN AVANT : ${uc.kpis.join(', ')}
+${spec ? `RÉSUMÉ DU PROTOTYPE : ${spec.resume}
+FONCTIONNALITÉS À DÉMONTRER : ${spec.fonctionnalites.join(' ; ')}
+DONNÉES D'EXEMPLE : ${spec.donneesEntree}
+RÉSULTAT À MONTRER : ${spec.sortieAttendue}` : ''}${blocRemarques}
+
+Crée une démo interactive et convaincante de ce produit.`;
+}
+
+// Nettoie une réponse LLM pour ne garder que le document HTML.
+function extraireHtml(brut: string): string | null {
+  let t = brut.trim();
+  // Retire un éventuel fence markdown ```html ... ```
+  t = t.replace(/^```[a-zA-Z]*\s*/, '').replace(/\s*```$/, '').trim();
+  const debut = t.search(/<!DOCTYPE html>|<html[\s>]/i);
+  if (debut === -1) return null;
+  const fin = t.toLowerCase().lastIndexOf('</html>');
+  if (fin === -1) return null;
+  return t.slice(debut, fin + '</html>'.length);
+}
+
+/**
+ * Génère le prototype HTML auto-porté pour un use case (action admin).
+ * Renvoie le HTML, ou `null` si l'IA est indisponible / réponse invalide.
+ */
+export async function genererPrototypeHtml(uc: UseCase): Promise<string | null> {
+  if (!iaDisponible()) return null;
+  // Température un peu plus haute pour la créativité visuelle, gros budget tokens.
+  const brut = await chatGemini(
+    SYSTEM_PROTOTYPE,
+    [{ role: 'user', text: promptPrototype(uc) }],
+    { temperature: 0.7 }
+  );
+  if (!brut) return null;
+  return extraireHtml(brut);
+}
+
+// ============================================================================
+// CADRAGE TECHNIQUE — IA "consultant architecte" (infra + packaging)
+// ============================================================================
+
+const SYSTEM_ARCHITECTE = `Tu es un architecte logiciel senior. Le prototype a été validé par le client ; ton rôle est maintenant de cadrer l'ASPECT TECHNIQUE pour livrer l'application en PLUG-AND-PLAY : le client doit pouvoir déployer le package et que TOUT fonctionne par défaut dans SON infrastructure.
+
+Tu mènes un entretien avec le client (souvent peu technique) pour obtenir TOUS les détails de son infrastructure. Tu dois couvrir :
+- Hébergement : cloud (AWS / Azure / GCP / OVH...) ou on-premise ? quel fournisseur ?
+- Système d'exploitation des serveurs cibles (Linux/Windows, version).
+- Conteneurisation disponible : Docker ? Kubernetes ? rien ?
+- Base de données : déjà une BDD (laquelle, version) ou faut-il l'embarquer ?
+- Authentification : SSO, LDAP/Active Directory, OAuth, ou aucune ?
+- Réseau : accès internet sortant ? proxy d'entreprise ? ports ouverts ? VPN ?
+- Sécurité/conformité : données sensibles, isolation, RGPD, exigences particulières.
+
+Règles :
+- Réponds en français, ton d'expert pédagogue et rassurant.
+- UNE seule question à la fois, courte, en VULGARISANT (le client n'est pas technique). Explique pourquoi tu poses la question si utile.
+- Propose jusqu'à 3 suggestions de réponses concrètes et courantes pour l'aider à répondre (ex. "On est sur AWS", "Tout est sur nos serveurs internes", "Je ne sais pas").
+- Si le client ne sait pas, propose l'option la plus standard et avance.
+- Quand tu as recueilli l'essentiel (en général 6 à 8 échanges), TERMINE : mets "done": true et produis le plan de packaging plug-and-play.
+- Ne pose jamais plus de 9 questions.
+
+Réponds TOUJOURS en JSON strict, sans texte autour :
+{
+  "reply": "ton message (accusé de réception + prochaine question ; ou clôture si done=true)",
+  "suggestions": ["...", "...", "..."],
+  "done": false,
+  "cadrage": null
+}
+
+Quand "done" vaut true, "cadrage" doit valoir EXACTEMENT :
+{
+  "hebergement": "synthèse de l'hébergement (cloud/on-premise + fournisseur)",
+  "os": "OS cible",
+  "conteneurisation": "Docker / Kubernetes / aucun",
+  "baseDeDonnees": "BDD existante ou à embarquer",
+  "authentification": "SSO / LDAP / OAuth / aucune",
+  "reseau": "accès internet, proxy, ports, VPN",
+  "contraintesSecu": "conformité, isolation, données sensibles",
+  "formatLivraison": "format de packaging recommandé pour du plug-and-play (ex: Image Docker + docker-compose tout-en-un)",
+  "etapesDeploiement": ["étapes simples côté client pour déployer, dans l'ordre"],
+  "prerequis": ["prérequis côté client avant déploiement"],
+  "resumePackaging": "1-2 phrases expliquant comment le package garantit le plug-and-play dans SON infra"
+}
+(dans ce cas "suggestions" peut être un tableau vide).`;
+
+export interface TourArchitecte {
+  reply: string;
+  suggestions: string[];
+  done: boolean;
+  cadrage?: CadrageTechnique;
+}
+
+function normaliserCadrageTechnique(j: any): CadrageTechnique {
+  return {
+    hebergement: s(j?.hebergement, 'À préciser'),
+    os: s(j?.os, 'Linux (par défaut)'),
+    conteneurisation: s(j?.conteneurisation, 'Docker'),
+    baseDeDonnees: s(j?.baseDeDonnees, 'Embarquée dans le package'),
+    authentification: s(j?.authentification, 'Aucune (à ajouter si besoin)'),
+    reseau: s(j?.reseau, 'À préciser'),
+    contraintesSecu: s(j?.contraintesSecu, 'Standard'),
+    formatLivraison: s(j?.formatLivraison, 'Image Docker + docker-compose tout-en-un'),
+    etapesDeploiement: liste(j?.etapesDeploiement, [
+      'Installer Docker sur le serveur cible',
+      'Copier le package et lancer docker-compose up',
+      'Accéder à l’application via l’URL fournie',
+    ]),
+    prerequis: liste(j?.prerequis, ['Un serveur avec Docker installé']),
+    resumePackaging: s(
+      j?.resumePackaging,
+      'Le package contient tout le nécessaire pour fonctionner par défaut dans votre environnement.'
+    ),
+  };
+}
+
+/**
+ * Un tour de l'entretien de cadrage technique mené par l'IA architecte.
+ * Renvoie `null` en cas d'échec (le caller gère le repli).
+ */
+export async function tourArchitecteIA(
+  messages: Message[],
+  forceFinish: boolean
+): Promise<TourArchitecte | null> {
+  if (!iaDisponible()) return null;
+  const premierUser = messages.findIndex((m) => m.role === 'user');
+  if (premierUser === -1) return null;
+
+  const historique = messages.slice(premierUser).map((m) => ({
+    role: (m.role === 'assistant' ? 'model' : 'user') as 'model' | 'user',
+    text: m.texte,
+  }));
+
+  const sys = forceFinish
+    ? SYSTEM_ARCHITECTE +
+      '\n\nIMPORTANT : tu as recueilli assez d\'informations. Termine maintenant ("done": true) en produisant le plan de packaging.'
+    : SYSTEM_ARCHITECTE;
+
+  const brut = await chatGemini(sys, historique, { json: true, temperature: 0.5 });
+  if (!brut) return null;
+
+  try {
+    const j = JSON.parse(brut);
+    const tour: TourArchitecte = {
+      reply: s(j?.reply, 'Pouvez-vous préciser ?'),
+      suggestions: Array.isArray(j?.suggestions) ? j.suggestions.slice(0, 3).map(String) : [],
+      done: j?.done === true,
+    };
+    if (tour.done) tour.cadrage = normaliserCadrageTechnique(j?.cadrage ?? {});
     return tour;
   } catch {
     return null;

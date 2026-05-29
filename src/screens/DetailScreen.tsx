@@ -3,11 +3,9 @@ import { Pressable, SafeAreaView, ScrollView, StyleSheet, Text, View } from 'rea
 import UseCaseView from '../components/UseCaseView';
 import { Bouton, Carte } from '../components/ui';
 import { useNav } from '../navigation';
-import { accepterProposition, mettreAJourStatut, trouverUseCase } from '../storage';
+import { trouverUseCase } from '../storage';
 import { colors, font, radius, spacing } from '../theme';
-import { PropositionExpert, StatutUseCase, UseCase } from '../types';
-
-const eur = (n: number) => n.toLocaleString('fr-FR') + ' €';
+import { CadrageTechnique, UseCase } from '../types';
 
 export default function DetailScreen({ useCaseId }: { useCaseId: string }) {
   const { aller, retour } = useNav();
@@ -17,16 +15,6 @@ export default function DetailScreen({ useCaseId }: { useCaseId: string }) {
     trouverUseCase(useCaseId).then((u) => setUc(u ?? null));
   }, [useCaseId]);
 
-  async function avancer(statut: StatutUseCase) {
-    const liste = await mettreAJourStatut(useCaseId, statut);
-    setUc(liste.find((u) => u.id === useCaseId) ?? null);
-  }
-
-  async function accepter(propositionId: string) {
-    const liste = await accepterProposition(useCaseId, propositionId);
-    setUc(liste.find((u) => u.id === useCaseId) ?? null);
-  }
-
   if (!uc) {
     return (
       <SafeAreaView style={styles.safe}>
@@ -35,127 +23,142 @@ export default function DetailScreen({ useCaseId }: { useCaseId: string }) {
     );
   }
 
-  const estPublie = uc.statut !== 'brouillon';
-  const propositions = uc.propositions ?? [];
-  const acceptee = propositions.find((p) => p.statut === 'acceptée');
-
   return (
     <SafeAreaView style={styles.safe}>
       <View style={styles.header}>
         <Pressable onPress={retour} hitSlop={12}>
           <Text style={styles.retour}>‹ Retour</Text>
         </Pressable>
-        <Text style={styles.headerTitre}>Use case</Text>
+        <Text style={styles.headerTitre}>Mon projet</Text>
         <View style={{ width: 70 }} />
       </View>
 
       <ScrollView contentContainerStyle={styles.content}>
+        <EtapeSuivante uc={uc} aller={aller} />
+
         <UseCaseView uc={uc} />
 
-        {/* Propositions reçues des experts */}
-        {estPublie && (
-          <View style={{ marginTop: spacing.xl, gap: spacing.md }}>
-            <Text style={styles.sectionTitre}>
-              Propositions d’experts ({propositions.length})
-            </Text>
-            {propositions.length === 0 && (
-              <Text style={styles.vide}>En attente de propositions d’experts…</Text>
-            )}
-            {propositions.map((p) => (
-              <PropoCarte
-                key={p.id}
-                p={p}
-                peutAccepter={uc.statut === 'publié'}
-                onAccepter={() => accepter(p.id)}
-              />
-            ))}
-          </View>
-        )}
-
-        {/* Pilotage du cycle de vie */}
-        <View style={{ marginTop: spacing.xl, gap: spacing.sm }}>
-          <Text style={styles.sectionTitre}>Faire avancer le projet</Text>
-          {uc.statut === 'brouillon' && (
-            <Bouton titre="📢 Publier pour les experts" onPress={() => avancer('publié')} />
-          )}
-          {uc.statut === 'publié' && (
-            <Text style={styles.aide}>Acceptez une proposition ci-dessus pour lancer le prototype.</Text>
-          )}
-          {uc.statut === 'prototype_en_cours' && (
-            <>
-              {acceptee && (
-                <Text style={styles.aide}>
-                  {acceptee.expert} réalise votre prototype ({eur(acceptee.prixEur)} ·{' '}
-                  {acceptee.delaiJours} j).
-                </Text>
-              )}
-              <Bouton titre="✅ Valider le prototype" onPress={() => avancer('prototype_validé')} />
-            </>
-          )}
-          {uc.statut === 'prototype_validé' && (
-            <Bouton titre="🚀 Commander le projet clé en main" onPress={() => avancer('livré')} />
-          )}
-          {uc.statut === 'livré' && (
-            <Carte style={{ backgroundColor: colors.success + '18', borderColor: colors.success + '44' }}>
-              <Text style={styles.livreTxt}>
-                🎉 Projet livré clé en main. Commission plateforme prélevée via l’escrow sécurisé.
-              </Text>
-            </Carte>
-          )}
-        </View>
+        {uc.cadrageTechnique && <PackagingBloc c={uc.cadrageTechnique} />}
       </ScrollView>
     </SafeAreaView>
   );
 }
 
-function PropoCarte({
-  p,
-  peutAccepter,
-  onAccepter,
-}: {
-  p: PropositionExpert;
-  peutAccepter: boolean;
-  onAccepter: () => void;
-}) {
-  const refusee = p.statut === 'refusée';
-  const acceptee = p.statut === 'acceptée';
+// Bandeau d'action contextuel selon l'étape du cycle de vie.
+function EtapeSuivante({ uc, aller }: { uc: UseCase; aller: (r: any) => void }) {
+  if (uc.statut === 'soumis') {
+    return (
+      <Carte style={[styles.etape, { borderColor: colors.accent + '55' }]}>
+        <Text style={styles.etapeTitre}>⏳ Projet soumis</Text>
+        <Text style={styles.etapeTxt}>
+          Notre équipe prépare votre prototype. Vous serez notifié dès qu’il est prêt à
+          être visualisé.
+        </Text>
+      </Carte>
+    );
+  }
+  if (uc.statut === 'prototype_genere') {
+    const revise = (uc.prototypeVersion ?? 1) > 1;
+    return (
+      <Carte style={[styles.etape, { borderColor: colors.warn + '66' }]}>
+        <Text style={styles.etapeTitre}>
+          🎨 {revise ? `Nouvelle version du prototype (v${uc.prototypeVersion})` : 'Votre prototype est prêt !'}
+        </Text>
+        <Text style={styles.etapeTxt}>
+          {revise
+            ? 'Nous avons intégré vos remarques. Visualisez la nouvelle version.'
+            : 'Visualisez-le, puis validez-le ou demandez des ajustements.'}
+        </Text>
+        <Bouton titre="👁️ Voir le prototype" onPress={() => aller({ nom: 'prototype', useCaseId: uc.id })} />
+      </Carte>
+    );
+  }
+  if (uc.statut === 'revision_demandee') {
+    return (
+      <Carte style={[styles.etape, { borderColor: colors.warn + '66' }]}>
+        <Text style={styles.etapeTitre}>📝 Remarques transmises</Text>
+        <Text style={styles.etapeTxt}>
+          Notre équipe retravaille le prototype en intégrant vos demandes. Vous serez
+          notifié dès que la nouvelle version est prête.
+        </Text>
+      </Carte>
+    );
+  }
+  if (uc.statut === 'prototype_valide') {
+    return (
+      <Carte style={[styles.etape, { borderColor: colors.success + '66' }]}>
+        <Text style={styles.etapeTitre}>✅ Prototype validé</Text>
+        <Text style={styles.etapeTxt}>
+          Passons au cadrage technique : notre architecte IA va préparer la livraison
+          plug-and-play dans votre infrastructure.
+        </Text>
+        <Bouton titre="🏗️ Démarrer le cadrage technique" onPress={() => aller({ nom: 'technique', useCaseId: uc.id })} />
+        <Bouton titre="Revoir le prototype" variante="secondaire" onPress={() => aller({ nom: 'prototype', useCaseId: uc.id })} />
+      </Carte>
+    );
+  }
+  if (uc.statut === 'cadrage_technique') {
+    return (
+      <Carte style={[styles.etape, { borderColor: colors.warn + '66' }]}>
+        <Text style={styles.etapeTitre}>🏗️ Cadrage technique en cours</Text>
+        <Text style={styles.etapeTxt}>Reprenez l’entretien avec l’architecte IA.</Text>
+        <Bouton titre="Continuer le cadrage technique" onPress={() => aller({ nom: 'technique', useCaseId: uc.id })} />
+      </Carte>
+    );
+  }
+  if (uc.statut === 'pret_a_packager') {
+    return (
+      <Carte style={[styles.etape, { borderColor: colors.success + '66' }]}>
+        <Text style={styles.etapeTitre}>📦 Prêt à packager</Text>
+        <Text style={styles.etapeTxt}>
+          Le plan de livraison plug-and-play est défini (voir ci-dessous). Prochaine étape :
+          la certification sécurité.
+        </Text>
+        <Bouton titre="Revoir le prototype" variante="secondaire" onPress={() => aller({ nom: 'prototype', useCaseId: uc.id })} />
+      </Carte>
+    );
+  }
+  return null;
+}
+
+// Affiche le plan de packaging plug-and-play issu du cadrage technique.
+function PackagingBloc({ c }: { c: CadrageTechnique }) {
   return (
-    <Carte
-      style={{
-        gap: spacing.md,
-        opacity: refusee ? 0.5 : 1,
-        borderColor: acceptee ? colors.success + '66' : colors.border,
-      }}
-    >
-      <View style={styles.propoTop}>
-        <View style={styles.avatar}>
-          <Text style={styles.avatarTxt}>{p.expert.slice(-2)}</Text>
-        </View>
-        <View style={{ flex: 1 }}>
-          <Text style={styles.expertNom}>{p.expert}</Text>
-          <Text style={styles.expertMeta}>
-            {p.specialite} · ⭐ {p.note}
-          </Text>
-        </View>
-        {acceptee && <Text style={styles.badgeOk}>✓ Acceptée</Text>}
-        {refusee && <Text style={styles.badgeKo}>Refusée</Text>}
-      </View>
+    <Carte style={{ gap: spacing.md, marginTop: spacing.lg, borderColor: colors.primary + '55' }}>
+      <Text style={styles.blocTitre}>📦 Livraison plug-and-play</Text>
+      <Text style={styles.blocTxt}>{c.resumePackaging}</Text>
 
-      <Text style={styles.propoMsg}>“{p.message}”</Text>
+      <Ligne label="Format de livraison" valeur={c.formatLivraison} />
+      <Ligne label="Hébergement" valeur={c.hebergement} />
+      <Ligne label="Base de données" valeur={c.baseDeDonnees} />
+      <Ligne label="Authentification" valeur={c.authentification} />
+      <Ligne label="Sécurité" valeur={c.contraintesSecu} />
 
-      <View style={styles.propoChiffres}>
-        <View style={styles.chiffre}>
-          <Text style={styles.chiffreVal}>{eur(p.prixEur)}</Text>
-          <Text style={styles.chiffreLabel}>Prototype</Text>
+      <Text style={styles.specLabel}>Prérequis</Text>
+      {c.prerequis.map((p) => (
+        <View key={p} style={styles.puceRow}>
+          <View style={styles.puce} />
+          <Text style={styles.puceTxt}>{p}</Text>
         </View>
-        <View style={styles.chiffre}>
-          <Text style={styles.chiffreVal}>{p.delaiJours} j</Text>
-          <Text style={styles.chiffreLabel}>Délai</Text>
-        </View>
-      </View>
+      ))}
 
-      {peutAccepter && <Bouton titre="Accepter cette proposition" onPress={onAccepter} />}
+      <Text style={styles.specLabel}>Étapes de déploiement</Text>
+      {c.etapesDeploiement.map((e, i) => (
+        <View key={e} style={styles.puceRow}>
+          <Text style={styles.num}>{i + 1}</Text>
+          <Text style={styles.puceTxt}>{e}</Text>
+        </View>
+      ))}
     </Carte>
+  );
+}
+
+function Ligne({ label, valeur }: { label: string; valeur: string }) {
+  return (
+    <View style={styles.ligne}>
+      <Text style={styles.ligneLabel}>{label}</Text>
+      <Text style={styles.ligneVal}>{valeur}</Text>
+    </View>
   );
 }
 
@@ -171,33 +174,30 @@ const styles = StyleSheet.create({
   retour: { color: colors.accent, fontSize: font.body, fontWeight: '600', width: 70 },
   headerTitre: { color: colors.text, fontSize: font.h3, fontWeight: '800' },
   content: { padding: spacing.lg, paddingBottom: spacing.xxl },
-  sectionTitre: { color: colors.text, fontSize: font.h3, fontWeight: '800' },
-  vide: { color: colors.textMuted, fontSize: font.small, fontStyle: 'italic' },
-  aide: { color: colors.textMuted, fontSize: font.small, lineHeight: 20 },
-  propoTop: { flexDirection: 'row', alignItems: 'center', gap: spacing.md },
-  avatar: {
-    width: 42,
-    height: 42,
-    borderRadius: radius.pill,
-    backgroundColor: colors.primarySoft,
-    alignItems: 'center',
-    justifyContent: 'center',
+  etape: { gap: spacing.md, marginBottom: spacing.lg },
+  etapeTitre: { color: colors.text, fontSize: font.h3, fontWeight: '800' },
+  etapeTxt: { color: colors.textMuted, fontSize: font.small, lineHeight: 20 },
+  blocTitre: { color: colors.text, fontSize: font.h3, fontWeight: '700' },
+  blocTxt: { color: colors.textMuted, fontSize: font.body, lineHeight: 22 },
+  specLabel: { color: colors.text, fontSize: font.small, fontWeight: '800', marginTop: spacing.xs },
+  ligne: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    gap: spacing.md,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.border,
+    paddingBottom: spacing.sm,
   },
-  avatarTxt: { color: colors.accent, fontWeight: '800' },
-  expertNom: { color: colors.text, fontSize: font.body, fontWeight: '700' },
-  expertMeta: { color: colors.textMuted, fontSize: font.small },
-  badgeOk: { color: colors.success, fontWeight: '800', fontSize: font.small },
-  badgeKo: { color: colors.textMuted, fontWeight: '700', fontSize: font.small },
-  propoMsg: { color: colors.text, fontSize: font.small, lineHeight: 20, fontStyle: 'italic' },
-  propoChiffres: { flexDirection: 'row', gap: spacing.md },
-  chiffre: {
-    flex: 1,
-    backgroundColor: colors.surfaceAlt,
-    borderRadius: radius.md,
-    padding: spacing.md,
+  ligneLabel: { color: colors.textMuted, fontSize: font.small, flexShrink: 0 },
+  ligneVal: { color: colors.text, fontSize: font.small, fontWeight: '600', flex: 1, textAlign: 'right' },
+  puceRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
+  puce: { width: 6, height: 6, borderRadius: 3, backgroundColor: colors.accent },
+  num: {
+    color: colors.accent,
+    fontWeight: '800',
+    width: 18,
+    fontSize: font.small,
   },
-  chiffreVal: { color: colors.text, fontSize: font.h3, fontWeight: '800' },
-  chiffreLabel: { color: colors.textMuted, fontSize: font.small },
-  livreTxt: { color: colors.text, fontSize: font.body, lineHeight: 21 },
+  puceTxt: { color: colors.text, fontSize: font.small, flex: 1, lineHeight: 19 },
   chargement: { color: colors.textMuted, textAlign: 'center', marginTop: 100 },
 });

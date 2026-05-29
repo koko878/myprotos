@@ -1,0 +1,280 @@
+import React, { useEffect, useRef, useState } from 'react';
+import {
+  KeyboardAvoidingView,
+  Platform,
+  Pressable,
+  SafeAreaView,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  View,
+} from 'react-native';
+import { useNav } from '../navigation';
+import { colors, font, radius, spacing } from '../theme';
+import { Message } from '../types';
+
+let compteur = 0;
+export const uidMessage = () => `m_${Date.now()}_${compteur++}`;
+
+// Résultat d'un tour : soit l'IA continue (messages mis à jour), soit elle a
+// terminé (done). `null` => échec transitoire (bouton Réessayer).
+export interface ResultatTour {
+  reply: string;
+  suggestions: string[];
+  done: boolean;
+}
+
+export interface ChatIAProps {
+  titre: string;
+  ouverture: Message[]; // bulles initiales de l'assistant
+  // Joue un tour : reçoit l'historique complet, renvoie le résultat ou null.
+  jouerTour: (historique: Message[]) => Promise<ResultatTour | null>;
+  // Appelé quand l'IA conclut (done=true) ; reçoit l'historique final.
+  onTermine: (historique: Message[]) => void;
+  // Progression affichée (0..1), calculée par le parent depuis le nb de tours.
+  progression?: (historique: Message[]) => number;
+}
+
+/**
+ * Conteneur de conversation IA réutilisable (cadrage métier, cadrage technique).
+ * Gère l'UI chat, l'état d'attente, le verrou anti-double-envoi et le repli
+ * « Réessayer » en cas d'échec transitoire.
+ */
+export default function ChatIA({ titre, ouverture, jouerTour, onTermine, progression }: ChatIAProps) {
+  const { retour } = useNav();
+  const [messages, setMessages] = useState<Message[]>(ouverture);
+  const [saisie, setSaisie] = useState('');
+  const [termine, setTermine] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [echec, setEchec] = useState<{ base: Message[] } | null>(null);
+  const verrou = useRef(false);
+  const scrollRef = useRef<ScrollView>(null);
+
+  useEffect(() => {
+    scrollRef.current?.scrollToEnd({ animated: true });
+  }, [messages, loading]);
+
+  async function tour(base: Message[]) {
+    setEchec(null);
+    setLoading(true);
+    const res = await jouerTour(base);
+    setLoading(false);
+
+    if (!res) {
+      setEchec({ base });
+      return;
+    }
+    if (res.done) {
+      const final = [...base, { id: uidMessage(), role: 'assistant' as const, texte: res.reply }];
+      setMessages(final);
+      setTermine(true);
+      onTermine(final);
+      return;
+    }
+    setMessages([
+      ...base,
+      { id: uidMessage(), role: 'assistant', texte: res.reply, suggestions: res.suggestions },
+    ]);
+  }
+
+  function lancer(base: Message[]) {
+    verrou.current = true;
+    tour(base).finally(() => {
+      verrou.current = false;
+    });
+  }
+
+  function envoyer(texteBrut: string) {
+    const texte = texteBrut.trim();
+    if (!texte || termine || loading || verrou.current) return;
+    setSaisie('');
+    const base: Message[] = [...messages, { id: uidMessage(), role: 'user', texte }];
+    setMessages(base);
+    lancer(base);
+  }
+
+  function reessayer() {
+    if (!echec || loading || verrou.current) return;
+    const { base } = echec;
+    setEchec(null);
+    lancer(base);
+  }
+
+  const prog = progression ? progression(messages) : 0;
+
+  return (
+    <SafeAreaView style={styles.safe}>
+      <View style={styles.header}>
+        <Pressable onPress={retour} hitSlop={12}>
+          <Text style={styles.retour}>‹ Retour</Text>
+        </Pressable>
+        <Text style={styles.headerTitre}>{titre}</Text>
+        <Text style={styles.badge}>✨ IA</Text>
+      </View>
+      <View style={styles.progressBarBg}>
+        <View style={[styles.progressBarFill, { width: `${Math.min(prog * 100, 100)}%` }]} />
+      </View>
+
+      <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+        <ScrollView ref={scrollRef} contentContainerStyle={styles.chat}>
+          {messages.map((m) => (
+            <Bulle key={m.id} message={m} onSuggestion={envoyer} actif={!termine && !loading} />
+          ))}
+          {loading && <Typing />}
+          {echec && !loading && (
+            <View style={styles.echecBox}>
+              <Text style={styles.echecTxt}>
+                ⚠️ L’IA est momentanément surchargée. Votre conversation est intacte.
+              </Text>
+              <Pressable style={styles.reessayer} onPress={reessayer}>
+                <Text style={styles.reessayerTxt}>↻ Réessayer</Text>
+              </Pressable>
+            </View>
+          )}
+        </ScrollView>
+
+        {!termine && (
+          <View style={styles.saisieZone}>
+            <TextInput
+              style={styles.input}
+              placeholder={loading ? 'L’assistant réfléchit…' : 'Votre réponse…'}
+              placeholderTextColor={colors.textMuted}
+              value={saisie}
+              onChangeText={setSaisie}
+              multiline
+              editable={!loading}
+              onSubmitEditing={() => envoyer(saisie)}
+            />
+            <Pressable
+              style={[styles.envoyer, (!saisie.trim() || loading) && { opacity: 0.4 }]}
+              onPress={() => envoyer(saisie)}
+              disabled={!saisie.trim() || loading}
+            >
+              <Text style={styles.envoyerTxt}>↑</Text>
+            </Pressable>
+          </View>
+        )}
+      </KeyboardAvoidingView>
+    </SafeAreaView>
+  );
+}
+
+function Typing() {
+  return (
+    <View style={[styles.bulle, styles.bulleAssistant, { flexDirection: 'row', gap: 6, alignItems: 'center' }]}>
+      <Text style={styles.bulleTexte}>✨ l’IA rédige</Text>
+      <Text style={[styles.bulleTexte, { color: colors.accent }]}>…</Text>
+    </View>
+  );
+}
+
+function Bulle({
+  message,
+  onSuggestion,
+  actif,
+}: {
+  message: Message;
+  onSuggestion: (t: string) => void;
+  actif: boolean;
+}) {
+  const estUser = message.role === 'user';
+  return (
+    <View style={{ marginBottom: spacing.md }}>
+      <View style={[styles.bulle, estUser ? styles.bulleUser : styles.bulleAssistant]}>
+        <Text style={[styles.bulleTexte, estUser && { color: '#fff' }]}>{message.texte}</Text>
+      </View>
+      {!estUser && actif && !!message.suggestions?.length && (
+        <View style={styles.suggestions}>
+          {message.suggestions.map((s) => (
+            <Pressable key={s} style={styles.chip} onPress={() => onSuggestion(s)}>
+              <Text style={styles.chipTxt}>{s}</Text>
+            </Pressable>
+          ))}
+        </View>
+      )}
+    </View>
+  );
+}
+
+const styles = StyleSheet.create({
+  safe: { flex: 1, backgroundColor: colors.bg },
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.md,
+  },
+  retour: { color: colors.accent, fontSize: font.body, fontWeight: '600', width: 70 },
+  headerTitre: { color: colors.text, fontSize: font.h3, fontWeight: '800' },
+  badge: { color: colors.textMuted, fontSize: font.small, width: 70, textAlign: 'right', fontWeight: '700' },
+  progressBarBg: { height: 3, backgroundColor: colors.surfaceAlt },
+  progressBarFill: { height: 3, backgroundColor: colors.primary },
+  chat: { padding: spacing.lg, paddingBottom: spacing.xl },
+  bulle: { maxWidth: '85%', padding: spacing.md, borderRadius: radius.md },
+  bulleAssistant: {
+    backgroundColor: colors.bubbleAssistant,
+    alignSelf: 'flex-start',
+    borderTopLeftRadius: 4,
+    borderWidth: 1,
+    borderColor: colors.border,
+  },
+  bulleUser: { backgroundColor: colors.bubbleUser, alignSelf: 'flex-end', borderTopRightRadius: 4 },
+  bulleTexte: { color: colors.text, fontSize: font.body, lineHeight: 21 },
+  suggestions: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm, marginTop: spacing.sm },
+  chip: {
+    backgroundColor: colors.surfaceAlt,
+    borderWidth: 1,
+    borderColor: colors.border,
+    borderRadius: radius.pill,
+    paddingHorizontal: spacing.md,
+    paddingVertical: 8,
+  },
+  chipTxt: { color: colors.accent, fontSize: font.small },
+  echecBox: {
+    backgroundColor: colors.warn + '18',
+    borderColor: colors.warn + '55',
+    borderWidth: 1,
+    borderRadius: radius.md,
+    padding: spacing.md,
+    gap: spacing.sm,
+    alignItems: 'flex-start',
+  },
+  echecTxt: { color: colors.text, fontSize: font.small, lineHeight: 19 },
+  reessayer: {
+    backgroundColor: colors.primary,
+    borderRadius: radius.pill,
+    paddingHorizontal: spacing.lg,
+    paddingVertical: 10,
+  },
+  reessayerTxt: { color: '#fff', fontWeight: '800', fontSize: font.small },
+  saisieZone: {
+    flexDirection: 'row',
+    alignItems: 'flex-end',
+    gap: spacing.sm,
+    padding: spacing.md,
+    borderTopWidth: 1,
+    borderTopColor: colors.border,
+    backgroundColor: colors.surface,
+  },
+  input: {
+    flex: 1,
+    color: colors.text,
+    fontSize: font.body,
+    maxHeight: 120,
+    backgroundColor: colors.surfaceAlt,
+    borderRadius: radius.md,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
+  },
+  envoyer: {
+    width: 44,
+    height: 44,
+    borderRadius: radius.pill,
+    backgroundColor: colors.primary,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  envoyerTxt: { color: '#fff', fontSize: 22, fontWeight: '800' },
+});

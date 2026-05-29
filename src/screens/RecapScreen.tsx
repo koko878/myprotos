@@ -2,9 +2,8 @@ import React, { useEffect, useState } from 'react';
 import { Pressable, SafeAreaView, ScrollView, StyleSheet, Text, View } from 'react-native';
 import UseCaseView from '../components/UseCaseView';
 import { Bouton } from '../components/ui';
-import { genererPropositions } from '../experts';
 import { useNav } from '../navigation';
-import { modifierUseCase, trouverUseCase } from '../storage';
+import { mettreAJourStatut, trouverUseCase } from '../storage';
 import { colors, font, spacing } from '../theme';
 import { UseCase } from '../types';
 
@@ -16,14 +15,10 @@ export default function RecapScreen({ useCaseId }: { useCaseId: string }) {
     trouverUseCase(useCaseId).then((u) => setUc(u ?? null));
   }, [useCaseId]);
 
-  // Publie le use case et simule l'arrivée de propositions d'experts (offre).
-  async function publier() {
+  // Le client soumet son projet : notre équipe génère ensuite le prototype.
+  async function soumettre() {
     if (!uc) return;
-    await modifierUseCase(useCaseId, (u) => ({
-      ...u,
-      statut: 'publié',
-      propositions: u.propositions?.length ? u.propositions : genererPropositions(u),
-    }));
+    await mettreAJourStatut(useCaseId, 'soumis');
     aller({ nom: 'detail', useCaseId });
   }
 
@@ -49,7 +44,7 @@ export default function RecapScreen({ useCaseId }: { useCaseId: string }) {
         <View style={styles.banniere}>
           <Text style={styles.banniereTxt}>
             ✅ Voici votre idée transformée en use case structuré par l’IA.
-            Relisez-le, puis publiez-le pour le rendre visible aux experts.
+            Relisez-le, puis soumettez-le : nous préparons votre prototype.
           </Text>
         </View>
         <UseCaseView uc={uc} />
@@ -57,10 +52,10 @@ export default function RecapScreen({ useCaseId }: { useCaseId: string }) {
 
       <View style={styles.footer}>
         {uc.statut === 'brouillon' ? (
-          <Bouton titre="📢 Publier pour les experts" onPress={publier} />
+          <Bouton titre="📤 Soumettre mon projet" onPress={soumettre} />
         ) : (
           <Bouton
-            titre="Voir mes use cases"
+            titre="Voir mes projets"
             variante="secondaire"
             onPress={() => aller({ nom: 'liste' })}
           />

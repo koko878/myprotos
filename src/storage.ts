@@ -2,7 +2,7 @@
 // En production : remplacer par une API / base de données.
 
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { PropositionExpert, StatutUseCase, UseCase } from './types';
+import { CadrageTechnique, RemarqueClient, StatutUseCase, UseCase } from './types';
 
 const CLE = 'usecases_v1';
 
@@ -57,29 +57,51 @@ export async function modifierUseCase(
   return nouvelle;
 }
 
-// Ajoute une proposition d'expert à un use case (côté offre).
-export async function ajouterProposition(
+// Enregistre le prototype HTML généré (côté admin) et passe le use case en
+// "prototype_genere" pour validation par le client. Incrémente la version
+// (utile pour les régénérations après remarques du client).
+export async function enregistrerPrototype(
   useCaseId: string,
-  proposition: PropositionExpert
+  prototypeHtml: string
 ): Promise<UseCase[]> {
   return modifierUseCase(useCaseId, (u) => ({
     ...u,
-    propositions: [proposition, ...(u.propositions ?? [])],
+    prototypeHtml,
+    prototypeGenereLe: Date.now(),
+    prototypeVersion: (u.prototypeVersion ?? 0) + 1,
+    statut: 'prototype_genere',
   }));
 }
 
-// Accepte une proposition : la marque acceptée (refuse les autres) et fait
-// passer le use case en "prototype_en_cours".
-export async function accepterProposition(
+// Le client challenge le prototype : ajoute une remarque/besoin et renvoie le
+// projet en révision côté admin.
+export async function ajouterRemarque(
   useCaseId: string,
-  propositionId: string
+  texte: string
+): Promise<UseCase[]> {
+  return modifierUseCase(useCaseId, (u) => {
+    const remarque: RemarqueClient = {
+      id: 'r_' + Date.now().toString(36),
+      texte,
+      versionPrototype: u.prototypeVersion ?? 1,
+      creeLe: Date.now(),
+    };
+    return {
+      ...u,
+      remarques: [...(u.remarques ?? []), remarque],
+      statut: 'revision_demandee',
+    };
+  });
+}
+
+// Enregistre le résultat du cadrage technique (infra + plan de packaging).
+export async function enregistrerCadrageTechnique(
+  useCaseId: string,
+  cadrage: CadrageTechnique
 ): Promise<UseCase[]> {
   return modifierUseCase(useCaseId, (u) => ({
     ...u,
-    statut: 'prototype_en_cours',
-    propositions: (u.propositions ?? []).map((p) => ({
-      ...p,
-      statut: p.id === propositionId ? 'acceptée' : 'refusée',
-    })),
+    cadrageTechnique: cadrage,
+    statut: 'pret_a_packager',
   }));
 }

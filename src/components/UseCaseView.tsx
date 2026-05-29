@@ -1,18 +1,20 @@
-import React, { useState } from 'react';
-import { Platform, Pressable, StyleSheet, Text, View } from 'react-native';
-import { copier } from '../clipboard';
+import React from 'react';
+import { StyleSheet, Text, View } from 'react-native';
 import { colors, font, radius, spacing } from '../theme';
-import { EstimationROI, SpecPrototype, StatutUseCase, UseCase } from '../types';
+import { EstimationROI, StatutUseCase, UseCase } from '../types';
 import { Carte, Etiquette, ScoreCadrage, couleurComplexite } from './ui';
 
 const eur = (n: number) => n.toLocaleString('fr-FR') + ' €';
 
-const LIBELLE_STATUT: Record<StatutUseCase, { texte: string; couleur: string }> = {
-  brouillon: { texte: 'Brouillon', couleur: colors.textMuted },
-  publié: { texte: 'Publié · ouvert aux experts', couleur: colors.accent },
-  prototype_en_cours: { texte: 'Prototype en cours', couleur: colors.warn },
-  prototype_validé: { texte: 'Prototype validé', couleur: colors.success },
-  livré: { texte: 'Livré', couleur: colors.success },
+export const LIBELLE_STATUT: Record<StatutUseCase, { texte: string; couleur: string }> = {
+  brouillon: { texte: 'Cadré · à soumettre', couleur: colors.textMuted },
+  soumis: { texte: 'Soumis', couleur: colors.accent },
+  prototype_genere: { texte: 'Prototype prêt', couleur: colors.warn },
+  revision_demandee: { texte: 'Révision demandée', couleur: colors.warn },
+  prototype_valide: { texte: 'Prototype validé', couleur: colors.success },
+  cadrage_technique: { texte: 'Cadrage technique', couleur: colors.warn },
+  pret_a_packager: { texte: 'Prêt à packager', couleur: colors.success },
+  certifie: { texte: 'Certifié', couleur: colors.success },
 };
 
 export default function UseCaseView({ uc }: { uc: UseCase }) {
@@ -59,7 +61,6 @@ export default function UseCaseView({ uc }: { uc: UseCase }) {
       </Carte>
 
       {uc.roi && <RoiBloc roi={uc.roi} />}
-      {uc.spec && <SpecBloc spec={uc.spec} />}
     </View>
   );
 }
@@ -92,65 +93,6 @@ function Kpi({ label, valeur, couleur }: { label: string; valeur: string; couleu
       <Text style={[styles.kpiVal, couleur ? { color: couleur } : null]}>{valeur}</Text>
       <Text style={styles.kpiLabel}>{label}</Text>
     </View>
-  );
-}
-
-// Bloc spécification + prompt prêt à coller dans Claude Code.
-function SpecBloc({ spec }: { spec: SpecPrototype }) {
-  const [copie, setCopie] = useState(false);
-  async function copierPrompt() {
-    const ok = await copier(spec.promptClaudeCode);
-    if (ok) {
-      setCopie(true);
-      setTimeout(() => setCopie(false), 2000);
-    }
-  }
-  return (
-    <Carte style={{ gap: spacing.md }}>
-      <Text style={styles.blocTitre}>🛠️ Spécification du prototype</Text>
-      <Text style={styles.blocTexte}>{spec.resume}</Text>
-
-      <Text style={styles.specLabel}>Stack recommandée</Text>
-      <View style={styles.tagRow}>
-        {spec.stack.map((s) => (
-          <Etiquette key={s} texte={s} couleur={colors.accent} />
-        ))}
-      </View>
-
-      <Text style={styles.specLabel}>Fonctionnalités</Text>
-      {spec.fonctionnalites.map((f) => (
-        <View key={f} style={styles.kpiRow}>
-          <View style={styles.puce} />
-          <Text style={styles.kpiTxt}>{f}</Text>
-        </View>
-      ))}
-
-      <Text style={styles.specLabel}>Données d’entrée</Text>
-      <Text style={styles.blocTexte}>{spec.donneesEntree}</Text>
-      <Text style={styles.specLabel}>Sortie attendue</Text>
-      <Text style={styles.blocTexte}>{spec.sortieAttendue}</Text>
-
-      <Text style={styles.specLabel}>Critères d’acceptation</Text>
-      {spec.criteresAcceptation.map((c) => (
-        <View key={c} style={styles.kpiRow}>
-          <Text style={styles.check}>✓</Text>
-          <Text style={styles.kpiTxt}>{c}</Text>
-        </View>
-      ))}
-
-      <View style={styles.promptHeader}>
-        <Text style={styles.specLabel}>⚡ Prompt prêt pour Claude Code</Text>
-        <Pressable onPress={copierPrompt} style={[styles.copyBtn, copie && { backgroundColor: colors.success }]}>
-          <Text style={styles.copyTxt}>{copie ? '✓ Copié' : '📋 Copier'}</Text>
-        </Pressable>
-      </View>
-      <View style={styles.promptBox}>
-        <Text style={styles.promptTxt}>{spec.promptClaudeCode}</Text>
-      </View>
-      <Text style={styles.promptHint}>
-        Collez ce prompt dans Claude Code : il produit le prototype sans poser de question.
-      </Text>
-    </Carte>
   );
 }
 
@@ -195,29 +137,4 @@ const styles = StyleSheet.create({
   kpiLabel: { color: colors.textMuted, fontSize: font.small, marginTop: 2 },
   roiDetail: { color: colors.text, fontSize: font.small, lineHeight: 20 },
   roiHypo: { color: colors.textMuted, fontSize: font.tiny, lineHeight: 17, fontStyle: 'italic' },
-  // Spec
-  specLabel: { color: colors.text, fontSize: font.small, fontWeight: '800', marginTop: spacing.xs },
-  check: { color: colors.success, fontWeight: '800', width: 14 },
-  promptHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: spacing.xs },
-  copyBtn: {
-    backgroundColor: colors.primary,
-    borderRadius: radius.pill,
-    paddingHorizontal: spacing.md,
-    paddingVertical: 6,
-  },
-  copyTxt: { color: '#fff', fontSize: font.small, fontWeight: '700' },
-  promptBox: {
-    backgroundColor: '#0A0E18',
-    borderRadius: radius.md,
-    borderWidth: 1,
-    borderColor: colors.border,
-    padding: spacing.md,
-  },
-  promptTxt: {
-    color: '#C9D4F0',
-    fontSize: font.small,
-    lineHeight: 19,
-    fontFamily: Platform.OS === 'ios' ? 'Menlo' : 'monospace',
-  },
-  promptHint: { color: colors.textMuted, fontSize: font.tiny, fontStyle: 'italic' },
 });

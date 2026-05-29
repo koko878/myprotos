@@ -1,26 +1,11 @@
 import React, { useEffect, useState } from 'react';
 import { Pressable, SafeAreaView, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { Bouton, Carte, Etiquette, couleurComplexite } from '../components/ui';
+import { LIBELLE_STATUT } from '../components/UseCaseView';
 import { useNav } from '../navigation';
 import { chargerUseCases } from '../storage';
 import { colors, font, spacing } from '../theme';
-import { StatutUseCase, UseCase } from '../types';
-
-const STATUT_COULEUR: Record<StatutUseCase, string> = {
-  brouillon: colors.textMuted,
-  publié: colors.accent,
-  prototype_en_cours: colors.warn,
-  prototype_validé: colors.success,
-  livré: colors.success,
-};
-
-const STATUT_LABEL: Record<StatutUseCase, string> = {
-  brouillon: 'Brouillon',
-  publié: 'Publié',
-  prototype_en_cours: 'Prototype en cours',
-  prototype_validé: 'Prototype validé',
-  livré: 'Livré',
-};
+import { UseCase } from '../types';
 
 export default function ListeScreen() {
   const { aller, retour } = useNav();
@@ -37,14 +22,14 @@ export default function ListeScreen() {
         <Pressable onPress={retour} hitSlop={12}>
           <Text style={styles.retour}>‹ Accueil</Text>
         </Pressable>
-        <Text style={styles.headerTitre}>Mes use cases</Text>
+        <Text style={styles.headerTitre}>Mes projets</Text>
         <View style={{ width: 70 }} />
       </View>
 
       <ScrollView contentContainerStyle={styles.content}>
         {liste && liste.length === 0 && (
           <View style={styles.vide}>
-            <Text style={styles.videTitre}>Aucun use case pour l’instant</Text>
+            <Text style={styles.videTitre}>Aucun projet pour l’instant</Text>
             <Text style={styles.videTxt}>
               Exprimez votre première idée, l’assistant IA vous aide à la cadrer.
             </Text>
@@ -59,7 +44,7 @@ export default function ListeScreen() {
             onPress={() => aller({ nom: 'detail', useCaseId: uc.id })}
           >
             <View style={styles.cardTop}>
-              <Etiquette texte={STATUT_LABEL[uc.statut]} couleur={STATUT_COULEUR[uc.statut]} />
+              <Etiquette texte={LIBELLE_STATUT[uc.statut].texte} couleur={LIBELLE_STATUT[uc.statut].couleur} />
               <Text style={[styles.score, { color: scoreCouleur(uc.scoreCadrage) }]}>
                 {uc.scoreCadrage}/100
               </Text>

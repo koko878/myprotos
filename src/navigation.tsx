@@ -5,12 +5,14 @@ import React, { createContext, useCallback, useContext, useMemo, useState } from
 
 export type Route =
   | { nom: 'home' }
-  | { nom: 'cadrage' }
+  | { nom: 'cadrage' } // cadrage métier (IA consultant)
   | { nom: 'recap'; useCaseId: string }
   | { nom: 'liste' }
   | { nom: 'detail'; useCaseId: string }
-  | { nom: 'expert' } // espace expert : besoins publiés
-  | { nom: 'expertDetail'; useCaseId: string }; // un expert consulte un besoin
+  | { nom: 'prototype'; useCaseId: string } // aperçu du prototype HTML (client)
+  | { nom: 'technique'; useCaseId: string } // cadrage technique (IA architecte)
+  | { nom: 'admin' } // espace admin : génération des prototypes
+  | { nom: 'adminDetail'; useCaseId: string };
 
 interface NavContext {
   route: Route;

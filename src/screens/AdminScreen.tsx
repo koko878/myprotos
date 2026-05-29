@@ -1,22 +1,32 @@
 import React, { useEffect, useState } from 'react';
 import { Pressable, SafeAreaView, ScrollView, StyleSheet, Text, View } from 'react-native';
-import { Carte, Etiquette, couleurComplexite } from '../components/ui';
+import { Carte, Etiquette } from '../components/ui';
+import { LIBELLE_STATUT } from '../components/UseCaseView';
 import { useNav } from '../navigation';
 import { chargerUseCases } from '../storage';
 import { colors, font, spacing } from '../theme';
 import { UseCase } from '../types';
 
-// Espace expert : on ne montre que les use cases ouverts à l'offre
-// (publiés ou déjà en cours), jamais les brouillons du demandeur.
-const STATUTS_VISIBLES = ['publié', 'prototype_en_cours', 'prototype_validé', 'livré'];
+// Espace admin : pilotage des projets soumis (génération des prototypes).
+// On masque les brouillons (pas encore soumis par le client).
+const VISIBLES: UseCase['statut'][] = [
+  'soumis',
+  'prototype_genere',
+  'prototype_valide',
+  'cadrage_technique',
+  'pret_a_packager',
+  'certifie',
+];
 
-export default function ExpertScreen() {
+export default function AdminScreen() {
   const { aller, retour } = useNav();
   const [liste, setListe] = useState<UseCase[] | null>(null);
 
   useEffect(() => {
-    chargerUseCases().then((l) => setListe(l.filter((u) => STATUTS_VISIBLES.includes(u.statut))));
+    chargerUseCases().then((l) => setListe(l.filter((u) => VISIBLES.includes(u.statut))));
   }, []);
+
+  const aTraiter = liste?.filter((u) => u.statut === 'soumis').length ?? 0;
 
   return (
     <SafeAreaView style={styles.safe}>
@@ -24,47 +34,39 @@ export default function ExpertScreen() {
         <Pressable onPress={retour} hitSlop={12}>
           <Text style={styles.retour}>‹ Accueil</Text>
         </Pressable>
-        <Text style={styles.headerTitre}>Espace expert</Text>
+        <Text style={styles.headerTitre}>Espace admin</Text>
         <View style={{ width: 70 }} />
       </View>
 
       <ScrollView contentContainerStyle={styles.content}>
         <Text style={styles.intro}>
-          Parcourez les besoins cadrés par l’IA. Chacun est livré avec ROI estimé et spec
-          prête à coder — positionnez-vous en quelques secondes.
+          Projets soumis par les clients. {aTraiter > 0 ? `${aTraiter} en attente de prototype.` : 'Aucun nouveau projet à traiter.'}
         </Text>
 
         {liste && liste.length === 0 && (
           <View style={styles.vide}>
-            <Text style={styles.videTitre}>Aucun besoin publié pour l’instant</Text>
-            <Text style={styles.videTxt}>
-              Les use cases publiés par les demandeurs apparaîtront ici.
-            </Text>
+            <Text style={styles.videTitre}>Aucun projet soumis</Text>
+            <Text style={styles.videTxt}>Les projets soumis par les clients apparaîtront ici.</Text>
           </View>
         )}
 
         {liste?.map((uc) => {
-          const nbProp = uc.propositions?.length ?? 0;
+          const st = LIBELLE_STATUT[uc.statut];
+          const aGenerer = uc.statut === 'soumis';
           return (
             <Carte
               key={uc.id}
-              style={{ marginBottom: spacing.md, gap: spacing.sm }}
-              onPress={() => aller({ nom: 'expertDetail', useCaseId: uc.id })}
+              style={{ marginBottom: spacing.md, gap: spacing.sm, borderColor: aGenerer ? colors.warn + '66' : colors.border }}
+              onPress={() => aller({ nom: 'adminDetail', useCaseId: uc.id })}
             >
               <View style={styles.cardTop}>
-                <Etiquette texte={uc.domaine} couleur={colors.accent} />
-                {uc.roi && (
-                  <Text style={styles.roiTag}>ROI {uc.roi.roiAn1Pct >= 0 ? '+' : ''}{uc.roi.roiAn1Pct}%</Text>
-                )}
+                <Etiquette texte={st.texte} couleur={st.couleur} />
+                {aGenerer && <Text style={styles.action}>⚙️ À générer</Text>}
               </View>
               <Text style={styles.cardTitre}>{uc.titre}</Text>
-              <Text style={styles.cardSous} numberOfLines={2}>
-                {uc.probleme || uc.objectif}
-              </Text>
-              <View style={styles.cardTags}>
-                <Etiquette texte={uc.complexite} couleur={couleurComplexite(uc.complexite)} />
-                <Etiquette texte={uc.budgetEstime} />
-                {nbProp > 0 && <Etiquette texte={`${nbProp} proposition${nbProp > 1 ? 's' : ''}`} couleur={colors.warn} />}
+              <View style={styles.tags}>
+                <Etiquette texte={uc.domaine} />
+                <Etiquette texte={uc.complexite} />
               </View>
             </Carte>
           );
@@ -88,10 +90,9 @@ const styles = StyleSheet.create({
   content: { padding: spacing.lg, paddingBottom: spacing.xxl },
   intro: { color: colors.textMuted, fontSize: font.small, lineHeight: 20, marginBottom: spacing.lg },
   cardTop: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
-  roiTag: { color: colors.success, fontSize: font.small, fontWeight: '800' },
+  action: { color: colors.warn, fontSize: font.small, fontWeight: '800' },
   cardTitre: { color: colors.text, fontSize: font.h3, fontWeight: '700', lineHeight: 22 },
-  cardSous: { color: colors.textMuted, fontSize: font.small, lineHeight: 19 },
-  cardTags: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm, marginTop: spacing.xs },
+  tags: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm, marginTop: spacing.xs },
   vide: { alignItems: 'center', gap: spacing.md, paddingVertical: spacing.xxl },
   videTitre: { color: colors.text, fontSize: font.h3, fontWeight: '700' },
   videTxt: { color: colors.textMuted, fontSize: font.body, textAlign: 'center', lineHeight: 21 },

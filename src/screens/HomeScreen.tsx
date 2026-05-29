@@ -1,5 +1,5 @@
 import React from 'react';
-import { SafeAreaView, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Pressable, SafeAreaView, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { Bouton, Carte } from '../components/ui';
 import { useNav } from '../navigation';
 import { colors, font, radius, spacing } from '../theme';
@@ -14,44 +14,35 @@ export default function HomeScreen() {
           <Text style={styles.marque}>GetExp</Text>
         </View>
 
-        <Text style={styles.h1}>Donnez vie à vos idées data & IA.</Text>
+        <Text style={styles.h1}>De l’idée à l’application, clé en main.</Text>
         <Text style={styles.sous}>
-          Exprimez un besoin. Notre assistant IA le transforme en use case clair,
-          que des experts data/IA peuvent reprendre — d’abord en prototype, puis
-          en projet clé en main.
+          Décrivez votre besoin. Notre IA le cadre, génère un prototype interactif,
+          puis prépare une application packagée plug-and-play pour votre infrastructure.
         </Text>
 
         <Carte style={{ marginTop: spacing.xl, gap: spacing.md }}>
-          <Text style={styles.cardTitre}>Vous êtes demandeur</Text>
+          <Text style={styles.cardTitre}>Vous êtes client</Text>
           <Text style={styles.cardTexte}>
-            Pas besoin d’être technique. Décrivez votre idée, l’IA vous aide à la cadrer.
+            Pas besoin d’être technique. Décrivez votre idée, l’IA vous accompagne.
           </Text>
           <Bouton titre="✨ Exprimer une idée" onPress={() => aller({ nom: 'cadrage' })} />
           <Bouton
-            titre="Voir mes use cases"
+            titre="Voir mes projets"
             variante="secondaire"
             onPress={() => aller({ nom: 'liste' })}
           />
         </Carte>
 
-        <Carte style={{ marginTop: spacing.md, gap: spacing.md }}>
-          <Text style={styles.cardTitre}>Vous êtes expert data/IA</Text>
-          <Text style={styles.cardTexte}>
-            Parcourez les besoins déjà cadrés (ROI + spec prête à coder) et positionnez-vous.
-          </Text>
-          <Bouton
-            titre="🧑‍💻 Accéder à l’espace expert"
-            variante="secondaire"
-            onPress={() => aller({ nom: 'expert' })}
-          />
-        </Carte>
-
         <View style={styles.etapes}>
-          <Etape n="1" titre="Cadrage IA" texte="L’IA structure votre besoin en use case." />
-          <Etape n="2" titre="Publication" texte="Les experts anonymes se positionnent." />
-          <Etape n="3" titre="Prototype" texte="Validez avant de vous engager." />
-          <Etape n="4" titre="Livraison" texte="Le projet livré clé en main." />
+          <Etape n="1" titre="Cadrage métier" texte="L’IA structure votre besoin et son ROI." />
+          <Etape n="2" titre="Prototype" texte="Un prototype interactif à valider (ou challenger)." />
+          <Etape n="3" titre="Cadrage technique" texte="L’IA architecte prépare la livraison plug-and-play." />
+          <Etape n="4" titre="Certification" texte="Sécurité vérifiée avant déploiement." />
         </View>
+
+        <Pressable onPress={() => aller({ nom: 'admin' })} style={styles.adminLien} hitSlop={8}>
+          <Text style={styles.adminTxt}>· Espace admin ·</Text>
+        </Pressable>
       </ScrollView>
     </SafeAreaView>
   );
@@ -94,4 +85,6 @@ const styles = StyleSheet.create({
   etapeNumTxt: { color: colors.accent, fontWeight: '800' },
   etapeTitre: { color: colors.text, fontSize: font.body, fontWeight: '700' },
   etapeTexte: { color: colors.textMuted, fontSize: font.small },
+  adminLien: { alignItems: 'center', marginTop: spacing.xxl, paddingVertical: spacing.sm },
+  adminTxt: { color: colors.textMuted, fontSize: font.small, fontWeight: '600' },
 });
