@@ -22,10 +22,11 @@ let seq = 0;
 const pid = () => `prop_${Date.now().toString(36)}_${seq++}`;
 
 // Prix de prototype indexé sur la complexité du use case.
+// `variation` est un pourcentage (100 = prix de base) ; on arrondit à la centaine.
 function prixPrototype(uc: UseCase, variation: number): number {
   const base =
     uc.complexite === 'Élevée' ? 9000 : uc.complexite === 'Moyenne' ? 5500 : 3000;
-  return Math.round((base * variation) / 100) * 100;
+  return Math.round((base * variation) / 100 / 100) * 100;
 }
 
 function delaiPrototype(uc: UseCase, variation: number): number {
