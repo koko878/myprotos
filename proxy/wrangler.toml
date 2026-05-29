@@ -1,0 +1,7 @@
+name = "myprotos-llm-proxy"
+main = "worker.js"
+compatibility_date = "2024-11-01"
+
+# Les clés ne sont JAMAIS écrites ici. On les ajoute en secret après déploiement :
+#   npx wrangler secret put GROQ_API_KEY
+#   npx wrangler secret put GEMINI_API_KEY   (optionnel)
