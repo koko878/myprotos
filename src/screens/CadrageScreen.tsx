@@ -59,6 +59,9 @@ export default function CadrageScreen() {
   const [saisie, setSaisie] = useState('');
   const [termine, setTermine] = useState(false);
   const [loading, setLoading] = useState(false); // attente IA
+  // Si l'IA échoue (ex: 503 surcharge), on mémorise le contexte à rejouer pour
+  // proposer un bouton « Réessayer » plutôt qu'un cul-de-sac.
+  const [echec, setEchec] = useState<{ texte: string; base: Message[] } | null>(null);
   const verrou = useRef(false); // empêche les envois concurrents pendant un tour IA
   const scrollRef = useRef<ScrollView>(null);
 
@@ -76,21 +79,16 @@ export default function CadrageScreen() {
   }
 
   async function envoyerIA(texte: string, base: Message[]) {
+    setEchec(null);
     setLoading(true);
     const nbUser = base.filter((m) => m.role === 'user').length;
     const tour = await tourCadrageIA(base, nbUser >= 6);
     setLoading(false);
 
     if (!tour) {
-      // Repli : message d'erreur, l'utilisateur peut reformuler.
-      setMessages([
-        ...base,
-        {
-          id: uid(),
-          role: 'assistant',
-          texte: 'Désolé, petit souci technique de mon côté. Pouvez-vous reformuler ou réessayer ?',
-        },
-      ]);
+      // Échec temporaire (souvent surcharge Gemini) : on mémorise le contexte
+      // pour proposer « Réessayer », sans perdre la conversation.
+      setEchec({ texte, base });
       return;
     }
 
@@ -104,6 +102,16 @@ export default function CadrageScreen() {
       ...base,
       { id: uid(), role: 'assistant', texte: tour.reply, suggestions: tour.suggestions },
     ]);
+  }
+
+  function reessayer() {
+    if (!echec || loading || verrou.current) return;
+    const { texte, base } = echec;
+    setEchec(null);
+    verrou.current = true;
+    envoyerIA(texte, base).finally(() => {
+      verrou.current = false;
+    });
   }
 
   function envoyerScript(texte: string, base: Message[]) {
@@ -180,6 +188,16 @@ export default function CadrageScreen() {
             <Bulle key={m.id} message={m} onSuggestion={envoyer} actif={!termine && !loading} />
           ))}
           {loading && <Typing />}
+          {echec && !loading && (
+            <View style={styles.echecBox}>
+              <Text style={styles.echecTxt}>
+                ⚠️ L’IA est momentanément surchargée. Votre conversation est intacte.
+              </Text>
+              <Pressable style={styles.reessayer} onPress={reessayer}>
+                <Text style={styles.reessayerTxt}>↻ Réessayer</Text>
+              </Pressable>
+            </View>
+          )}
         </ScrollView>
 
         {!termine && (
@@ -280,6 +298,23 @@ const styles = StyleSheet.create({
     paddingVertical: 8,
   },
   chipTxt: { color: colors.accent, fontSize: font.small },
+  echecBox: {
+    backgroundColor: colors.warn + '18',
+    borderColor: colors.warn + '55',
+    borderWidth: 1,
+    borderRadius: radius.md,
+    padding: spacing.md,
+    gap: spacing.sm,
+    alignItems: 'flex-start',
+  },
+  echecTxt: { color: colors.text, fontSize: font.small, lineHeight: 19 },
+  reessayer: {
+    backgroundColor: colors.primary,
+    borderRadius: radius.pill,
+    paddingHorizontal: spacing.lg,
+    paddingVertical: 10,
+  },
+  reessayerTxt: { color: '#fff', fontWeight: '800', fontSize: font.small },
   saisieZone: {
     flexDirection: 'row',
     alignItems: 'flex-end',
