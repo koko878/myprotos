@@ -4,19 +4,17 @@
 // le proxy ajoute la clé et relaie vers Groq (ou Gemini). Ainsi aucune clé
 // n'est embarquée dans le bundle public de l'application.
 //
-// Déploiement : voir proxy/README.md (npx wrangler deploy).
-// Secrets attendus (configurés via `wrangler secret put`) :
+// Secrets attendus (dashboard → Settings → Variables and Secrets, type Secret) :
 //   GROQ_API_KEY     (obligatoire pour Groq)
 //   GEMINI_API_KEY   (optionnel, fournisseur de secours)
 //
-// Endpoints exposés :
+// Endpoints :
+//   GET  /health  -> diagnostic : worker vivant + quels secrets sont configurés
 //   POST /groq    -> relaie vers l'API chat completions de Groq
 //   POST /gemini  -> relaie vers generateContent de Gemini (modèle dans ?model=)
 
 const GROQ_URL = 'https://api.groq.com/openai/v1/chat/completions';
 
-// CORS : on autorise l'origine de la page (GitHub Pages) + localhost pour les
-// tests. Adapter ALLOW_ORIGINS si besoin.
 const ALLOW_ORIGINS = [
   'https://koko878.github.io',
   'http://localhost:9095',
@@ -28,7 +26,7 @@ function corsHeaders(origin) {
   const autorise = ALLOW_ORIGINS.includes(origin) ? origin : ALLOW_ORIGINS[0];
   return {
     'Access-Control-Allow-Origin': autorise,
-    'Access-Control-Allow-Methods': 'POST, OPTIONS',
+    'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
     'Access-Control-Allow-Headers': 'Content-Type',
     'Access-Control-Max-Age': '86400',
   };
@@ -38,20 +36,31 @@ export default {
   async fetch(request, env) {
     const origin = request.headers.get('Origin') || '';
     const cors = corsHeaders(origin);
+    const url = new URL(request.url);
 
     if (request.method === 'OPTIONS') {
       return new Response(null, { status: 204, headers: cors });
     }
-    if (request.method !== 'POST') {
-      return new Response('Method Not Allowed', { status: 405, headers: cors });
-    }
 
-    const url = new URL(request.url);
     const json = (obj, status = 200) =>
       new Response(JSON.stringify(obj), {
         status,
         headers: { ...cors, 'Content-Type': 'application/json' },
       });
+
+    // --- Diagnostic (ouvrable dans le navigateur) -------------------------
+    if (request.method === 'GET' && url.pathname === '/health') {
+      return json({
+        ok: true,
+        worker: 'myprotos-llm-proxy',
+        groqKeyConfigured: !!env.GROQ_API_KEY,
+        geminiKeyConfigured: !!env.GEMINI_API_KEY,
+      });
+    }
+
+    if (request.method !== 'POST') {
+      return new Response('Method Not Allowed', { status: 405, headers: cors });
+    }
 
     try {
       const body = await request.json();
