@@ -1,4 +1,4 @@
-# protos — marketplace tech / data / IA
+# GetExp — marketplace tech / data / IA
 
 Prototype mobile (Expo / React Native) d'une marketplace qui met en relation des
 **demandeurs** (chefs de projet, métiers) et des **experts data/IA anonymes**.

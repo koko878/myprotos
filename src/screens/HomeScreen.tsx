@@ -11,7 +11,7 @@ export default function HomeScreen() {
       <ScrollView contentContainerStyle={styles.content}>
         <View style={styles.logoRow}>
           <View style={styles.logoDot} />
-          <Text style={styles.marque}>protos</Text>
+          <Text style={styles.marque}>GetExp</Text>
         </View>
 
         <Text style={styles.h1}>Donnez vie à vos idées data & IA.</Text>
