@@ -19,21 +19,20 @@ interface OptionsAppel {
   temperature?: number;
 }
 
+const ENDPOINT = (m: string) =>
+  `https://generativelanguage.googleapis.com/v1beta/models/${m}:generateContent?key=${GEMINI_KEY}`;
+
 /**
- * Appelle Gemini et renvoie le texte généré, ou `null` si l'IA n'est pas
- * disponible / en cas d'erreur (le code appelant doit alors retomber sur le
- * moteur local). N'émet jamais d'exception vers l'appelant.
+ * Appel mono-prompt. Renvoie le texte généré, ou `null` si l'IA n'est pas
+ * disponible / en cas d'erreur. N'émet jamais d'exception.
  */
 export async function appelerGemini(
   prompt: string,
   opts: OptionsAppel = {}
 ): Promise<string | null> {
   if (!iaDisponible()) return null;
-
-  const url = `https://generativelanguage.googleapis.com/v1beta/models/${MODELE}:generateContent?key=${GEMINI_KEY}`;
-
   try {
-    const reponse = await fetch(url, {
+    const reponse = await fetch(ENDPOINT(MODELE), {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -44,11 +43,47 @@ export async function appelerGemini(
         },
       }),
     });
-
     if (!reponse.ok) return null;
     const data = await reponse.json();
-    const texte: string | undefined =
-      data?.candidates?.[0]?.content?.parts?.[0]?.text;
+    const texte: string | undefined = data?.candidates?.[0]?.content?.parts?.[0]?.text;
+    return typeof texte === 'string' ? texte : null;
+  } catch {
+    return null;
+  }
+}
+
+export interface TourChat {
+  role: 'user' | 'model';
+  text: string;
+}
+
+/**
+ * Appel conversationnel multi-tours avec instruction système.
+ * `history` doit commencer par un tour 'user'. Renvoie le texte (souvent du
+ * JSON), ou `null` en cas d'indisponibilité / erreur.
+ */
+export async function chatGemini(
+  systemPrompt: string,
+  history: TourChat[],
+  opts: OptionsAppel = {}
+): Promise<string | null> {
+  if (!iaDisponible()) return null;
+  try {
+    const reponse = await fetch(ENDPOINT(MODELE), {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        systemInstruction: { parts: [{ text: systemPrompt }] },
+        contents: history.map((h) => ({ role: h.role, parts: [{ text: h.text }] })),
+        generationConfig: {
+          temperature: opts.temperature ?? 0.6,
+          ...(opts.json ? { responseMimeType: 'application/json' } : {}),
+        },
+      }),
+    });
+    if (!reponse.ok) return null;
+    const data = await reponse.json();
+    const texte: string | undefined = data?.candidates?.[0]?.content?.parts?.[0]?.text;
     return typeof texte === 'string' ? texte : null;
   } catch {
     return null;

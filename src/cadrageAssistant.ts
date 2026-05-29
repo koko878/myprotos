@@ -9,8 +9,8 @@
 // L'adaptateur `maybeCallLLM` permet de brancher l'API Claude quand une clé
 // est disponible ; sinon on tourne en "IA simulée" 100% locale (mode prototype).
 
-import { appelerGemini, iaDisponible } from './llm';
-import { Complexite, UseCase } from './types';
+import { appelerGemini, chatGemini, iaDisponible } from './llm';
+import { Complexite, Message, UseCase } from './types';
 
 export interface CadrageEtape {
   cle: keyof CadrageReponses;
@@ -299,5 +299,146 @@ export async function synthetiserUseCaseIA(
     };
   } catch {
     return base;
+  }
+}
+
+// ============================================================================
+// MODE CONVERSATIONNEL 100% IA (Gemini pilote tout le dialogue de cadrage)
+// ============================================================================
+
+const SYSTEM_CADRAGE = `Tu es un consultant senior en data/IA qui aide un client (souvent non technique) à cadrer son idée de projet, via un dialogue sur mobile.
+
+Contexte : tu as DÉJÀ salué le client et lui as demandé son idée en une phrase. Tu mènes maintenant l'entretien de cadrage.
+
+Règles :
+- Réponds en français, ton chaleureux mais professionnel.
+- UNE seule question à la fois, courte (2-3 phrases max), en t'appuyant explicitement sur ce que le client vient de dire (montre que tu comprends son métier/secteur).
+- Couvre progressivement : le problème métier concret, l'objectif mesurable (chiffré si possible), les données disponibles, les utilisateurs cibles, les contraintes (budget / délai / conformité type RGPD).
+- Propose jusqu'à 3 suggestions de réponses COURTES, concrètes et adaptées à SON cas précis, pour l'aider à répondre vite.
+- Après avoir recueilli assez d'infos (en général 5 à 6 échanges), TERMINE : mets "done": true et produis le use case structuré.
+- Ne pose jamais plus de 7 questions.
+
+Réponds TOUJOURS en JSON strict, sans texte autour :
+{
+  "reply": "ton message (accusé de réception + prochaine question ; ou message de clôture si done=true)",
+  "suggestions": ["...", "...", "..."],
+  "done": false,
+  "useCase": null
+}
+
+Quand "done" vaut true, "useCase" doit valoir :
+{
+  "titre": "titre court et percutant (< 70 caractères)",
+  "domaine": "domaine métier précis (ex: Marketing & Ventes, Industrie & IoT, Finance & Risque...)",
+  "probleme": "problème métier reformulé clairement (1-2 phrases)",
+  "objectif": "objectif business mesurable (1 phrase)",
+  "kpis": ["3 KPIs de succès concrets"],
+  "donnees": "données disponibles",
+  "utilisateurs": "utilisateurs cibles de la solution",
+  "contraintes": "contraintes (budget/délai/conformité)",
+  "approcheSuggeree": "piste technique recommandée (1 phrase)",
+  "complexite": "Faible | Moyenne | Élevée",
+  "budgetEstime": "fourchette en euros, ex: 12 000 € – 30 000 €"
+}
+(dans ce cas "suggestions" peut être un tableau vide).`;
+
+export interface TourIA {
+  reply: string;
+  suggestions: string[];
+  done: boolean;
+  useCase?: UseCase;
+}
+
+function s(v: unknown, defaut: string): string {
+  return typeof v === 'string' && v.trim() ? v.trim() : defaut;
+}
+
+// Score de maturité calculé localement à partir du use case produit par l'IA.
+function scoreDepuisUseCase(uc: {
+  probleme: string;
+  objectif: string;
+  donnees: string;
+  utilisateurs: string;
+  contraintes: string;
+  kpis: string[];
+}): number {
+  let score = 0;
+  for (const champ of [uc.probleme, uc.objectif, uc.donnees, uc.utilisateurs, uc.contraintes]) {
+    if (champ.trim()) score += 12;
+    if (champ.trim().length > 40) score += 4;
+  }
+  if (/\d/.test(uc.objectif)) score += 10;
+  score += Math.min(uc.kpis.length * 4, 12);
+  return Math.min(100, Math.round(score));
+}
+
+function normaliserUseCase(j: any): UseCase {
+  const kpis = Array.isArray(j?.kpis) && j.kpis.length
+    ? j.kpis.slice(0, 4).map(String)
+    : ['Gain de productivité (%)'];
+  const complexite: Complexite = ['Faible', 'Moyenne', 'Élevée'].includes(j?.complexite)
+    ? j.complexite
+    : 'Moyenne';
+  let titre = s(j?.titre, 'Nouveau use case');
+  if (titre.length > 70) titre = titre.slice(0, 67) + '…';
+  const champs = {
+    probleme: s(j?.probleme, ''),
+    objectif: s(j?.objectif, ''),
+    donnees: s(j?.donnees, ''),
+    utilisateurs: s(j?.utilisateurs, ''),
+    contraintes: s(j?.contraintes, ''),
+    kpis,
+  };
+  return {
+    id: 'uc_' + Date.now().toString(36),
+    titre,
+    domaine: s(j?.domaine, 'Transverse'),
+    ...champs,
+    approcheSuggeree: s(j?.approcheSuggeree, 'À préciser avec un expert'),
+    complexite,
+    scoreCadrage: scoreDepuisUseCase(champs),
+    budgetEstime: s(j?.budgetEstime, 'À définir'),
+    statut: 'brouillon',
+    creeLe: Date.now(),
+  };
+}
+
+/**
+ * Un tour de l'entretien de cadrage piloté par l'IA.
+ * `messages` est l'historique complet (assistant + user). `forceFinish` pousse
+ * l'IA à conclure. Renvoie `null` en cas d'échec (le caller gère le repli).
+ */
+export async function tourCadrageIA(
+  messages: Message[],
+  forceFinish: boolean
+): Promise<TourIA | null> {
+  if (!iaDisponible()) return null;
+  const premierUser = messages.findIndex((m) => m.role === 'user');
+  if (premierUser === -1) return null;
+
+  const historique = messages.slice(premierUser).map((m) => ({
+    role: (m.role === 'assistant' ? 'model' : 'user') as 'model' | 'user',
+    text: m.texte,
+  }));
+
+  const sys = forceFinish
+    ? SYSTEM_CADRAGE +
+      '\n\nIMPORTANT : tu as recueilli assez d\'informations. Termine maintenant ("done": true) en produisant le use case.'
+    : SYSTEM_CADRAGE;
+
+  const brut = await chatGemini(sys, historique, { json: true, temperature: 0.6 });
+  if (!brut) return null;
+
+  try {
+    const j = JSON.parse(brut);
+    const tour: TourIA = {
+      reply: s(j?.reply, 'Pouvez-vous préciser un peu ?'),
+      suggestions: Array.isArray(j?.suggestions) ? j.suggestions.slice(0, 3).map(String) : [],
+      done: j?.done === true,
+    };
+    if (tour.done) tour.useCase = normaliserUseCase(j?.useCase ?? {});
+    return tour;
+  } catch {
+    return null;
   }
 }

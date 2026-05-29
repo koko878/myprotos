@@ -15,6 +15,7 @@ import {
   ETAPES,
   reactionAssistant,
   synthetiserUseCaseIA,
+  tourCadrageIA,
 } from '../cadrageAssistant';
 import { iaDisponible } from '../llm';
 import { useNav } from '../navigation';
@@ -34,52 +35,84 @@ const VIDE: CadrageReponses = {
 let compteur = 0;
 const uid = () => `m_${Date.now()}_${compteur++}`;
 
+// Message d'ouverture (identique dans les deux modes : l'IA prend la main ensuite).
+const OUVERTURE: Message[] = [
+  {
+    id: uid(),
+    role: 'assistant',
+    texte:
+      'Bonjour 👋 Je suis votre assistant de cadrage. On va transformer votre idée en use case clair en quelques questions.',
+  },
+  {
+    id: uid(),
+    role: 'assistant',
+    texte: ETAPES[0].question,
+    suggestions: ETAPES[0].suggestions,
+  },
+];
+
 export default function CadrageScreen() {
   const { aller, retour } = useNav();
-  const [messages, setMessages] = useState<Message[]>([]);
+  const modeIA = useRef(iaDisponible()).current;
+
+  const [messages, setMessages] = useState<Message[]>(OUVERTURE);
   const [saisie, setSaisie] = useState('');
-  const [indexEtape, setIndexEtape] = useState(0);
-  const [reponses, setReponses] = useState<CadrageReponses>({ ...VIDE });
   const [termine, setTermine] = useState(false);
+  const [loading, setLoading] = useState(false); // attente IA
+  const verrou = useRef(false); // empêche les envois concurrents pendant un tour IA
   const scrollRef = useRef<ScrollView>(null);
 
-  // Premier message de l'assistant.
-  useEffect(() => {
-    poserQuestion(0, [
-      {
-        id: uid(),
-        role: 'assistant',
-        texte:
-          'Bonjour 👋 Je suis votre assistant de cadrage. On va transformer votre idée en use case clair en quelques questions.',
-      },
-    ]);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
-  function poserQuestion(idx: number, base: Message[]) {
-    const etape = ETAPES[idx];
-    setMessages([
-      ...base,
-      { id: uid(), role: 'assistant', texte: etape.question, suggestions: etape.suggestions },
-    ]);
-  }
+  // État du mode scripté (utilisé seulement si pas d'IA).
+  const [indexEtape, setIndexEtape] = useState(0);
+  const [reponses, setReponses] = useState<CadrageReponses>({ ...VIDE });
 
   useEffect(() => {
     scrollRef.current?.scrollToEnd({ animated: true });
-  }, [messages]);
+  }, [messages, loading]);
 
-  function envoyer(texteBrut: string) {
-    const texte = texteBrut.trim();
-    if (!texte || termine) return;
+  function finaliser(uc: import('../types').UseCase) {
+    setTermine(true);
+    ajouterUseCase(uc).then(() => aller({ nom: 'recap', useCaseId: uc.id }));
+  }
 
+  async function envoyerIA(texte: string, base: Message[]) {
+    setLoading(true);
+    const nbUser = base.filter((m) => m.role === 'user').length;
+    const tour = await tourCadrageIA(base, nbUser >= 6);
+    setLoading(false);
+
+    if (!tour) {
+      // Repli : message d'erreur, l'utilisateur peut reformuler.
+      setMessages([
+        ...base,
+        {
+          id: uid(),
+          role: 'assistant',
+          texte: 'Désolé, petit souci technique de mon côté. Pouvez-vous reformuler ou réessayer ?',
+        },
+      ]);
+      return;
+    }
+
+    if (tour.done && tour.useCase) {
+      setMessages([...base, { id: uid(), role: 'assistant', texte: tour.reply }]);
+      finaliser(tour.useCase);
+      return;
+    }
+
+    setMessages([
+      ...base,
+      { id: uid(), role: 'assistant', texte: tour.reply, suggestions: tour.suggestions },
+    ]);
+  }
+
+  function envoyerScript(texte: string, base: Message[]) {
     const etape = ETAPES[indexEtape];
     const nouvellesReponses = { ...reponses, [etape.cle]: texte };
     setReponses(nouvellesReponses);
-    setSaisie('');
 
     const apresUser: Message[] = [
-      ...messages,
-      { id: uid(), role: 'user', texte },
+      ...base,
       { id: uid(), role: 'assistant', texte: reactionAssistant(etape, texte) },
     ];
 
@@ -88,36 +121,36 @@ export default function CadrageScreen() {
       const etapeSuiv = ETAPES[suivant];
       setMessages([
         ...apresUser,
-        {
-          id: uid(),
-          role: 'assistant',
-          texte: etapeSuiv.question,
-          suggestions: etapeSuiv.suggestions,
-        },
+        { id: uid(), role: 'assistant', texte: etapeSuiv.question, suggestions: etapeSuiv.suggestions },
       ]);
       setIndexEtape(suivant);
     } else {
-      // Fin du parcours : on synthétise (IA si dispo) et on propose un récap.
-      setTermine(true);
       setMessages([
         ...apresUser,
-        {
-          id: uid(),
-          role: 'assistant',
-          texte: iaDisponible()
-            ? '⏳ L’IA structure votre use case (domaine, KPIs, complexité, budget)…'
-            : '⏳ Je structure votre use case…',
-        },
+        { id: uid(), role: 'assistant', texte: '⏳ Je structure votre use case…' },
       ]);
+      setTermine(true);
       synthetiserUseCaseIA(nouvellesReponses).then((uc) =>
-        ajouterUseCase(uc).then(() =>
-          aller({ nom: 'recap', useCaseId: uc.id })
-        )
+        ajouterUseCase(uc).then(() => aller({ nom: 'recap', useCaseId: uc.id }))
       );
     }
   }
 
-  const etapeCourante = ETAPES[Math.min(indexEtape, ETAPES.length - 1)];
+  function envoyer(texteBrut: string) {
+    const texte = texteBrut.trim();
+    if (!texte || termine || loading || verrou.current) return;
+    setSaisie('');
+    const base: Message[] = [...messages, { id: uid(), role: 'user', texte }];
+    setMessages(base);
+    if (modeIA) {
+      verrou.current = true;
+      envoyerIA(texte, base).finally(() => {
+        verrou.current = false;
+      });
+    } else {
+      envoyerScript(texte, base);
+    }
+  }
 
   return (
     <SafeAreaView style={styles.safe}>
@@ -126,44 +159,45 @@ export default function CadrageScreen() {
           <Text style={styles.retour}>‹ Retour</Text>
         </Pressable>
         <Text style={styles.headerTitre}>Cadrage assisté</Text>
-        <Text style={styles.progres}>
-          {Math.min(indexEtape + 1, ETAPES.length)}/{ETAPES.length}
-        </Text>
+        <Text style={styles.badge}>{modeIA ? '✨ IA' : `${Math.min(indexEtape + 1, ETAPES.length)}/${ETAPES.length}`}</Text>
       </View>
       <View style={styles.progressBarBg}>
         <View
           style={[
             styles.progressBarFill,
-            { width: `${(Math.min(indexEtape, ETAPES.length) / ETAPES.length) * 100}%` },
+            {
+              width: modeIA
+                ? `${Math.min((messages.filter((m) => m.role === 'user').length / 6) * 100, 100)}%`
+                : `${(Math.min(indexEtape, ETAPES.length) / ETAPES.length) * 100}%`,
+            },
           ]}
         />
       </View>
 
-      <KeyboardAvoidingView
-        style={{ flex: 1 }}
-        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-      >
+      <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
         <ScrollView ref={scrollRef} contentContainerStyle={styles.chat}>
           {messages.map((m) => (
-            <Bulle key={m.id} message={m} onSuggestion={envoyer} actif={!termine} />
+            <Bulle key={m.id} message={m} onSuggestion={envoyer} actif={!termine && !loading} />
           ))}
+          {loading && <Typing />}
         </ScrollView>
 
         {!termine && (
           <View style={styles.saisieZone}>
             <TextInput
               style={styles.input}
-              placeholder={etapeCourante?.question.includes('phrase') ? 'Votre idée…' : 'Votre réponse…'}
+              placeholder={loading ? 'L’assistant réfléchit…' : 'Votre réponse…'}
               placeholderTextColor={colors.textMuted}
               value={saisie}
               onChangeText={setSaisie}
               multiline
+              editable={!loading}
               onSubmitEditing={() => envoyer(saisie)}
             />
             <Pressable
-              style={[styles.envoyer, !saisie.trim() && { opacity: 0.4 }]}
+              style={[styles.envoyer, (!saisie.trim() || loading) && { opacity: 0.4 }]}
               onPress={() => envoyer(saisie)}
-              disabled={!saisie.trim()}
+              disabled={!saisie.trim() || loading}
             >
               <Text style={styles.envoyerTxt}>↑</Text>
             </Pressable>
@@ -171,6 +205,15 @@ export default function CadrageScreen() {
         )}
       </KeyboardAvoidingView>
     </SafeAreaView>
+  );
+}
+
+function Typing() {
+  return (
+    <View style={[styles.bulle, styles.bulleAssistant, { flexDirection: 'row', gap: 6, alignItems: 'center' }]}>
+      <Text style={styles.bulleTexte}>✨ l’IA rédige</Text>
+      <Text style={[styles.bulleTexte, { color: colors.accent }]}>…</Text>
+    </View>
   );
 }
 
@@ -186,15 +229,10 @@ function Bulle({
   const estUser = message.role === 'user';
   return (
     <View style={{ marginBottom: spacing.md }}>
-      <View
-        style={[
-          styles.bulle,
-          estUser ? styles.bulleUser : styles.bulleAssistant,
-        ]}
-      >
+      <View style={[styles.bulle, estUser ? styles.bulleUser : styles.bulleAssistant]}>
         <Text style={[styles.bulleTexte, estUser && { color: '#fff' }]}>{message.texte}</Text>
       </View>
-      {!estUser && actif && message.suggestions && (
+      {!estUser && actif && !!message.suggestions?.length && (
         <View style={styles.suggestions}>
           {message.suggestions.map((s) => (
             <Pressable key={s} style={styles.chip} onPress={() => onSuggestion(s)}>
@@ -218,7 +256,7 @@ const styles = StyleSheet.create({
   },
   retour: { color: colors.accent, fontSize: font.body, fontWeight: '600', width: 70 },
   headerTitre: { color: colors.text, fontSize: font.h3, fontWeight: '800' },
-  progres: { color: colors.textMuted, fontSize: font.small, width: 70, textAlign: 'right' },
+  badge: { color: colors.textMuted, fontSize: font.small, width: 70, textAlign: 'right', fontWeight: '700' },
   progressBarBg: { height: 3, backgroundColor: colors.surfaceAlt },
   progressBarFill: { height: 3, backgroundColor: colors.primary },
   chat: { padding: spacing.lg, paddingBottom: spacing.xl },
@@ -230,11 +268,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: colors.border,
   },
-  bulleUser: {
-    backgroundColor: colors.bubbleUser,
-    alignSelf: 'flex-end',
-    borderTopRightRadius: 4,
-  },
+  bulleUser: { backgroundColor: colors.bubbleUser, alignSelf: 'flex-end', borderTopRightRadius: 4 },
   bulleTexte: { color: colors.text, fontSize: font.body, lineHeight: 21 },
   suggestions: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm, marginTop: spacing.sm },
   chip: {
