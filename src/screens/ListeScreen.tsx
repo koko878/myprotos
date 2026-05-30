@@ -55,6 +55,9 @@ export default function ListeScreen() {
               <Etiquette texte={uc.complexite} couleur={couleurComplexite(uc.complexite)} />
               <Etiquette texte={uc.budgetEstime} />
             </View>
+            {prochaineAction(uc.statut) && (
+              <Text style={styles.action}>{prochaineAction(uc.statut)}</Text>
+            )}
           </Carte>
         ))}
 
@@ -70,6 +73,28 @@ function scoreCouleur(s: number) {
   return s >= 75 ? colors.success : s >= 50 ? colors.warn : colors.danger;
 }
 
+// Indique au client ce qu'il peut/doit faire ensuite, selon l'étape.
+function prochaineAction(statut: UseCase['statut']): string {
+  switch (statut) {
+    case 'brouillon':
+      return '👉 À soumettre pour lancer le prototype';
+    case 'soumis':
+      return '⏳ Prototype en préparation';
+    case 'prototype_genere':
+      return '👉 Votre prototype est prêt — à voir et valider';
+    case 'revision_demandee':
+      return '⏳ Nouvelle version en préparation';
+    case 'prototype_valide':
+      return '👉 Passez au cadrage technique';
+    case 'cadrage_technique':
+      return '👉 Reprendre le cadrage technique';
+    case 'pret_a_packager':
+      return '✅ Prêt à packager';
+    default:
+      return '';
+  }
+}
+
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: colors.bg },
   header: {
@@ -82,6 +107,7 @@ const styles = StyleSheet.create({
   retour: { color: colors.accent, fontSize: font.body, fontWeight: '600', width: 70 },
   headerTitre: { color: colors.text, fontSize: font.h3, fontWeight: '800' },
   content: { padding: spacing.lg, paddingBottom: spacing.xxl },
+  action: { color: colors.accent, fontSize: font.small, fontWeight: '700', marginTop: spacing.xs },
   cardTop: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
   score: { fontSize: font.small, fontWeight: '800' },
   cardTitre: { color: colors.text, fontSize: font.h3, fontWeight: '700', lineHeight: 22 },
