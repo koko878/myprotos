@@ -49,6 +49,18 @@ export default function CadrageScreen() {
     aller({ nom: 'recap', useCaseId: id });
   }
 
+  // Si l'IA a assez d'infos (≥6 réponses) mais a répondu sans poser de question
+  // (dernier message = conclusion type "je résume votre cas"), on relance pour
+  // obtenir le use case structuré sans attendre l'utilisateur.
+  function relanceAuto(historique: Message[]): boolean {
+    const nbUser = historique.filter((m) => m.role === 'user').length;
+    if (nbUser < 6) return false;
+    const dernier = historique[historique.length - 1];
+    if (!dernier || dernier.role !== 'assistant') return false;
+    // Pas de question en attente -> on peut conclure automatiquement.
+    return !dernier.texte.includes('?');
+  }
+
   return (
     <ChatIA
       titre="Cadrage métier"
@@ -56,6 +68,7 @@ export default function CadrageScreen() {
       jouerTour={jouerTour}
       onTermine={onTermine}
       progression={(h) => h.filter((m) => m.role === 'user').length / 6}
+      relanceAuto={relanceAuto}
     />
   );
 }

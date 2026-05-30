@@ -35,6 +35,10 @@ export interface ChatIAProps {
   onTermine: (historique: Message[]) => void;
   // Progression affichée (0..1), calculée par le parent depuis le nb de tours.
   progression?: (historique: Message[]) => number;
+  // Si vrai pour l'historique courant, ChatIA relance automatiquement un tour
+  // (sans attendre l'utilisateur) — utile quand l'IA annonce la conclusion mais
+  // n'a pas encore produit le résultat structuré.
+  relanceAuto?: (historique: Message[]) => boolean;
 }
 
 /**
@@ -42,7 +46,7 @@ export interface ChatIAProps {
  * Gère l'UI chat, l'état d'attente, le verrou anti-double-envoi et le repli
  * « Réessayer » en cas d'échec transitoire.
  */
-export default function ChatIA({ titre, ouverture, jouerTour, onTermine, progression }: ChatIAProps) {
+export default function ChatIA({ titre, ouverture, jouerTour, onTermine, progression, relanceAuto }: ChatIAProps) {
   const { retour } = useNav();
   const [messages, setMessages] = useState<Message[]>(ouverture);
   const [saisie, setSaisie] = useState('');
@@ -51,6 +55,7 @@ export default function ChatIA({ titre, ouverture, jouerTour, onTermine, progres
   const [echec, setEchec] = useState<{ base: Message[] } | null>(null);
   const [dictee, setDictee] = useState(false); // micro actif
   const verrou = useRef(false);
+  const relances = useRef(0); // garde-fou anti-boucle de relance auto
   const scrollRef = useRef<ScrollView>(null);
   const sessionDictee = useRef<SessionDictee | null>(null);
   const baseSaisie = useRef(''); // texte déjà saisi avant la dictée en cours
@@ -102,10 +107,21 @@ export default function ChatIA({ titre, ouverture, jouerTour, onTermine, progres
       onTermine(final);
       return;
     }
-    setMessages([
+    const suite = [
       ...base,
-      { id: uidMessage(), role: 'assistant', texte: res.reply, suggestions: res.suggestions },
-    ]);
+      { id: uidMessage(), role: 'assistant' as const, texte: res.reply, suggestions: res.suggestions },
+    ];
+    setMessages(suite);
+    // L'IA a répondu sans conclure : si elle est en train de conclure (ex.
+    // "je résume votre cas…"), on relance automatiquement un tour pour obtenir
+    // le résultat structuré, sans bloquer en attente de l'utilisateur.
+    if (relanceAuto && relances.current < 2 && relanceAuto(suite)) {
+      relances.current += 1;
+      verrou.current = true;
+      tour(suite).finally(() => {
+        verrou.current = false;
+      });
+    }
   }
 
   function lancer(base: Message[]) {
@@ -119,6 +135,7 @@ export default function ChatIA({ titre, ouverture, jouerTour, onTermine, progres
     const texte = texteBrut.trim();
     if (!texte || termine || loading || verrou.current) return;
     sessionDictee.current?.stop(); // coupe le micro à l'envoi
+    relances.current = 0; // nouvelle entrée utilisateur -> réautorise la relance auto
     setSaisie('');
     const base: Message[] = [...messages, { id: uidMessage(), role: 'user', texte }];
     setMessages(base);

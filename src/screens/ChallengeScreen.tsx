@@ -132,6 +132,11 @@ export default function ChallengeScreen({ useCaseId }: { useCaseId: string }) {
       jouerTour={jouerTour}
       onTermine={onTermine}
       progression={(h) => h.filter((m) => m.role === 'user').length / 4}
+      relanceAuto={(h) => {
+        const nbUser = h.filter((m) => m.role === 'user').length;
+        const d = h[h.length - 1];
+        return nbUser >= 4 && !!d && d.role === 'assistant' && !d.texte.includes('?');
+      }}
     />
   );
 }
