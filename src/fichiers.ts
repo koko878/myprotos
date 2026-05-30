@@ -45,6 +45,34 @@ export function choisirFichiers(accept = '*/*'): Promise<PieceJointe[]> {
   });
 }
 
+// Ouvre le sélecteur de fichiers (web) et lit UN fichier texte (ex: .html).
+// Renvoie { nom, contenu } ou null si annulé. Web uniquement.
+export function lireFichierTexte(
+  accept = '.html,text/html'
+): Promise<{ nom: string; contenu: string } | null> {
+  return new Promise((resolve) => {
+    if (Platform.OS !== 'web' || typeof document === 'undefined') {
+      resolve(null);
+      return;
+    }
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = accept;
+    input.onchange = () => {
+      const f = (input.files || [])[0];
+      if (!f) {
+        resolve(null);
+        return;
+      }
+      const reader = new FileReader();
+      reader.onload = () => resolve({ nom: f.name, contenu: String(reader.result || '') });
+      reader.onerror = () => resolve(null);
+      reader.readAsText(f);
+    };
+    input.click();
+  });
+}
+
 export function tailleLisible(octets: number): string {
   if (octets < 1024) return octets + ' o';
   if (octets < 1024 * 1024) return (octets / 1024).toFixed(0) + ' Ko';

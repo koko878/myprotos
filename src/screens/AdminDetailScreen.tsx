@@ -3,7 +3,7 @@ import { ActivityIndicator, Platform, Pressable, SafeAreaView, ScrollView, Style
 import { backendDisponible, genererPrototypeHtml } from '../cadrageAssistant';
 import HtmlPreview from '../components/HtmlPreview';
 import { Bouton, Carte } from '../components/ui';
-import { telechargerDossierProjet } from '../fichiers';
+import { lireFichierTexte, telechargerDossierProjet } from '../fichiers';
 import { iaDisponible } from '../llm';
 import { useNav } from '../navigation';
 import { deposerPrototypeHtml, enregistrerPrototype, trouverUseCase } from '../storage';
@@ -20,6 +20,7 @@ export default function AdminDetailScreen({ useCaseId }: { useCaseId: string }) 
   const [diag, setDiag] = useState<string | null>(null);
   // Mode manuel : dépôt du HTML généré hors-app.
   const [htmlColle, setHtmlColle] = useState('');
+  const [colleVisible, setColleVisible] = useState(false);
   const [autoVisible, setAutoVisible] = useState(false); // génération auto repliée
 
   useEffect(() => {
@@ -140,17 +141,29 @@ export default function AdminDetailScreen({ useCaseId }: { useCaseId: string }) 
           <View style={styles.etapeNum}><Text style={styles.etapeNumTxt}>1</Text><Text style={styles.etapeTxt}>Télécharger le prompt (+ pièces jointes) à passer à l’agent de code</Text></View>
           <Bouton titre="⬇️ Télécharger le prompt + fichiers" variante="secondaire" onPress={telecharger} />
 
-          <View style={styles.etapeNum}><Text style={styles.etapeNumTxt}>2</Text><Text style={styles.etapeTxt}>Générer le prototype à partir du prompt, puis coller le HTML obtenu :</Text></View>
+          <View style={styles.etapeNum}><Text style={styles.etapeNumTxt}>2</Text><Text style={styles.etapeTxt}>Générer le prototype, puis déposer le fichier HTML obtenu :</Text></View>
           {erreur && <Text style={styles.erreur}>⚠️ {erreur}</Text>}
-          <TextInput
-            style={styles.htmlInput}
-            value={htmlColle}
-            onChangeText={setHtmlColle}
-            multiline
-            placeholder="<!DOCTYPE html> … </html>"
-            placeholderTextColor={colors.textMuted}
-          />
-          <Bouton titre="✅ Déposer le prototype (nouvelle version)" onPress={deposer} />
+
+          {/* Méthode principale : upload d'un fichier .html */}
+          <Bouton titre="📄 Importer un fichier .html" onPress={uploader} />
+
+          {/* Méthode de secours : coller le code */}
+          <Pressable onPress={() => setColleVisible((v) => !v)} hitSlop={6} style={styles.toggleColle}>
+            <Text style={styles.toggleColleTxt}>{colleVisible ? '▾ ' : '▸ '}ou coller le code HTML</Text>
+          </Pressable>
+          {colleVisible && (
+            <>
+              <TextInput
+                style={styles.htmlInput}
+                value={htmlColle}
+                onChangeText={setHtmlColle}
+                multiline
+                placeholder="<!DOCTYPE html> … </html>"
+                placeholderTextColor={colors.textMuted}
+              />
+              <Bouton titre="✅ Déposer le code collé" variante="secondaire" onPress={deposer} />
+            </>
+          )}
         </Carte>
 
         {/* GÉNÉRATION AUTO (option repliée) */}
@@ -260,4 +273,6 @@ const styles = StyleSheet.create({
     textAlignVertical: 'top',
     fontFamily: Platform.OS === 'ios' ? 'Menlo' : 'monospace',
   },
+  toggleColle: { paddingVertical: spacing.xs },
+  toggleColleTxt: { color: colors.textMuted, fontSize: font.small, fontWeight: '600' },
 });
