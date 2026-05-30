@@ -30,6 +30,10 @@ export const supabase: SupabaseClient | null = supabaseDisponible()
         autoRefreshToken: true,
         persistSession: true,
         detectSessionInUrl: surWeb,
+        // Flow "implicit" : le jeton arrive directement dans l'URL de retour,
+        // sans "code_verifier" à retrouver — fiable pour un lien magique ouvert
+        // dans un autre contexte/navigateur (cas fréquent sur mobile).
+        flowType: 'implicit',
       },
     })
   : null;
