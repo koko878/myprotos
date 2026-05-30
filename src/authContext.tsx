@@ -17,9 +17,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<Utilisateur | null>(null);
 
   async function charger() {
-    const u = await utilisateurCourant();
-    setUser(u);
-    setPret(true);
+    try {
+      const u = await utilisateurCourant();
+      setUser(u);
+    } catch {
+      setUser(null);
+    } finally {
+      setPret(true); // ne jamais rester bloqué sur l'écran de chargement
+    }
   }
 
   useEffect(() => {
@@ -29,7 +34,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
     charger();
     const off = surChangementAuth(charger);
-    return off;
+    // Garde-fou : si la vérification de session traîne (réseau lent), on
+    // débloque l'UI au bout de 6 s (l'utilisateur verra l'écran de connexion).
+    const secours = setTimeout(() => setPret(true), 6000);
+    return () => {
+      clearTimeout(secours);
+      off();
+    };
   }, []);
 
   return (

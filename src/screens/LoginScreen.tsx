@@ -1,18 +1,17 @@
 import React, { useState } from 'react';
-import { KeyboardAvoidingView, Platform, Pressable, SafeAreaView, StyleSheet, Text, TextInput, View } from 'react-native';
-import { connexion, inscription } from '../auth';
+import { KeyboardAvoidingView, Platform, SafeAreaView, StyleSheet, Text, TextInput, View } from 'react-native';
+import { connexionOuInscription } from '../auth';
 import Logo from '../components/Logo';
 import { Bouton, Carte } from '../components/ui';
 import { colors, font, radius, spacing } from '../theme';
 
-// Connexion / inscription par email + mot de passe.
+// Connexion / inscription unifiée par email + mot de passe.
+// Un seul bouton : connecte si le compte existe, sinon le crée.
 export default function LoginScreen() {
-  const [mode, setMode] = useState<'connexion' | 'inscription'>('connexion');
   const [email, setEmail] = useState('');
   const [mdp, setMdp] = useState('');
   const [loading, setLoading] = useState(false);
   const [erreur, setErreur] = useState<string | null>(null);
-  const [info, setInfo] = useState<string | null>(null);
 
   async function valider() {
     const e = email.trim();
@@ -25,20 +24,11 @@ export default function LoginScreen() {
       return;
     }
     setErreur(null);
-    setInfo(null);
     setLoading(true);
-    const err =
-      mode === 'inscription' ? await inscription(e, mdp) : await connexion(e, mdp);
+    const err = await connexionOuInscription(e, mdp);
     setLoading(false);
-    if (err) {
-      setErreur(err);
-    } else if (mode === 'inscription') {
-      // Selon la config Supabase, l'inscription peut connecter directement
-      // (si confirmation email désactivée) ou demander une confirmation.
-      setInfo('Compte créé. Si l’app ne s’ouvre pas, connectez-vous avec vos identifiants.');
-      setMode('connexion');
-    }
-    // En cas de succès de connexion, le contexte d'auth bascule automatiquement.
+    if (err) setErreur(err);
+    // En cas de succès, le contexte d'auth bascule automatiquement vers l'app.
   }
 
   return (
@@ -49,11 +39,10 @@ export default function LoginScreen() {
         </View>
 
         <Carte style={{ gap: spacing.md }}>
-          <Text style={styles.titre}>{mode === 'connexion' ? 'Connexion' : 'Créer un compte'}</Text>
+          <Text style={styles.titre}>Connexion</Text>
           <Text style={styles.txt}>
-            {mode === 'connexion'
-              ? 'Connectez-vous avec votre email et votre mot de passe.'
-              : 'Choisissez un email et un mot de passe (6 caractères minimum).'}
+            Entrez votre email et un mot de passe (6 caractères min). Si vous n’avez pas
+            encore de compte, il sera créé automatiquement.
           </Text>
 
           <TextInput
@@ -77,23 +66,12 @@ export default function LoginScreen() {
           />
 
           {erreur && <Text style={styles.err}>{erreur}</Text>}
-          {info && <Text style={styles.info}>{info}</Text>}
 
           <Bouton
-            titre={loading ? 'Veuillez patienter…' : mode === 'connexion' ? 'Se connecter' : 'Créer mon compte'}
+            titre={loading ? 'Veuillez patienter…' : 'Continuer'}
             onPress={valider}
             loading={loading}
           />
-
-          <Pressable
-            onPress={() => { setMode(mode === 'connexion' ? 'inscription' : 'connexion'); setErreur(null); setInfo(null); }}
-            hitSlop={8}
-            style={styles.lien}
-          >
-            <Text style={styles.lienTxt}>
-              {mode === 'connexion' ? 'Pas encore de compte ? Créer un compte' : 'J’ai déjà un compte — me connecter'}
-            </Text>
-          </Pressable>
         </Carte>
       </KeyboardAvoidingView>
     </SafeAreaView>
@@ -116,8 +94,5 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.md,
   },
-  err: { color: colors.danger, fontSize: font.small },
-  info: { color: colors.success, fontSize: font.small, lineHeight: 19 },
-  lien: { alignItems: 'center', paddingVertical: spacing.sm },
-  lienTxt: { color: colors.accent, fontSize: font.small, fontWeight: '700' },
+  err: { color: colors.danger, fontSize: font.small, lineHeight: 19 },
 });
