@@ -17,6 +17,12 @@ export function choisirFichiers(accept = '*/*'): Promise<PieceJointe[]> {
     input.type = 'file';
     input.multiple = true;
     input.accept = accept;
+    input.style.position = 'fixed';
+    input.style.opacity = '0';
+    input.style.pointerEvents = 'none';
+    const nettoyer = () => {
+      try { document.body.removeChild(input); } catch { /* déjà retiré */ }
+    };
     input.onchange = async () => {
       const files = Array.from(input.files || []);
       const pieces: PieceJointe[] = [];
@@ -38,9 +44,11 @@ export function choisirFichiers(accept = '*/*'): Promise<PieceJointe[]> {
           });
         }
       }
+      nettoyer();
       resolve(pieces);
     };
     // Si l'utilisateur annule, onchange ne se déclenche pas : on ne bloque pas.
+    document.body.appendChild(input);
     input.click();
   });
 }
@@ -58,17 +66,26 @@ export function lireFichierTexte(
     const input = document.createElement('input');
     input.type = 'file';
     input.accept = accept;
+    // Sur mobile, l'input doit être DANS le DOM pour que la sélection marche.
+    input.style.position = 'fixed';
+    input.style.opacity = '0';
+    input.style.pointerEvents = 'none';
+    const nettoyer = () => {
+      try { document.body.removeChild(input); } catch { /* déjà retiré */ }
+    };
     input.onchange = () => {
       const f = (input.files || [])[0];
       if (!f) {
+        nettoyer();
         resolve(null);
         return;
       }
       const reader = new FileReader();
-      reader.onload = () => resolve({ nom: f.name, contenu: String(reader.result || '') });
-      reader.onerror = () => resolve(null);
+      reader.onload = () => { nettoyer(); resolve({ nom: f.name, contenu: String(reader.result || '') }); };
+      reader.onerror = () => { nettoyer(); resolve(null); };
       reader.readAsText(f);
     };
+    document.body.appendChild(input);
     input.click();
   });
 }
