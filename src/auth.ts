@@ -1,5 +1,4 @@
-// Authentification par lien magique (Supabase) + rôle utilisateur.
-import { Platform } from 'react-native';
+// Authentification par email + mot de passe (Supabase) + rôle utilisateur.
 import { supabase, supabaseDisponible } from './supabase';
 
 export type Role = 'client' | 'admin';
@@ -10,23 +9,35 @@ export interface Utilisateur {
   role: Role;
 }
 
-// URL de redirection après clic sur le lien magique.
-// Web : on revient sur la page. Natif (APK) : deep link via le scheme de l'app.
-function redirectTo(): string {
-  if (Platform.OS === 'web' && typeof window !== 'undefined') {
-    return window.location.origin + window.location.pathname;
-  }
-  return 'getexp://auth-callback';
+// Inscription par email + mot de passe. Renvoie null si OK, sinon un message.
+export async function inscription(email: string, motDePasse: string): Promise<string | null> {
+  if (!supabase) return 'Authentification non configurée.';
+  const { error } = await supabase.auth.signUp({
+    email: email.trim(),
+    password: motDePasse,
+  });
+  return error ? traduireErreur(error.message) : null;
 }
 
-// Envoie le lien magique à l'email. Renvoie null si OK, sinon un message.
-export async function envoyerLienMagique(email: string): Promise<string | null> {
+// Connexion par email + mot de passe. Renvoie null si OK, sinon un message.
+export async function connexion(email: string, motDePasse: string): Promise<string | null> {
   if (!supabase) return 'Authentification non configurée.';
-  const { error } = await supabase.auth.signInWithOtp({
+  const { error } = await supabase.auth.signInWithPassword({
     email: email.trim(),
-    options: { emailRedirectTo: redirectTo() },
+    password: motDePasse,
   });
-  return error ? error.message : null;
+  return error ? traduireErreur(error.message) : null;
+}
+
+// Traduit les messages d'erreur Supabase courants en français.
+function traduireErreur(msg: string): string {
+  const m = msg.toLowerCase();
+  if (m.includes('invalid login')) return 'Email ou mot de passe incorrect.';
+  if (m.includes('already registered') || m.includes('already been registered'))
+    return 'Un compte existe déjà avec cet email — connectez-vous.';
+  if (m.includes('password') && m.includes('6')) return 'Le mot de passe doit faire au moins 6 caractères.';
+  if (m.includes('email not confirmed')) return 'Email non confirmé. Vérifiez votre boîte mail.';
+  return msg;
 }
 
 // Récupère l'utilisateur courant (avec son rôle), ou null si non connecté.

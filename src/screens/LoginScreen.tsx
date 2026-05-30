@@ -1,29 +1,44 @@
 import React, { useState } from 'react';
-import { KeyboardAvoidingView, Platform, SafeAreaView, StyleSheet, Text, TextInput, View } from 'react-native';
-import { envoyerLienMagique } from '../auth';
+import { KeyboardAvoidingView, Platform, Pressable, SafeAreaView, StyleSheet, Text, TextInput, View } from 'react-native';
+import { connexion, inscription } from '../auth';
 import Logo from '../components/Logo';
 import { Bouton, Carte } from '../components/ui';
 import { colors, font, radius, spacing } from '../theme';
 
-// Connexion par lien magique : on saisit son email, on reçoit un lien.
+// Connexion / inscription par email + mot de passe.
 export default function LoginScreen() {
+  const [mode, setMode] = useState<'connexion' | 'inscription'>('connexion');
   const [email, setEmail] = useState('');
-  const [envoye, setEnvoye] = useState(false);
+  const [mdp, setMdp] = useState('');
   const [loading, setLoading] = useState(false);
   const [erreur, setErreur] = useState<string | null>(null);
+  const [info, setInfo] = useState<string | null>(null);
 
-  async function envoyer() {
+  async function valider() {
     const e = email.trim();
     if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(e)) {
       setErreur('Entrez une adresse email valide.');
       return;
     }
+    if (mdp.length < 6) {
+      setErreur('Le mot de passe doit faire au moins 6 caractères.');
+      return;
+    }
     setErreur(null);
+    setInfo(null);
     setLoading(true);
-    const err = await envoyerLienMagique(e);
+    const err =
+      mode === 'inscription' ? await inscription(e, mdp) : await connexion(e, mdp);
     setLoading(false);
-    if (err) setErreur(err);
-    else setEnvoye(true);
+    if (err) {
+      setErreur(err);
+    } else if (mode === 'inscription') {
+      // Selon la config Supabase, l'inscription peut connecter directement
+      // (si confirmation email désactivée) ou demander une confirmation.
+      setInfo('Compte créé. Si l’app ne s’ouvre pas, connectez-vous avec vos identifiants.');
+      setMode('connexion');
+    }
+    // En cas de succès de connexion, le contexte d'auth bascule automatiquement.
   }
 
   return (
@@ -33,36 +48,53 @@ export default function LoginScreen() {
           <Logo size="lg" />
         </View>
 
-        {envoye ? (
-          <Carte style={{ gap: spacing.md }}>
-            <Text style={styles.titre}>📬 Vérifiez votre email</Text>
-            <Text style={styles.txt}>
-              Un lien de connexion a été envoyé à {email.trim()}. Ouvrez-le sur cet appareil
-              pour vous connecter. (Pensez à vérifier les spams.)
+        <Carte style={{ gap: spacing.md }}>
+          <Text style={styles.titre}>{mode === 'connexion' ? 'Connexion' : 'Créer un compte'}</Text>
+          <Text style={styles.txt}>
+            {mode === 'connexion'
+              ? 'Connectez-vous avec votre email et votre mot de passe.'
+              : 'Choisissez un email et un mot de passe (6 caractères minimum).'}
+          </Text>
+
+          <TextInput
+            style={styles.input}
+            value={email}
+            onChangeText={(t) => { setEmail(t); setErreur(null); }}
+            placeholder="vous@exemple.com"
+            placeholderTextColor={colors.textMuted}
+            keyboardType="email-address"
+            autoCapitalize="none"
+            autoComplete="email"
+          />
+          <TextInput
+            style={styles.input}
+            value={mdp}
+            onChangeText={(t) => { setMdp(t); setErreur(null); }}
+            placeholder="Mot de passe"
+            placeholderTextColor={colors.textMuted}
+            secureTextEntry
+            onSubmitEditing={valider}
+          />
+
+          {erreur && <Text style={styles.err}>{erreur}</Text>}
+          {info && <Text style={styles.info}>{info}</Text>}
+
+          <Bouton
+            titre={loading ? 'Veuillez patienter…' : mode === 'connexion' ? 'Se connecter' : 'Créer mon compte'}
+            onPress={valider}
+            loading={loading}
+          />
+
+          <Pressable
+            onPress={() => { setMode(mode === 'connexion' ? 'inscription' : 'connexion'); setErreur(null); setInfo(null); }}
+            hitSlop={8}
+            style={styles.lien}
+          >
+            <Text style={styles.lienTxt}>
+              {mode === 'connexion' ? 'Pas encore de compte ? Créer un compte' : 'J’ai déjà un compte — me connecter'}
             </Text>
-            <Bouton titre="Renvoyer le lien" variante="secondaire" onPress={() => { setEnvoye(false); }} />
-          </Carte>
-        ) : (
-          <Carte style={{ gap: spacing.md }}>
-            <Text style={styles.titre}>Connexion</Text>
-            <Text style={styles.txt}>
-              Entrez votre email : vous recevrez un lien de connexion, sans mot de passe.
-            </Text>
-            <TextInput
-              style={styles.input}
-              value={email}
-              onChangeText={(t) => { setEmail(t); setErreur(null); }}
-              placeholder="vous@exemple.com"
-              placeholderTextColor={colors.textMuted}
-              keyboardType="email-address"
-              autoCapitalize="none"
-              autoComplete="email"
-              onSubmitEditing={envoyer}
-            />
-            {erreur && <Text style={styles.err}>{erreur}</Text>}
-            <Bouton titre={loading ? 'Envoi…' : '✉️ Recevoir mon lien'} onPress={envoyer} loading={loading} />
-          </Carte>
-        )}
+          </Pressable>
+        </Carte>
       </KeyboardAvoidingView>
     </SafeAreaView>
   );
@@ -85,4 +117,7 @@ const styles = StyleSheet.create({
     paddingVertical: spacing.md,
   },
   err: { color: colors.danger, fontSize: font.small },
+  info: { color: colors.success, fontSize: font.small, lineHeight: 19 },
+  lien: { alignItems: 'center', paddingVertical: spacing.sm },
+  lienTxt: { color: colors.accent, fontSize: font.small, fontWeight: '700' },
 });
