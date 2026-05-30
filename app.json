@@ -2,7 +2,9 @@
   "expo": {
     "name": "GetExp",
     "slug": "getexp",
+    "owner": "getexp",
     "version": "1.0.0",
+    "scheme": "getexp",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "dark",
