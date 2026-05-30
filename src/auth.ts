@@ -1,6 +1,15 @@
 // Authentification par email + mot de passe (Supabase) + rôle utilisateur.
 import { supabase, supabaseDisponible } from './supabase';
 
+// Empêche une requête réseau de bloquer indéfiniment (réseau lent / pas de
+// réponse). Rejette au bout de `ms` millisecondes.
+function avecDelai<T>(p: Promise<T>, ms = 12000): Promise<T> {
+  return Promise.race([
+    p,
+    new Promise<T>((_, rej) => setTimeout(() => rej(new Error('timeout')), ms)),
+  ]);
+}
+
 export type Role = 'client' | 'admin';
 
 export interface Utilisateur {
@@ -38,36 +47,41 @@ export async function connexionOuInscription(
 ): Promise<string | null> {
   if (!supabase) return 'Authentification non configurée.';
   const e = email.trim();
+  const sb = supabase;
 
-  // 1) Tentative de connexion directe.
-  const { error: errLogin } = await supabase.auth.signInWithPassword({
-    email: e,
-    password: motDePasse,
-  });
-  if (!errLogin) return null; // connecté
+  try {
+    // 1) Tentative de connexion directe.
+    const { error: errLogin } = await avecDelai(
+      sb.auth.signInWithPassword({ email: e, password: motDePasse })
+    );
+    if (!errLogin) return null; // connecté
 
-  const msg = errLogin.message.toLowerCase();
+    const msg = errLogin.message.toLowerCase();
 
-  // 2) Identifiants invalides -> peut-être que le compte n'existe pas : on tente
-  //    une inscription, puis une reconnexion.
-  if (msg.includes('invalid login')) {
-    const { error: errSignup } = await supabase.auth.signUp({ email: e, password: motDePasse });
-    if (errSignup) {
-      const m2 = errSignup.message.toLowerCase();
-      // Le compte existe déjà -> c'était donc un vrai mauvais mot de passe.
-      if (m2.includes('already')) return 'Mot de passe incorrect pour cet email.';
-      return traduireErreur(errSignup.message);
+    // 2) Identifiants invalides -> peut-être que le compte n'existe pas : on tente
+    //    une inscription, puis une reconnexion.
+    if (msg.includes('invalid login')) {
+      const { error: errSignup } = await avecDelai(
+        sb.auth.signUp({ email: e, password: motDePasse })
+      );
+      if (errSignup) {
+        const m2 = errSignup.message.toLowerCase();
+        if (m2.includes('already')) return 'Mot de passe incorrect pour cet email.';
+        return traduireErreur(errSignup.message);
+      }
+      const { data } = await sb.auth.getSession();
+      if (data.session) return null;
+      const { error: errLogin2 } = await avecDelai(
+        sb.auth.signInWithPassword({ email: e, password: motDePasse })
+      );
+      if (!errLogin2) return null;
+      return 'Compte créé, mais la confirmation par email est activée. Désactivez-la dans Supabase (Authentication → Email → Confirm email) pour vous connecter sans email.';
     }
-    // Inscription OK : si une session est créée, c'est bon ; sinon on reconnecte.
-    const { data } = await supabase.auth.getSession();
-    if (data.session) return null;
-    const { error: errLogin2 } = await supabase.auth.signInWithPassword({ email: e, password: motDePasse });
-    if (!errLogin2) return null;
-    // Pas de session après inscription => confirmation email probablement activée.
-    return 'Compte créé, mais la confirmation par email est activée. Désactivez-la dans Supabase (Authentication → Email → Confirm email) pour vous connecter sans email.';
-  }
 
-  return traduireErreur(errLogin.message);
+    return traduireErreur(errLogin.message);
+  } catch {
+    return 'Connexion trop longue. Vérifiez votre réseau et réessayez.';
+  }
 }
 
 // Traduit les messages d'erreur Supabase courants en français.
