@@ -9,6 +9,7 @@
 import 'react-native-url-polyfill/auto';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { createClient, SupabaseClient } from '@supabase/supabase-js';
+import { Platform } from 'react-native';
 
 const URL = process.env.EXPO_PUBLIC_SUPABASE_URL || '';
 const ANON = process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY || '';
@@ -17,6 +18,10 @@ export function supabaseDisponible(): boolean {
   return URL.length > 0 && ANON.length > 0;
 }
 
+// Sur le web, le lien magique revient avec le jeton dans l'URL : supabase-js
+// doit le détecter automatiquement. Sur natif (APK), on gère le deep link.
+const surWeb = Platform.OS === 'web';
+
 // Un seul client réutilisé. `null` si non configuré.
 export const supabase: SupabaseClient | null = supabaseDisponible()
   ? createClient(URL, ANON, {
@@ -24,7 +29,7 @@ export const supabase: SupabaseClient | null = supabaseDisponible()
         storage: AsyncStorage as any,
         autoRefreshToken: true,
         persistSession: true,
-        detectSessionInUrl: false, // on gère le lien magique nous-mêmes (mobile)
+        detectSessionInUrl: surWeb,
       },
     })
   : null;
