@@ -1,23 +1,25 @@
 import React from 'react';
-import { ScrollView, StyleSheet, Text } from 'react-native';
-import { colors, font, spacing } from '../theme';
+import { StyleSheet, View } from 'react-native';
+import { WebView } from 'react-native-webview';
 
-// Repli natif (iOS/Android) : sans WebView dans ce prototype, on affiche un
-// message. La cible déployée est le web (voir HtmlPreview.web.tsx).
-export default function HtmlPreview({ html }: { html: string; style?: any }) {
+// Aperçu natif (iOS/Android) du prototype HTML auto-porté, via WebView.
+export default function HtmlPreview({ html, style }: { html: string; style?: any }) {
   return (
-    <ScrollView style={styles.box} contentContainerStyle={{ padding: spacing.lg }}>
-      <Text style={styles.txt}>
-        L’aperçu interactif du prototype est disponible dans la version web de
-        l’application.
-      </Text>
-      <Text style={styles.meta}>{html.length} caractères de HTML généré.</Text>
-    </ScrollView>
+    <View style={[styles.box, style]}>
+      <WebView
+        originWhitelist={['*']}
+        source={{ html }}
+        style={styles.web}
+        // Le prototype est auto-porté ; on autorise JS et le contenu mixte.
+        javaScriptEnabled
+        domStorageEnabled
+        setSupportMultipleWindows={false}
+      />
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  box: { flex: 1, backgroundColor: colors.surface, borderRadius: 12 },
-  txt: { color: colors.text, fontSize: font.body, lineHeight: 22 },
-  meta: { color: colors.textMuted, fontSize: font.small, marginTop: spacing.md },
+  box: { flex: 1, backgroundColor: '#fff', overflow: 'hidden' },
+  web: { flex: 1, backgroundColor: '#fff' },
 });

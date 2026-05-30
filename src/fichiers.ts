@@ -6,10 +6,12 @@ import { PieceJointe, UseCase } from './types';
 let seq = 0;
 const pid = () => `pj_${Date.now().toString(36)}_${seq++}`;
 
-// Ouvre le sélecteur de fichiers (web) et renvoie les pièces lues en data URL.
-export function choisirFichiers(accept = '*/*'): Promise<PieceJointe[]> {
+// Ouvre le sélecteur de fichiers et renvoie les pièces lues en data URL.
+// Web : input DOM. Natif (APK) : expo-document-picker.
+export async function choisirFichiers(accept = '*/*'): Promise<PieceJointe[]> {
+  if (Platform.OS !== 'web') return choisirFichiersNatif();
   return new Promise((resolve) => {
-    if (Platform.OS !== 'web' || typeof document === 'undefined') {
+    if (typeof document === 'undefined') {
       resolve([]);
       return;
     }
@@ -53,20 +55,46 @@ export function choisirFichiers(accept = '*/*'): Promise<PieceJointe[]> {
   });
 }
 
-// Ouvre le sélecteur de fichiers (web) et lit UN fichier texte (ex: .html).
-// Renvoie { nom, contenu } ou null si annulé. Web uniquement.
-export function lireFichierTexte(
+// Sélection de pièces jointes en natif (Android/iOS) via DocumentPicker.
+async function choisirFichiersNatif(): Promise<PieceJointe[]> {
+  try {
+    const DocumentPicker = await import('expo-document-picker');
+    const FileSystem = await import('expo-file-system');
+    const res = await DocumentPicker.getDocumentAsync({ multiple: true, copyToCacheDirectory: true });
+    if (res.canceled || !res.assets) return [];
+    const pieces: PieceJointe[] = [];
+    for (const a of res.assets) {
+      const b64 = await FileSystem.readAsStringAsync(a.uri, { encoding: 'base64' as any });
+      const mime = a.mimeType || 'application/octet-stream';
+      pieces.push({
+        id: pid(),
+        nom: a.name || 'fichier',
+        type: mime,
+        taille: a.size || 0,
+        dataUrl: `data:${mime};base64,${b64}`,
+        creeLe: Date.now(),
+      });
+    }
+    return pieces;
+  } catch {
+    return [];
+  }
+}
+
+// Lit UN fichier texte (ex: .html). Web : input DOM. Natif : DocumentPicker.
+export async function lireFichierTexte(
   accept = '.html,text/html'
 ): Promise<{ nom: string; contenu: string } | null> {
+  if (Platform.OS !== 'web') return lireFichierTexteNatif();
   return new Promise((resolve) => {
-    if (Platform.OS !== 'web' || typeof document === 'undefined') {
+    if (typeof document === 'undefined') {
       resolve(null);
       return;
     }
     const input = document.createElement('input');
     input.type = 'file';
     input.accept = accept;
-    // Sur mobile, l'input doit être DANS le DOM pour que la sélection marche.
+    // Sur mobile web, l'input doit être DANS le DOM pour que la sélection marche.
     input.style.position = 'fixed';
     input.style.opacity = '0';
     input.style.pointerEvents = 'none';
@@ -88,6 +116,24 @@ export function lireFichierTexte(
     document.body.appendChild(input);
     input.click();
   });
+}
+
+// Lecture d'un fichier texte en natif (Android/iOS).
+async function lireFichierTexteNatif(): Promise<{ nom: string; contenu: string } | null> {
+  try {
+    const DocumentPicker = await import('expo-document-picker');
+    const FileSystem = await import('expo-file-system');
+    const res = await DocumentPicker.getDocumentAsync({
+      type: ['text/html', 'text/plain', '*/*'],
+      copyToCacheDirectory: true,
+    });
+    if (res.canceled || !res.assets?.[0]) return null;
+    const a = res.assets[0];
+    const contenu = await FileSystem.readAsStringAsync(a.uri, { encoding: 'utf8' as any });
+    return { nom: a.name || 'fichier.html', contenu };
+  } catch {
+    return null;
+  }
 }
 
 export function tailleLisible(octets: number): string {
