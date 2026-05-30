@@ -1,5 +1,6 @@
-import React from 'react';
-import { Pressable, SafeAreaView, ScrollView, StyleSheet, Text, View } from 'react-native';
+import React, { useEffect, useRef, useState } from 'react';
+import { Modal, Pressable, SafeAreaView, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import { deverrouillerAdmin, estAdminDeverrouille, verifierPin, verrouillerAdmin } from '../admin';
 import Logo from '../components/Logo';
 import { Bouton, Carte } from '../components/ui';
 import { useNav } from '../navigation';
@@ -7,12 +8,52 @@ import { colors, font, radius, spacing } from '../theme';
 
 export default function HomeScreen() {
   const { aller } = useNav();
+  const [adminOuvert, setAdminOuvert] = useState(false); // accès admin déverrouillé
+  const [modalPin, setModalPin] = useState(false);
+  const [pin, setPin] = useState('');
+  const [erreurPin, setErreurPin] = useState(false);
+  const taps = useRef(0);
+  const dernierTap = useRef(0);
+
+  useEffect(() => {
+    estAdminDeverrouille().then(setAdminOuvert);
+  }, []);
+
+  // 5 appuis rapides sur le logo ouvrent la saisie du code admin (réservé proprio).
+  function tapLogo() {
+    if (adminOuvert) return;
+    const now = Date.now();
+    taps.current = now - dernierTap.current < 800 ? taps.current + 1 : 1;
+    dernierTap.current = now;
+    if (taps.current >= 5) {
+      taps.current = 0;
+      setPin('');
+      setErreurPin(false);
+      setModalPin(true);
+    }
+  }
+
+  async function validerPin() {
+    if (verifierPin(pin)) {
+      await deverrouillerAdmin();
+      setAdminOuvert(true);
+      setModalPin(false);
+    } else {
+      setErreurPin(true);
+    }
+  }
+
+  async function quitterAdmin() {
+    await verrouillerAdmin();
+    setAdminOuvert(false);
+  }
+
   return (
     <SafeAreaView style={styles.safe}>
       <ScrollView contentContainerStyle={styles.content}>
-        <View style={styles.logoRow}>
+        <Pressable onPress={tapLogo} style={styles.logoRow}>
           <Logo size="lg" />
-        </View>
+        </Pressable>
 
         <Text style={styles.h1}>De l’idée à l’application, clé en main.</Text>
         <Text style={styles.sous}>
@@ -40,10 +81,41 @@ export default function HomeScreen() {
           <Etape n="4" titre="Certification" texte="Sécurité vérifiée avant déploiement." />
         </View>
 
-        <Pressable onPress={() => aller({ nom: 'admin' })} style={styles.adminLien} hitSlop={8}>
-          <Text style={styles.adminTxt}>· Espace admin ·</Text>
-        </Pressable>
+        {/* Accès admin : visible uniquement après déverrouillage par code (proprio). */}
+        {adminOuvert && (
+          <View style={styles.adminZone}>
+            <Bouton titre="🛠️ Espace admin" variante="secondaire" onPress={() => aller({ nom: 'admin' })} />
+            <Pressable onPress={quitterAdmin} hitSlop={8} style={styles.adminLien}>
+              <Text style={styles.adminTxt}>Quitter le mode admin</Text>
+            </Pressable>
+          </View>
+        )}
       </ScrollView>
+
+      {/* Modal de saisie du code admin */}
+      <Modal visible={modalPin} transparent animationType="fade" onRequestClose={() => setModalPin(false)}>
+        <View style={styles.modalFond}>
+          <Carte style={styles.modalCarte}>
+            <Text style={styles.modalTitre}>Code administrateur</Text>
+            <TextInput
+              style={[styles.pinInput, erreurPin && { borderColor: colors.danger }]}
+              value={pin}
+              onChangeText={(t) => { setPin(t); setErreurPin(false); }}
+              placeholder="••••"
+              placeholderTextColor={colors.textMuted}
+              secureTextEntry
+              keyboardType="number-pad"
+              autoFocus
+              onSubmitEditing={validerPin}
+            />
+            {erreurPin && <Text style={styles.pinErr}>Code incorrect.</Text>}
+            <Bouton titre="Déverrouiller" onPress={validerPin} />
+            <Pressable onPress={() => setModalPin(false)} hitSlop={8} style={styles.adminLien}>
+              <Text style={styles.adminTxt}>Annuler</Text>
+            </Pressable>
+          </Carte>
+        </View>
+      </Modal>
     </SafeAreaView>
   );
 }
@@ -85,6 +157,27 @@ const styles = StyleSheet.create({
   etapeNumTxt: { color: colors.accent, fontWeight: '800' },
   etapeTitre: { color: colors.text, fontSize: font.body, fontWeight: '700' },
   etapeTexte: { color: colors.textMuted, fontSize: font.small },
-  adminLien: { alignItems: 'center', marginTop: spacing.xxl, paddingVertical: spacing.sm },
+  adminZone: { marginTop: spacing.xxl, gap: spacing.xs },
+  adminLien: { alignItems: 'center', paddingVertical: spacing.sm },
   adminTxt: { color: colors.textMuted, fontSize: font.small, fontWeight: '600' },
+  modalFond: {
+    flex: 1,
+    backgroundColor: '#000000AA',
+    justifyContent: 'center',
+    padding: spacing.xl,
+  },
+  modalCarte: { gap: spacing.md },
+  modalTitre: { color: colors.text, fontSize: font.h3, fontWeight: '800' },
+  pinInput: {
+    backgroundColor: colors.surfaceAlt,
+    borderWidth: 1,
+    borderColor: colors.border,
+    borderRadius: radius.md,
+    color: colors.text,
+    fontSize: font.h2,
+    letterSpacing: 8,
+    textAlign: 'center',
+    paddingVertical: spacing.md,
+  },
+  pinErr: { color: colors.danger, fontSize: font.small, textAlign: 'center' },
 });
