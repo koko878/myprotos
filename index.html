@@ -1,0 +1,978 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Nounou — Trouvez la perle rare, près de chez vous</title>
+<meta name="description" content="Nounou met en relation directe familles et gardes d'enfants de confiance. Zéro commission cachée, profils vérifiés, disponibilités en temps réel." />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+<style>
+  :root{
+    --ink:#1d1b2e;
+    --ink-soft:#54506b;
+    --ink-faint:#8b88a0;
+    --paper:#fdfbf7;
+    --cream:#f6f1e7;
+    --card:#ffffff;
+    --line:#ece6da;
+    --berry:#e8557f;
+    --berry-deep:#c83c66;
+    --plum:#5a3d8a;
+    --plum-deep:#412a66;
+    --mint:#27b58a;
+    --honey:#f7b733;
+    --sky:#5b8def;
+    --shadow-sm:0 1px 2px rgba(29,27,46,.06), 0 4px 14px rgba(29,27,46,.05);
+    --shadow-md:0 8px 30px rgba(29,27,46,.10);
+    --shadow-lg:0 24px 60px rgba(65,42,102,.18);
+    --r-sm:12px; --r-md:18px; --r-lg:28px; --r-xl:38px;
+    --maxw:1180px;
+    --ease:cubic-bezier(.22,1,.36,1);
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html{scroll-behavior:smooth}
+  body{
+    font-family:'Plus Jakarta Sans',system-ui,sans-serif;
+    background:var(--paper);
+    color:var(--ink);
+    line-height:1.6;
+    -webkit-font-smoothing:antialiased;
+    overflow-x:hidden;
+  }
+  h1,h2,h3,h4{font-family:'Fraunces',Georgia,serif;line-height:1.08;font-weight:600;letter-spacing:-.01em}
+  a{color:inherit;text-decoration:none}
+  img{max-width:100%;display:block}
+  ::selection{background:var(--berry);color:#fff}
+  .wrap{max-width:var(--maxw);margin:0 auto;padding:0 24px}
+  .serif-em{font-family:'Fraunces',serif;font-style:italic;font-weight:500}
+
+  /* ---------- Buttons ---------- */
+  .btn{
+    display:inline-flex;align-items:center;gap:.55em;cursor:pointer;border:none;
+    font-family:inherit;font-weight:700;font-size:15px;border-radius:100px;
+    padding:14px 26px;transition:transform .25s var(--ease), box-shadow .25s var(--ease), background .2s;
+    white-space:nowrap;
+  }
+  .btn:active{transform:translateY(1px) scale(.99)}
+  .btn-primary{background:var(--ink);color:#fff;box-shadow:var(--shadow-sm)}
+  .btn-primary:hover{transform:translateY(-2px);box-shadow:var(--shadow-md);background:#2b2842}
+  .btn-berry{background:linear-gradient(135deg,var(--berry),var(--berry-deep));color:#fff;box-shadow:0 10px 24px rgba(200,60,102,.35)}
+  .btn-berry:hover{transform:translateY(-2px);box-shadow:0 16px 34px rgba(200,60,102,.45)}
+  .btn-ghost{background:rgba(255,255,255,.6);color:var(--ink);border:1.5px solid var(--line)}
+  .btn-ghost:hover{background:#fff;border-color:var(--ink);transform:translateY(-2px)}
+  .btn-sm{padding:9px 16px;font-size:13.5px}
+
+  .pill{display:inline-flex;align-items:center;gap:7px;font-size:13px;font-weight:700;
+    padding:7px 14px;border-radius:100px;background:var(--cream);color:var(--plum);border:1px solid var(--line)}
+  .pill .dot{width:7px;height:7px;border-radius:50%;background:var(--mint);box-shadow:0 0 0 4px rgba(39,181,138,.18)}
+
+  /* ---------- Nav ---------- */
+  header.nav{position:sticky;top:0;z-index:100;backdrop-filter:saturate(160%) blur(14px);
+    background:rgba(253,251,247,.78);border-bottom:1px solid transparent;transition:border-color .3s, box-shadow .3s}
+  header.nav.scrolled{border-color:var(--line);box-shadow:0 6px 20px rgba(29,27,46,.05)}
+  .nav-inner{display:flex;align-items:center;justify-content:space-between;height:74px}
+  .logo{display:flex;align-items:center;gap:11px;font-family:'Fraunces',serif;font-weight:600;font-size:23px;letter-spacing:-.02em}
+  .logo .mark{width:38px;height:38px;border-radius:13px;background:linear-gradient(140deg,var(--berry),var(--plum));
+    display:grid;place-items:center;color:#fff;box-shadow:0 6px 16px rgba(90,61,138,.35);position:relative}
+  .logo .mark svg{width:22px;height:22px}
+  .nav-links{display:flex;align-items:center;gap:34px}
+  .nav-links a{font-size:15px;font-weight:600;color:var(--ink-soft);position:relative;transition:color .2s}
+  .nav-links a::after{content:"";position:absolute;left:0;bottom:-6px;height:2px;width:0;background:var(--berry);transition:width .3s var(--ease)}
+  .nav-links a:hover{color:var(--ink)}
+  .nav-links a:hover::after{width:100%}
+  .nav-cta{display:flex;align-items:center;gap:12px}
+  .burger{display:none;background:none;border:none;cursor:pointer;padding:8px}
+  .burger span{display:block;width:24px;height:2px;background:var(--ink);margin:5px 0;border-radius:2px;transition:.3s}
+
+  /* ---------- Hero ---------- */
+  .hero{position:relative;padding:64px 0 90px;overflow:hidden}
+  .hero-bg{position:absolute;inset:0;z-index:0;pointer-events:none}
+  .blob{position:absolute;border-radius:50%;filter:blur(60px);opacity:.5}
+  .blob.b1{width:520px;height:520px;background:radial-gradient(circle,#f7c9d8,transparent 70%);top:-160px;right:-120px}
+  .blob.b2{width:440px;height:440px;background:radial-gradient(circle,#d9cbf0,transparent 70%);bottom:-160px;left:-140px}
+  .blob.b3{width:300px;height:300px;background:radial-gradient(circle,#cfeede,transparent 70%);top:200px;left:40%}
+  .hero-grid{position:relative;z-index:2;display:grid;grid-template-columns:1.05fr .95fr;gap:54px;align-items:center}
+  .hero h1{font-size:clamp(40px,5.4vw,68px);font-weight:600}
+  .hero h1 em{color:var(--berry-deep)}
+  .hero .lede{font-size:19px;color:var(--ink-soft);margin:22px 0 30px;max-width:520px}
+  .hero-cta{display:flex;gap:14px;flex-wrap:wrap;align-items:center}
+  .trust-row{display:flex;align-items:center;gap:18px;margin-top:34px;flex-wrap:wrap}
+  .avatars{display:flex}
+  .avatars span{width:42px;height:42px;border-radius:50%;border:3px solid var(--paper);margin-left:-12px;
+    background-size:cover;background-position:center;box-shadow:var(--shadow-sm)}
+  .avatars span:first-child{margin-left:0}
+  .trust-txt{font-size:14px;color:var(--ink-soft)}
+  .trust-txt b{color:var(--ink)}
+  .stars{color:var(--honey);letter-spacing:1px;font-size:14px}
+
+  /* hero card mockup */
+  .hero-card{position:relative}
+  .phone{background:var(--card);border-radius:var(--r-xl);box-shadow:var(--shadow-lg);
+    border:1px solid var(--line);overflow:hidden;transform:rotate(1.5deg);transition:transform .6s var(--ease)}
+  .hero-card:hover .phone{transform:rotate(0)}
+  .phone-top{background:linear-gradient(135deg,var(--plum),var(--plum-deep));color:#fff;padding:22px 22px 56px;position:relative}
+  .phone-top .ph-row{display:flex;justify-content:space-between;align-items:center;font-size:13px;opacity:.85;font-weight:600}
+  .phone-top h3{font-size:24px;margin-top:14px;color:#fff;font-weight:600}
+  .phone-top p{font-size:13.5px;opacity:.8;margin-top:3px}
+  .ph-search{position:absolute;left:22px;right:22px;bottom:-24px;background:#fff;border-radius:16px;
+    padding:13px 16px;display:flex;align-items:center;gap:11px;box-shadow:var(--shadow-md);color:var(--ink-faint);font-size:14px;font-weight:600}
+  .ph-body{padding:42px 18px 20px}
+  .mini-nounou{display:flex;gap:13px;align-items:center;padding:13px;border-radius:16px;border:1px solid var(--line);
+    margin-bottom:11px;background:#fff;transition:transform .3s var(--ease), box-shadow .3s;animation:floatIn .7s var(--ease) backwards}
+  .mini-nounou:nth-child(2){animation-delay:.12s}
+  .mini-nounou:nth-child(3){animation-delay:.24s}
+  .mini-nounou:hover{transform:translateY(-3px);box-shadow:var(--shadow-md);border-color:transparent}
+  .mini-av{width:52px;height:52px;border-radius:14px;background-size:cover;background-position:center;flex-shrink:0}
+  .mini-info{flex:1;min-width:0}
+  .mini-info b{font-size:15px;display:block}
+  .mini-info small{color:var(--ink-faint);font-size:12.5px}
+  .mini-tag{font-size:11px;font-weight:700;color:var(--mint);background:rgba(39,181,138,.12);padding:3px 9px;border-radius:100px;display:inline-block;margin-top:4px}
+  .mini-price{text-align:right;flex-shrink:0}
+  .mini-price b{font-size:17px;color:var(--ink)}
+  .mini-price small{display:block;font-size:11px;color:var(--ink-faint)}
+  .float-badge{position:absolute;background:#fff;border-radius:16px;box-shadow:var(--shadow-lg);
+    padding:13px 16px;display:flex;align-items:center;gap:11px;border:1px solid var(--line);z-index:3}
+  .float-badge.fb1{top:-22px;left:-30px;animation:bob 5s ease-in-out infinite}
+  .float-badge.fb2{bottom:40px;right:-34px;animation:bob 5.5s ease-in-out infinite .6s}
+  .fb-ic{width:38px;height:38px;border-radius:11px;display:grid;place-items:center;color:#fff}
+  .float-badge b{font-size:14px;display:block;line-height:1.2}
+  .float-badge small{font-size:11.5px;color:var(--ink-faint)}
+  @keyframes bob{0%,100%{transform:translateY(0)}50%{transform:translateY(-12px)}}
+  @keyframes floatIn{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:translateY(0)}}
+
+  /* ---------- Marquee logos ---------- */
+  .marquee{border-top:1px solid var(--line);border-bottom:1px solid var(--line);background:var(--cream);overflow:hidden;padding:20px 0}
+  .marquee-track{display:flex;gap:60px;align-items:center;width:max-content;animation:scroll 30s linear infinite;opacity:.65}
+  .marquee:hover .marquee-track{animation-play-state:paused}
+  .marquee span{font-family:'Fraunces',serif;font-weight:600;font-size:20px;color:var(--ink-soft);white-space:nowrap;display:flex;align-items:center;gap:10px}
+  @keyframes scroll{to{transform:translateX(-50%)}}
+
+  /* ---------- Section shells ---------- */
+  section{position:relative}
+  .sec{padding:96px 0}
+  .sec-head{max-width:640px;margin:0 auto 56px;text-align:center}
+  .eyebrow{font-size:13px;font-weight:800;letter-spacing:.14em;text-transform:uppercase;color:var(--berry-deep);margin-bottom:14px;display:inline-block}
+  .sec-head h2{font-size:clamp(30px,4vw,46px)}
+  .sec-head p{color:var(--ink-soft);font-size:17.5px;margin-top:16px}
+
+  /* ---------- KPI band ---------- */
+  .kpi-band{background:linear-gradient(135deg,var(--plum-deep),var(--plum) 55%,#6e4fa3);color:#fff;border-radius:var(--r-xl);
+    padding:54px 40px;display:grid;grid-template-columns:repeat(3,1fr);gap:30px;box-shadow:var(--shadow-lg);position:relative;overflow:hidden}
+  .kpi-band::before{content:"";position:absolute;inset:0;background:radial-gradient(700px 300px at 90% -20%,rgba(232,85,127,.4),transparent 60%);pointer-events:none}
+  .kpi{text-align:center;position:relative}
+  .kpi .num{font-family:'Fraunces',serif;font-weight:600;font-size:clamp(40px,5vw,58px);line-height:1}
+  .kpi .lab{font-size:15px;opacity:.85;margin-top:10px;font-weight:600}
+  .kpi .sub{font-size:12.5px;opacity:.6;margin-top:4px}
+  .kpi+.kpi{border-left:1px solid rgba(255,255,255,.14)}
+
+  /* ---------- How it works ---------- */
+  .steps{display:grid;grid-template-columns:repeat(3,1fr);gap:24px}
+  .step{background:var(--card);border:1px solid var(--line);border-radius:var(--r-lg);padding:32px 28px;position:relative;transition:transform .35s var(--ease),box-shadow .35s,border-color .35s}
+  .step:hover{transform:translateY(-6px);box-shadow:var(--shadow-md);border-color:transparent}
+  .step-n{font-family:'Fraunces',serif;font-size:15px;font-weight:700;color:#fff;width:34px;height:34px;border-radius:10px;display:grid;place-items:center;margin-bottom:18px}
+  .step h3{font-size:21px;margin-bottom:9px}
+  .step p{color:var(--ink-soft);font-size:15px}
+  .step .ic{position:absolute;top:30px;right:28px;opacity:.18}
+
+  /* ---------- Search app demo ---------- */
+  .app{background:var(--cream);border-radius:var(--r-xl);border:1px solid var(--line);overflow:hidden;box-shadow:var(--shadow-md)}
+  .app-bar{display:flex;align-items:center;gap:10px;padding:16px 22px;border-bottom:1px solid var(--line);background:#fff}
+  .app-bar .dots{display:flex;gap:6px}
+  .app-bar .dots i{width:11px;height:11px;border-radius:50%}
+  .app-bar .addr{flex:1;background:var(--cream);border-radius:100px;padding:7px 16px;font-size:13px;color:var(--ink-faint);font-weight:600;text-align:center}
+  .app-body{display:grid;grid-template-columns:280px 1fr;min-height:560px}
+  .filters{padding:24px;border-right:1px solid var(--line);background:#fff}
+  .filters h4{font-family:'Plus Jakarta Sans',sans-serif;font-weight:800;font-size:13px;text-transform:uppercase;letter-spacing:.08em;color:var(--ink-faint);margin:22px 0 13px}
+  .filters h4:first-child{margin-top:0}
+  .field{position:relative;margin-bottom:14px}
+  .field input,.field select{width:100%;padding:12px 14px;border:1.5px solid var(--line);border-radius:12px;font-family:inherit;font-size:14px;font-weight:600;color:var(--ink);background:#fff;transition:border-color .2s, box-shadow .2s}
+  .field input:focus,.field select:focus{outline:none;border-color:var(--berry);box-shadow:0 0 0 4px rgba(232,85,127,.12)}
+  .chips{display:flex;flex-wrap:wrap;gap:8px}
+  .chip{font-size:13px;font-weight:700;padding:8px 13px;border-radius:100px;border:1.5px solid var(--line);background:#fff;cursor:pointer;color:var(--ink-soft);transition:.2s;user-select:none}
+  .chip:hover{border-color:var(--plum)}
+  .chip.active{background:var(--plum);color:#fff;border-color:var(--plum);box-shadow:0 6px 14px rgba(90,61,138,.3)}
+  .range-val{font-weight:800;color:var(--berry-deep);font-size:15px}
+  input[type=range]{width:100%;accent-color:var(--berry);margin-top:8px}
+  .filter-reset{font-size:13px;font-weight:700;color:var(--berry-deep);background:none;border:none;cursor:pointer;margin-top:8px;padding:0}
+  .filter-reset:hover{text-decoration:underline}
+
+  .results{padding:22px 24px}
+  .results-top{display:flex;justify-content:space-between;align-items:center;margin-bottom:18px;flex-wrap:wrap;gap:12px}
+  .results-top .count{font-weight:700;font-size:15px}
+  .results-top .count b{color:var(--berry-deep)}
+  .sort{display:flex;align-items:center;gap:8px;font-size:13.5px;color:var(--ink-soft);font-weight:600}
+  .sort select{padding:8px 12px;border:1.5px solid var(--line);border-radius:10px;font-family:inherit;font-weight:700;font-size:13.5px;cursor:pointer;background:#fff}
+  .cards{display:grid;grid-template-columns:repeat(2,1fr);gap:16px}
+  .ncard{background:#fff;border:1px solid var(--line);border-radius:var(--r-md);padding:18px;cursor:pointer;
+    transition:transform .3s var(--ease),box-shadow .3s,border-color .3s;position:relative;overflow:hidden}
+  .ncard:hover{transform:translateY(-5px);box-shadow:var(--shadow-md);border-color:transparent}
+  .ncard.hide{display:none}
+  .ncard-head{display:flex;gap:13px;align-items:flex-start}
+  .ncard-av{width:60px;height:60px;border-radius:16px;background-size:cover;background-position:center;flex-shrink:0;position:relative}
+  .ncard-av .verif{position:absolute;bottom:-4px;right:-4px;width:22px;height:22px;border-radius:50%;background:var(--sky);border:2.5px solid #fff;display:grid;place-items:center;color:#fff}
+  .ncard-av .verif svg{width:11px;height:11px}
+  .ncard-name{font-family:'Fraunces',serif;font-weight:600;font-size:18px;display:flex;align-items:center;gap:7px}
+  .ncard-meta{font-size:13px;color:var(--ink-faint);font-weight:600;margin-top:2px}
+  .ncard-rate{display:flex;align-items:center;gap:5px;font-size:13px;font-weight:700;margin-top:6px}
+  .ncard-rate .stars{font-size:13px}
+  .ncard-rate span{color:var(--ink-faint);font-weight:600}
+  .ncard-tags{display:flex;flex-wrap:wrap;gap:6px;margin:14px 0}
+  .ncard-tags .t{font-size:11.5px;font-weight:700;padding:4px 10px;border-radius:100px;background:var(--cream);color:var(--plum)}
+  .ncard-foot{display:flex;justify-content:space-between;align-items:center;border-top:1px solid var(--line);padding-top:13px;margin-top:2px}
+  .ncard-price b{font-family:'Fraunces',serif;font-size:21px}
+  .ncard-price small{color:var(--ink-faint);font-size:12px;font-weight:600}
+  .ncard .availdot{font-size:12px;font-weight:700;color:var(--mint);display:flex;align-items:center;gap:5px}
+  .ncard .availdot.soon{color:var(--honey)}
+  .ncard .availdot i{width:7px;height:7px;border-radius:50%;background:currentColor}
+  .no-res{grid-column:1/-1;text-align:center;padding:60px 20px;color:var(--ink-faint)}
+  .no-res svg{width:54px;height:54px;opacity:.4;margin-bottom:14px}
+
+  /* ---------- Profile / Reviews ---------- */
+  .split{display:grid;grid-template-columns:1.1fr .9fr;gap:50px;align-items:center}
+  .review-stack{display:grid;gap:16px}
+  .review{background:var(--card);border:1px solid var(--line);border-radius:var(--r-md);padding:22px;box-shadow:var(--shadow-sm);transition:transform .3s var(--ease)}
+  .review:hover{transform:translateX(6px)}
+  .review-head{display:flex;align-items:center;gap:12px;margin-bottom:12px}
+  .review-head .ra{width:46px;height:46px;border-radius:50%;background-size:cover;background-position:center}
+  .review-head b{font-size:15px;display:block}
+  .review-head small{color:var(--ink-faint);font-size:12.5px}
+  .review p{font-size:14.5px;color:var(--ink-soft)}
+  .review .stars{font-size:13px;margin-top:4px}
+  .rating-card{background:linear-gradient(135deg,#fff,var(--cream));border:1px solid var(--line);border-radius:var(--r-lg);padding:30px;text-align:center;box-shadow:var(--shadow-md)}
+  .rating-card .big{font-family:'Fraunces',serif;font-size:64px;font-weight:600;line-height:1}
+  .rating-card .stars{font-size:22px;margin:6px 0}
+  .rating-card .ct{color:var(--ink-faint);font-size:14px;font-weight:600}
+  .bars{margin-top:22px;text-align:left;display:grid;gap:9px}
+  .bar-row{display:flex;align-items:center;gap:10px;font-size:13px;font-weight:600;color:var(--ink-soft)}
+  .bar-row .lab{width:90px}
+  .bar-track{flex:1;height:8px;background:var(--line);border-radius:100px;overflow:hidden}
+  .bar-fill{height:100%;background:linear-gradient(90deg,var(--honey),var(--berry));border-radius:100px;width:0;transition:width 1.1s var(--ease)}
+
+  /* ---------- Pricing / value ---------- */
+  .value-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:20px}
+  .vcard{background:var(--card);border:1px solid var(--line);border-radius:var(--r-lg);padding:28px 24px;transition:transform .35s var(--ease),box-shadow .35s,border-color .35s}
+  .vcard:hover{transform:translateY(-6px);box-shadow:var(--shadow-md);border-color:transparent}
+  .vcard .ic{width:50px;height:50px;border-radius:15px;display:grid;place-items:center;color:#fff;margin-bottom:18px}
+  .vcard h3{font-size:19px;margin-bottom:8px}
+  .vcard p{font-size:14.5px;color:var(--ink-soft)}
+
+  /* compare commission */
+  .compare{display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-top:42px}
+  .comp-card{border-radius:var(--r-lg);padding:30px;position:relative;overflow:hidden}
+  .comp-old{background:#f3eee5;border:1px solid var(--line)}
+  .comp-new{background:linear-gradient(135deg,var(--ink),#2e2a47);color:#fff;box-shadow:var(--shadow-lg)}
+  .comp-card h4{font-family:'Plus Jakarta Sans';font-weight:800;font-size:13px;text-transform:uppercase;letter-spacing:.08em;opacity:.7;margin-bottom:8px}
+  .comp-card .pct{font-family:'Fraunces',serif;font-size:52px;font-weight:600;line-height:1}
+  .comp-old .pct{color:var(--ink)}
+  .comp-card .desc{font-size:14px;margin-top:10px;opacity:.85}
+  .comp-new .badge-save{position:absolute;top:22px;right:22px;background:var(--mint);color:#fff;font-size:12px;font-weight:800;padding:6px 13px;border-radius:100px}
+
+  /* ---------- CTA ---------- */
+  .cta-final{background:linear-gradient(140deg,var(--berry),var(--plum) 90%);border-radius:var(--r-xl);padding:64px 40px;text-align:center;color:#fff;position:relative;overflow:hidden;box-shadow:var(--shadow-lg)}
+  .cta-final::before,.cta-final::after{content:"";position:absolute;border-radius:50%;background:rgba(255,255,255,.12)}
+  .cta-final::before{width:300px;height:300px;top:-120px;left:-80px}
+  .cta-final::after{width:240px;height:240px;bottom:-120px;right:-60px}
+  .cta-final h2{font-size:clamp(32px,4.5vw,50px);color:#fff;position:relative}
+  .cta-final p{font-size:18px;opacity:.92;margin:16px auto 30px;max-width:520px;position:relative}
+  .cta-final .hero-cta{justify-content:center;position:relative}
+  .cta-final .btn-ghost{background:rgba(255,255,255,.16);border-color:rgba(255,255,255,.4);color:#fff}
+  .cta-final .btn-ghost:hover{background:rgba(255,255,255,.28);border-color:#fff}
+
+  /* ---------- Footer ---------- */
+  footer{background:var(--ink);color:#cfcbe0;padding:64px 0 30px;margin-top:96px}
+  .foot-grid{display:grid;grid-template-columns:1.6fr 1fr 1fr 1fr;gap:40px;padding-bottom:42px;border-bottom:1px solid rgba(255,255,255,.1)}
+  footer .logo{color:#fff}
+  footer .logo .mark{box-shadow:none}
+  .foot-grid p{font-size:14px;margin-top:16px;max-width:300px;color:#9b97b3}
+  .foot-col h5{font-family:'Plus Jakarta Sans';font-weight:800;font-size:13px;text-transform:uppercase;letter-spacing:.08em;color:#fff;margin-bottom:16px}
+  .foot-col a{display:block;font-size:14px;margin-bottom:11px;color:#9b97b3;transition:color .2s}
+  .foot-col a:hover{color:#fff}
+  .foot-bottom{display:flex;justify-content:space-between;align-items:center;padding-top:24px;font-size:13px;color:#7d799a;flex-wrap:wrap;gap:12px}
+  .compliance{display:flex;align-items:center;gap:8px;font-size:12.5px}
+
+  /* reveal */
+  .reveal{opacity:0;transform:translateY(28px);transition:opacity .7s var(--ease),transform .7s var(--ease)}
+  .reveal.in{opacity:1;transform:none}
+
+  /* ---------- Modal ---------- */
+  .modal-back{position:fixed;inset:0;background:rgba(29,27,46,.55);backdrop-filter:blur(6px);z-index:200;display:none;align-items:center;justify-content:center;padding:24px;opacity:0;transition:opacity .3s}
+  .modal-back.open{display:flex;opacity:1}
+  .modal{background:var(--paper);border-radius:var(--r-xl);max-width:720px;width:100%;max-height:90vh;overflow:auto;box-shadow:var(--shadow-lg);transform:translateY(20px) scale(.98);transition:transform .4s var(--ease)}
+  .modal-back.open .modal{transform:none}
+  .modal-hero{background:linear-gradient(135deg,var(--plum),var(--plum-deep));padding:32px;color:#fff;position:relative;display:flex;gap:20px;align-items:center}
+  .modal-hero .m-av{width:96px;height:96px;border-radius:24px;background-size:cover;background-position:center;border:3px solid rgba(255,255,255,.3);flex-shrink:0}
+  .modal-hero h3{font-size:28px;color:#fff}
+  .modal-hero .m-meta{opacity:.85;font-size:14px;margin-top:4px;font-weight:600}
+  .modal-hero .m-rate{display:inline-flex;align-items:center;gap:7px;background:rgba(255,255,255,.18);padding:6px 13px;border-radius:100px;margin-top:12px;font-size:13.5px;font-weight:700}
+  .modal-close{position:absolute;top:18px;right:18px;width:38px;height:38px;border-radius:50%;background:rgba(255,255,255,.2);border:none;color:#fff;cursor:pointer;font-size:20px;display:grid;place-items:center;transition:.2s}
+  .modal-close:hover{background:rgba(255,255,255,.35);transform:rotate(90deg)}
+  .modal-body{padding:30px 32px 34px}
+  .modal-body .m-sec{margin-bottom:26px}
+  .modal-body h4{font-size:13px;text-transform:uppercase;letter-spacing:.08em;color:var(--ink-faint);font-family:'Plus Jakarta Sans';font-weight:800;margin-bottom:12px}
+  .m-tags{display:flex;flex-wrap:wrap;gap:8px}
+  .m-tags .t{font-size:13px;font-weight:700;padding:7px 13px;border-radius:100px;background:var(--cream);color:var(--plum);border:1px solid var(--line)}
+  .m-avail{display:grid;grid-template-columns:repeat(7,1fr);gap:7px;text-align:center}
+  .m-avail .d{padding:11px 4px;border-radius:11px;font-size:12px;font-weight:700;border:1.5px solid var(--line)}
+  .m-avail .d.on{background:rgba(39,181,138,.12);border-color:var(--mint);color:var(--mint)}
+  .m-avail .d.off{color:var(--ink-faint);opacity:.55}
+  .m-avail .d small{display:block;font-size:10px;font-weight:600;margin-top:3px;opacity:.7}
+  .modal-foot{position:sticky;bottom:0;background:var(--paper);border-top:1px solid var(--line);padding:18px 32px;display:flex;justify-content:space-between;align-items:center;gap:14px;flex-wrap:wrap}
+  .modal-foot .mf-price b{font-family:'Fraunces',serif;font-size:26px}
+  .modal-foot .mf-price small{color:var(--ink-faint);font-size:13px;font-weight:600}
+
+  /* toast */
+  .toast{position:fixed;bottom:28px;left:50%;transform:translateX(-50%) translateY(120px);background:var(--ink);color:#fff;padding:15px 24px;border-radius:100px;font-weight:700;font-size:14.5px;box-shadow:var(--shadow-lg);z-index:300;transition:transform .45s var(--ease);display:flex;align-items:center;gap:10px}
+  .toast.show{transform:translateX(-50%) translateY(0)}
+  .toast .tic{width:24px;height:24px;border-radius:50%;background:var(--mint);display:grid;place-items:center;color:#fff;flex-shrink:0}
+
+  /* ---------- Responsive ---------- */
+  @media(max-width:960px){
+    .hero-grid{grid-template-columns:1fr;gap:40px}
+    .hero-card{max-width:420px;margin:0 auto}
+    .split{grid-template-columns:1fr;gap:34px}
+    .value-grid{grid-template-columns:repeat(2,1fr)}
+    .app-body{grid-template-columns:1fr}
+    .filters{border-right:none;border-bottom:1px solid var(--line)}
+    .foot-grid{grid-template-columns:1fr 1fr}
+  }
+  @media(max-width:720px){
+    .nav-links{display:none}
+    .nav-cta .btn-ghost{display:none}
+    .burger{display:block}
+    .kpi-band{grid-template-columns:1fr;gap:0}
+    .kpi+.kpi{border-left:none;border-top:1px solid rgba(255,255,255,.14);padding-top:28px;margin-top:28px}
+    .steps{grid-template-columns:1fr}
+    .compare{grid-template-columns:1fr}
+    .cards{grid-template-columns:1fr}
+    .sec{padding:70px 0}
+    .float-badge{display:none}
+    .modal-hero{flex-direction:column;text-align:center}
+  }
+  @media(max-width:520px){
+    .value-grid{grid-template-columns:1fr}
+    .foot-grid{grid-template-columns:1fr}
+  }
+  @media (prefers-reduced-motion: reduce){
+    *{animation:none!important;transition:none!important}
+    .reveal{opacity:1;transform:none}
+  }
+</style>
+</head>
+<body>
+
+<!-- ============ NAV ============ -->
+<header class="nav" id="nav">
+  <div class="wrap nav-inner">
+    <a href="#top" class="logo">
+      <span class="mark">
+        <svg viewBox="0 0 24 24" fill="none"><path d="M12 21s-7-4.35-9.33-8.66C1.1 9.07 2.7 5.5 6.2 5.5c2 0 3.3 1.2 3.8 2.3.5-1.1 1.8-2.3 3.8-2.3 3.5 0 5.1 3.57 3.53 6.84C19 16.65 12 21 12 21z" fill="currentColor"/></svg>
+      </span>
+      Nounou
+    </a>
+    <nav class="nav-links">
+      <a href="#how">Comment ça marche</a>
+      <a href="#search">Rechercher</a>
+      <a href="#reviews">Avis</a>
+      <a href="#value">Tarifs</a>
+    </nav>
+    <div class="nav-cta">
+      <a href="#search" class="btn btn-ghost btn-sm">Je suis une famille</a>
+      <a href="#join" class="btn btn-berry btn-sm">Devenir nounou</a>
+      <button class="burger" id="burger" aria-label="Menu"><span></span><span></span><span></span></button>
+    </div>
+  </div>
+</header>
+
+<a id="top"></a>
+
+<!-- ============ HERO ============ -->
+<section class="hero">
+  <div class="hero-bg">
+    <div class="blob b1"></div><div class="blob b2"></div><div class="blob b3"></div>
+  </div>
+  <div class="wrap hero-grid">
+    <div class="hero-copy reveal">
+      <span class="pill"><span class="dot"></span> 1 200+ nounous vérifiées près de chez vous</span>
+      <h1 style="margin-top:20px">La garde d'enfants <em>de confiance</em>, sans intermédiaire.</h1>
+      <p class="lede">Nounou met familles et professionnel·les de la petite enfance en relation <b>directe</b>. Profils vérifiés, disponibilités en temps réel, et <b>0 % de commission cachée</b>.</p>
+      <div class="hero-cta">
+        <a href="#search" class="btn btn-berry">Trouver une nounou
+          <svg width="17" height="17" viewBox="0 0 24 24" fill="none"><path d="M5 12h14M13 6l6 6-6 6" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </a>
+        <a href="#join" class="btn btn-ghost">Je suis nounou</a>
+      </div>
+      <div class="trust-row">
+        <div class="avatars">
+          <span style="background-image:url('https://i.pravatar.cc/100?img=47')"></span>
+          <span style="background-image:url('https://i.pravatar.cc/100?img=32')"></span>
+          <span style="background-image:url('https://i.pravatar.cc/100?img=12')"></span>
+          <span style="background-image:url('https://i.pravatar.cc/100?img=5')"></span>
+        </div>
+        <div class="trust-txt">
+          <div class="stars">★★★★★ <b style="color:var(--ink)">4,9/5</b></div>
+          <div>sur <b>8 400+ avis</b> de familles</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="hero-card reveal">
+      <div class="float-badge fb1">
+        <div class="fb-ic" style="background:linear-gradient(135deg,var(--mint),#1e9e78)">
+          <svg width="19" height="19" viewBox="0 0 24 24" fill="none"><path d="M20 6L9 17l-5-5" stroke="#fff" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </div>
+        <div><b>Identité vérifiée</b><small>Pièce + diplôme CAP AEPE</small></div>
+      </div>
+      <div class="float-badge fb2">
+        <div class="fb-ic" style="background:linear-gradient(135deg,var(--honey),#e89a12)">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="#fff"><path d="M12 2l2.4 6.9H22l-6 4.5 2.3 7.1L12 16.9 5.7 20.5 8 13.4 2 8.9h7.6z"/></svg>
+        </div>
+        <div><b>4,95 ★</b><small>Note moyenne quartier</small></div>
+      </div>
+
+      <div class="phone">
+        <div class="phone-top">
+          <div class="ph-row"><span>9:41</span><span>● Nounou</span></div>
+          <h3>Bonjour Camille 👋</h3>
+          <p>12 nounous disponibles à Lyon 3e</p>
+          <div class="ph-search">
+            <svg width="17" height="17" viewBox="0 0 24 24" fill="none"><circle cx="11" cy="11" r="7" stroke="currentColor" stroke-width="2"/><path d="M21 21l-4-4" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+            Bébé 14 mois · Temps plein
+          </div>
+        </div>
+        <div class="ph-body">
+          <div class="mini-nounou">
+            <div class="mini-av" style="background-image:url('https://i.pravatar.cc/120?img=45')"></div>
+            <div class="mini-info"><b>Awa D.</b><small>Lyon 3e · 8 ans d'exp.</small><span class="mini-tag">Disponible lun.</span></div>
+            <div class="mini-price"><b>14€</b><small>/heure</small></div>
+          </div>
+          <div class="mini-nounou">
+            <div class="mini-av" style="background-image:url('https://i.pravatar.cc/120?img=20')"></div>
+            <div class="mini-info"><b>Léa M.</b><small>Lyon 6e · CAP AEPE</small><span class="mini-tag">Dispo. ce soir</span></div>
+            <div class="mini-price"><b>16€</b><small>/heure</small></div>
+          </div>
+          <div class="mini-nounou">
+            <div class="mini-av" style="background-image:url('https://i.pravatar.cc/120?img=60')"></div>
+            <div class="mini-info"><b>Sofia R.</b><small>Villeurbanne · PSC1</small><span class="mini-tag">Week-ends</span></div>
+            <div class="mini-price"><b>13€</b><small>/heure</small></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ MARQUEE ============ -->
+<div class="marquee" aria-hidden="true">
+  <div class="marquee-track">
+    <span>🛡️ Identités vérifiées</span><span>📄 Diplômes contrôlés</span><span>⚡ Mise en relation instantanée</span>
+    <span>💬 Messagerie sécurisée</span><span>⭐ Avis authentifiés</span><span>🔒 Données RGPD</span>
+    <span>🛡️ Identités vérifiées</span><span>📄 Diplômes contrôlés</span><span>⚡ Mise en relation instantanée</span>
+    <span>💬 Messagerie sécurisée</span><span>⭐ Avis authentifiés</span><span>🔒 Données RGPD</span>
+  </div>
+</div>
+
+<!-- ============ KPI ============ -->
+<section class="sec" id="kpi">
+  <div class="wrap">
+    <div class="kpi-band reveal">
+      <div class="kpi"><div class="num" data-count="1240" data-suffix="">0</div><div class="lab">Nounous inscrites</div><div class="sub">+ 180 ce mois-ci</div></div>
+      <div class="kpi"><div class="num" data-count="6800" data-suffix="">0</div><div class="lab">Familles accompagnées</div><div class="sub">dans 24 villes</div></div>
+      <div class="kpi"><div class="num" data-count="96" data-suffix="%">0</div><div class="lab">Taux de satisfaction</div><div class="sub">familles + nounous</div></div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ HOW IT WORKS ============ -->
+<section class="sec" id="how" style="padding-top:0">
+  <div class="wrap">
+    <div class="sec-head reveal">
+      <span class="eyebrow">Simple, humain, transparent</span>
+      <h2>Trois étapes vers la perle rare</h2>
+      <p>De la recherche au premier jour de garde, on a tout pensé pour que ça soit fluide — et rassurant.</p>
+    </div>
+    <div class="steps">
+      <div class="step reveal">
+        <div class="step-n" style="background:linear-gradient(135deg,var(--berry),var(--berry-deep))">1</div>
+        <div class="ic"><svg width="64" height="64" viewBox="0 0 24 24" fill="none"><circle cx="11" cy="11" r="7" stroke="var(--berry)" stroke-width="1.6"/><path d="M21 21l-4-4" stroke="var(--berry)" stroke-width="1.6" stroke-linecap="round"/></svg></div>
+        <h3>Décrivez votre besoin</h3>
+        <p>Âge des enfants, horaires, quartier, budget. En 30 secondes, on filtre les profils qui collent vraiment.</p>
+      </div>
+      <div class="step reveal">
+        <div class="step-n" style="background:linear-gradient(135deg,var(--plum),var(--plum-deep))">2</div>
+        <div class="ic"><svg width="64" height="64" viewBox="0 0 24 24" fill="none"><path d="M12 21s-7-4.35-9.33-8.66C1.1 9.07 2.7 5.5 6.2 5.5c2 0 3.3 1.2 3.8 2.3.5-1.1 1.8-2.3 3.8-2.3 3.5 0 5.1 3.57 3.53 6.84C19 16.65 12 21 12 21z" stroke="var(--plum)" stroke-width="1.6"/></svg></div>
+        <h3>Comparez & échangez</h3>
+        <p>Profils vérifiés, avis authentifiés, disponibilités en direct. Discutez en messagerie sécurisée avant de décider.</p>
+      </div>
+      <div class="step reveal">
+        <div class="step-n" style="background:linear-gradient(135deg,var(--mint),#1e9e78)">3</div>
+        <div class="ic"><svg width="64" height="64" viewBox="0 0 24 24" fill="none"><path d="M20 6L9 17l-5-5" stroke="var(--mint)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+        <h3>Réservez en confiance</h3>
+        <p>Contrat type, paiement sécurisé, attestation pour le crédit d'impôt. Sans commission d'agence.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ SEARCH APP ============ -->
+<section class="sec" id="search" style="background:var(--cream)">
+  <div class="wrap">
+    <div class="sec-head reveal">
+      <span class="eyebrow">Côté famille</span>
+      <h2>Trouvez, filtrez, réservez</h2>
+      <p>Une vraie recherche, interactive. Jouez avec les filtres : les résultats s'adaptent en direct.</p>
+    </div>
+
+    <div class="app reveal">
+      <div class="app-bar">
+        <div class="dots"><i style="background:#ff5f57"></i><i style="background:#febc2e"></i><i style="background:#28c840"></i></div>
+        <div class="addr">app.nounou.fr/recherche</div>
+      </div>
+      <div class="app-body">
+        <!-- FILTERS -->
+        <aside class="filters">
+          <h4>Localisation</h4>
+          <div class="field">
+            <select id="f-city">
+              <option value="all">Toutes les villes</option>
+              <option value="Lyon 3e">Lyon 3e</option>
+              <option value="Lyon 6e">Lyon 6e</option>
+              <option value="Villeurbanne">Villeurbanne</option>
+              <option value="Lyon 7e">Lyon 7e</option>
+            </select>
+          </div>
+
+          <h4>Type de garde</h4>
+          <div class="chips" id="f-type">
+            <span class="chip" data-f="Bébé">Bébé (0-2 ans)</span>
+            <span class="chip" data-f="Périscolaire">Périscolaire</span>
+            <span class="chip" data-f="Sortie d'école">Sortie d'école</span>
+            <span class="chip" data-f="Soirée">Soirée</span>
+            <span class="chip" data-f="Week-end">Week-end</span>
+          </div>
+
+          <h4>Tarif horaire max</h4>
+          <div class="range-val"><span id="rate-out">20</span>€ / heure</div>
+          <input type="range" id="f-rate" min="11" max="25" value="20" step="1" />
+
+          <h4>Disponibilité</h4>
+          <div class="chips" id="f-avail">
+            <span class="chip" data-f="now">Dispo. maintenant</span>
+            <span class="chip" data-f="soon">Bientôt</span>
+          </div>
+
+          <h4>Garanties</h4>
+          <div class="chips" id="f-cert">
+            <span class="chip" data-f="CAP AEPE">CAP AEPE</span>
+            <span class="chip" data-f="PSC1">Secourisme PSC1</span>
+            <span class="chip" data-f="Non-fumeur">Non-fumeur</span>
+          </div>
+
+          <button class="filter-reset" id="reset">↺ Réinitialiser les filtres</button>
+        </aside>
+
+        <!-- RESULTS -->
+        <div class="results">
+          <div class="results-top">
+            <div class="count"><b id="res-count">6</b> nounous correspondent</div>
+            <div class="sort">Trier :
+              <select id="sort">
+                <option value="rate">Mieux notées</option>
+                <option value="price">Prix croissant</option>
+                <option value="exp">Expérience</option>
+              </select>
+            </div>
+          </div>
+          <div class="cards" id="cards"><!-- injected --></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ REVIEWS ============ -->
+<section class="sec" id="reviews">
+  <div class="wrap">
+    <div class="sec-head reveal">
+      <span class="eyebrow">Confiance & transparence</span>
+      <h2>Des avis qui veulent dire quelque chose</h2>
+      <p>Chaque avis provient d'une famille ayant réellement réservé. Notés sur quatre critères clés.</p>
+    </div>
+    <div class="split">
+      <div class="review-stack">
+        <div class="review reveal">
+          <div class="review-head">
+            <div class="ra" style="background-image:url('https://i.pravatar.cc/90?img=49')"></div>
+            <div><b>Camille & Théo</b><small>Lyon 3e · garde de Lila, 14 mois</small><div class="stars">★★★★★</div></div>
+          </div>
+          <p>« Awa est une perle. Ponctuelle, douce, et Lila la réclame chaque matin. La mise en relation a pris 2 jours, contre 3 semaines avec une agence. »</p>
+        </div>
+        <div class="review reveal">
+          <div class="review-head">
+            <div class="ra" style="background-image:url('https://i.pravatar.cc/90?img=33')"></div>
+            <div><b>Nadia B.</b><small>Villeurbanne · sortie d'école x2</small><div class="stars">★★★★★</div></div>
+          </div>
+          <p>« Le profil vérifié et les avis m'ont rassurée immédiatement. On a échangé par messagerie, fait un essai, puis réservé. Zéro commission, tout est clair. »</p>
+        </div>
+        <div class="review reveal">
+          <div class="review-head">
+            <div class="ra" style="background-image:url('https://i.pravatar.cc/90?img=15')"></div>
+            <div><b>Marc & Inès</b><small>Lyon 6e · gardes du soir</small><div class="stars">★★★★☆</div></div>
+          </div>
+          <p>« Très bonne expérience. Léa est diplômée et hyper carrée sur les horaires. L'attestation pour le crédit d'impôt est générée automatiquement, un vrai plus. »</p>
+        </div>
+      </div>
+
+      <div class="rating-card reveal">
+        <div class="big">4,9</div>
+        <div class="stars">★★★★★</div>
+        <div class="ct">basé sur 8 412 avis vérifiés</div>
+        <div class="bars">
+          <div class="bar-row"><span class="lab">Ponctualité</span><div class="bar-track"><div class="bar-fill" data-w="98%"></div></div><span>98%</span></div>
+          <div class="bar-row"><span class="lab">Sécurité</span><div class="bar-track"><div class="bar-fill" data-w="97%"></div></div><span>97%</span></div>
+          <div class="bar-row"><span class="lab">Pédagogie</span><div class="bar-track"><div class="bar-fill" data-w="94%"></div></div><span>94%</span></div>
+          <div class="bar-row"><span class="lab">Communication</span><div class="bar-track"><div class="bar-fill" data-w="96%"></div></div><span>96%</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ VALUE / COMMISSION ============ -->
+<section class="sec" id="value" style="background:var(--cream)">
+  <div class="wrap">
+    <div class="sec-head reveal">
+      <span class="eyebrow">Côté nounou</span>
+      <h2>Gardez ce que vous gagnez</h2>
+      <p>Les agences prélèvent jusqu'à 25 % sur chaque heure. Nounou, c'est un abonnement clair et la relation directe.</p>
+    </div>
+
+    <div class="value-grid">
+      <div class="vcard reveal">
+        <div class="ic" style="background:linear-gradient(135deg,var(--berry),var(--berry-deep))">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none"><path d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM4 21v-1a6 6 0 0112 0v1" stroke="#fff" stroke-width="2" stroke-linecap="round"/></svg>
+        </div>
+        <h3>Profil qui vous ressemble</h3>
+        <p>Expériences, diplômes, langues, photos. Mettez en avant ce qui vous distingue.</p>
+      </div>
+      <div class="vcard reveal">
+        <div class="ic" style="background:linear-gradient(135deg,var(--plum),var(--plum-deep))">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none"><rect x="3" y="4" width="18" height="17" rx="3" stroke="#fff" stroke-width="2"/><path d="M3 9h18M8 2v4M16 2v4" stroke="#fff" stroke-width="2" stroke-linecap="round"/></svg>
+        </div>
+        <h3>Disponibilités en direct</h3>
+        <p>Affichez vos créneaux libres. Les familles ne vous contactent que quand vous l'êtes.</p>
+      </div>
+      <div class="vcard reveal">
+        <div class="ic" style="background:linear-gradient(135deg,var(--mint),#1e9e78)">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none"><path d="M12 2l2.4 6.9H22l-6 4.5 2.3 7.1L12 16.9 5.7 20.5 8 13.4 2 8.9h7.6z" stroke="#fff" stroke-width="1.8" stroke-linejoin="round"/></svg>
+        </div>
+        <h3>Réputation qui compte</h3>
+        <p>Vos avis vous suivent et vous font monter dans les résultats. Le bouche-à-oreille, version digitale.</p>
+      </div>
+      <div class="vcard reveal">
+        <div class="ic" style="background:linear-gradient(135deg,var(--sky),#3f6fd1)">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none"><path d="M12 2L4 6v6c0 5 3.4 8.5 8 10 4.6-1.5 8-5 8-10V6l-8-4z" stroke="#fff" stroke-width="1.8" stroke-linejoin="round"/><path d="M9 12l2 2 4-4" stroke="#fff" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </div>
+        <h3>Paiements protégés</h3>
+        <p>Paiement sécurisé, contrat type et attestations. On s'occupe du cadre, vous des enfants.</p>
+      </div>
+    </div>
+
+    <div class="compare">
+      <div class="comp-card comp-old reveal">
+        <h4>Agence traditionnelle</h4>
+        <div class="pct">20-25%</div>
+        <div class="desc">de commission prélevée sur chaque heure travaillée, plus des délais de placement de plusieurs semaines.</div>
+      </div>
+      <div class="comp-card comp-new reveal">
+        <span class="badge-save">jusqu'à -90%</span>
+        <h4>Avec Nounou</h4>
+        <div class="pct">0%</div>
+        <div class="desc">de commission sur vos heures. Un abonnement transparent dès 9€/mois, et la relation directe avec les familles.</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ FINAL CTA ============ -->
+<section class="sec" id="join">
+  <div class="wrap">
+    <div class="cta-final reveal">
+      <h2>Prêt·e à faire la rencontre qui change tout ?</h2>
+      <p>Familles et nounous, rejoignez les milliers de personnes qui se font confiance sur Nounou.</p>
+      <div class="hero-cta">
+        <a href="#search" class="btn btn-primary" style="background:#fff;color:var(--ink)">Trouver une nounou</a>
+        <button class="btn btn-ghost" onclick="toast('Inscription nounou — bientôt disponible ✨')">Créer mon profil de nounou</button>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ FOOTER ============ -->
+<footer>
+  <div class="wrap">
+    <div class="foot-grid">
+      <div>
+        <a href="#top" class="logo">
+          <span class="mark"><svg viewBox="0 0 24 24" fill="none"><path d="M12 21s-7-4.35-9.33-8.66C1.1 9.07 2.7 5.5 6.2 5.5c2 0 3.3 1.2 3.8 2.3.5-1.1 1.8-2.3 3.8-2.3 3.5 0 5.1 3.57 3.53 6.84C19 16.65 12 21 12 21z" fill="currentColor"/></svg></span>
+          Nounou
+        </a>
+        <p>La plateforme qui rapproche familles et professionnel·les de la petite enfance, en toute confiance et sans intermédiaire.</p>
+      </div>
+      <div class="foot-col">
+        <h5>Familles</h5>
+        <a href="#search">Rechercher une nounou</a>
+        <a href="#how">Comment ça marche</a>
+        <a href="#reviews">Avis & garanties</a>
+        <a href="#">Crédit d'impôt</a>
+      </div>
+      <div class="foot-col">
+        <h5>Nounous</h5>
+        <a href="#join">Créer un profil</a>
+        <a href="#value">Tarifs & abonnement</a>
+        <a href="#">Conseils & guides</a>
+        <a href="#">Espace pro</a>
+      </div>
+      <div class="foot-col">
+        <h5>Nounou</h5>
+        <a href="#">À propos</a>
+        <a href="#">Sécurité & vérifications</a>
+        <a href="#">Aide & contact</a>
+        <a href="#">Recrutement</a>
+      </div>
+    </div>
+    <div class="foot-bottom">
+      <span>© 2026 Nounou — Prototype de démonstration.</span>
+      <span class="compliance">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none"><path d="M12 2L4 6v6c0 5 3.4 8.5 8 10 4.6-1.5 8-5 8-10V6l-8-4z" stroke="#9b97b3" stroke-width="1.6"/></svg>
+        Données hébergées en France · Conforme RGPD
+      </span>
+    </div>
+  </div>
+</footer>
+
+<!-- ============ MODAL ============ -->
+<div class="modal-back" id="modal-back">
+  <div class="modal" id="modal"><!-- injected --></div>
+</div>
+
+<!-- ============ TOAST ============ -->
+<div class="toast" id="toast"><span class="tic"><svg width="13" height="13" viewBox="0 0 24 24" fill="none"><path d="M20 6L9 17l-5-5" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg></span><span id="toast-msg"></span></div>
+
+<script>
+/* ====================== DATA ====================== */
+const NOUNOUS = [
+  {id:1,name:"Awa Diallo",img:45,city:"Lyon 3e",exp:8,rate:14,score:4.9,reviews:127,avail:"now",
+    types:["Bébé","Périscolaire","Sortie d'école"],certs:["CAP AEPE","PSC1","Non-fumeur"],
+    bio:"Auxiliaire de puériculture passionnée, je m'occupe des tout-petits avec patience et beaucoup de jeux d'éveil. J'adore inventer des comptines !",
+    langs:["Français","Anglais","Wolof"], days:[1,1,1,1,1,0,0]},
+  {id:2,name:"Léa Martin",img:20,city:"Lyon 6e",exp:5,rate:16,score:4.8,reviews:89,avail:"now",
+    types:["Bébé","Soirée","Week-end"],certs:["CAP AEPE","Non-fumeur"],
+    bio:"Diplômée CAP AEPE, je propose des gardes à domicile structurées : repas équilibrés, sieste, activités créatives. Disponible aussi en soirée.",
+    langs:["Français","Espagnol"], days:[0,1,1,1,1,1,1]},
+  {id:3,name:"Sofia Rossi",img:60,city:"Villeurbanne",exp:6,rate:13,score:4.7,reviews:64,avail:"soon",
+    types:["Périscolaire","Sortie d'école","Week-end"],certs:["PSC1","Non-fumeur"],
+    bio:"Étudiante en sciences de l'éducation, je suis spécialisée dans l'accompagnement des 3-10 ans : devoirs, sorties au parc, activités sportives.",
+    langs:["Français","Italien","Anglais"], days:[0,0,1,0,1,1,1]},
+  {id:4,name:"Fatou Ndiaye",img:31,city:"Lyon 7e",exp:11,rate:18,score:5.0,reviews:203,avail:"now",
+    types:["Bébé","Périscolaire","Soirée"],certs:["CAP AEPE","PSC1","Non-fumeur"],
+    bio:"11 ans d'expérience auprès des familles lyonnaises. Bienveillante et rigoureuse, je crée un cadre rassurant et stimulant pour vos enfants.",
+    langs:["Français","Anglais"], days:[1,1,1,1,1,0,0]},
+  {id:5,name:"Inès Benali",img:25,city:"Lyon 3e",exp:3,rate:12,score:4.6,reviews:38,avail:"soon",
+    types:["Sortie d'école","Périscolaire","Week-end"],certs:["PSC1"],
+    bio:"Jeune et dynamique, je raccompagne les enfants de l'école et les aide aux devoirs. Toujours partante pour un atelier dessin ou une partie de cache-cache !",
+    langs:["Français","Arabe"], days:[0,1,1,1,1,0,1]},
+  {id:6,name:"Mathilde Roux",img:16,city:"Lyon 6e",exp:9,rate:17,score:4.9,reviews:156,avail:"now",
+    types:["Bébé","Soirée","Week-end"],certs:["CAP AEPE","PSC1","Non-fumeur"],
+    bio:"Ancienne assistante maternelle agréée, je connais les besoins des tout-petits sur le bout des doigts. Repères, douceur et éveil au programme.",
+    langs:["Français","Allemand"], days:[1,0,1,0,1,1,1]},
+  {id:7,name:"Yasmine Khelifi",img:48,city:"Villeurbanne",exp:4,rate:13,score:4.7,reviews:52,avail:"now",
+    types:["Périscolaire","Sortie d'école","Soirée"],certs:["PSC1","Non-fumeur"],
+    bio:"Patiente et créative, je transforme l'aide aux devoirs en moment ludique. Spécialiste des goûters maison et des activités manuelles.",
+    langs:["Français","Anglais","Arabe"], days:[0,1,1,1,1,1,0]},
+  {id:8,name:"Clara Lefevre",img:9,city:"Lyon 7e",exp:7,rate:15,score:4.8,reviews:98,avail:"soon",
+    types:["Bébé","Périscolaire","Week-end"],certs:["CAP AEPE","Non-fumeur"],
+    bio:"Diplômée et maman de deux enfants, j'apporte une attention sur-mesure à chaque famille. Sorties au parc, lecture et motricité au quotidien.",
+    langs:["Français","Anglais"], days:[1,1,0,1,1,1,0]},
+];
+const DAYS_FR = ["Lun","Mar","Mer","Jeu","Ven","Sam","Dim"];
+
+/* ====================== STATE ====================== */
+const state = { city:"all", types:[], rateMax:20, avail:[], certs:[], sort:"rate" };
+
+/* ====================== RENDER CARDS ====================== */
+const cardsEl = document.getElementById('cards');
+const stars = s => "★★★★★".slice(0, Math.round(s)) + "☆☆☆☆☆".slice(0, 5-Math.round(s));
+
+function matches(n){
+  if(state.city!=="all" && n.city!==state.city) return false;
+  if(n.rate > state.rateMax) return false;
+  if(state.types.length && !state.types.some(t=>n.types.includes(t))) return false;
+  if(state.avail.length && !state.avail.includes(n.avail)) return false;
+  if(state.certs.length && !state.certs.every(c=>n.certs.includes(c))) return false;
+  return true;
+}
+
+function render(){
+  let list = NOUNOUS.filter(matches);
+  if(state.sort==="rate") list.sort((a,b)=>b.score-a.score);
+  if(state.sort==="price") list.sort((a,b)=>a.rate-b.rate);
+  if(state.sort==="exp") list.sort((a,b)=>b.exp-a.exp);
+
+  document.getElementById('res-count').textContent = list.length;
+
+  if(!list.length){
+    cardsEl.innerHTML = `<div class="no-res">
+      <svg viewBox="0 0 24 24" fill="none"><circle cx="11" cy="11" r="7" stroke="currentColor" stroke-width="1.6"/><path d="M21 21l-4-4M8 11h6" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
+      <h3 style="font-size:20px;color:var(--ink);margin-bottom:6px">Aucune nounou sur ces critères</h3>
+      <p>Essayez d'élargir votre budget ou vos filtres.</p></div>`;
+    return;
+  }
+
+  cardsEl.innerHTML = list.map(n=>`
+    <article class="ncard" onclick="openModal(${n.id})">
+      <div class="ncard-head">
+        <div class="ncard-av" style="background-image:url('https://i.pravatar.cc/160?img=${n.img}')">
+          <span class="verif" title="Profil vérifié"><svg viewBox="0 0 24 24" fill="none"><path d="M20 6L9 17l-5-5" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+        </div>
+        <div style="flex:1">
+          <div class="ncard-name">${n.name}</div>
+          <div class="ncard-meta">${n.city} · ${n.exp} ans d'expérience</div>
+          <div class="ncard-rate"><span class="stars">${stars(n.score)}</span> ${n.score} <span>(${n.reviews} avis)</span></div>
+        </div>
+      </div>
+      <div class="ncard-tags">${n.types.slice(0,3).map(t=>`<span class="t">${t}</span>`).join('')}</div>
+      <div class="ncard-foot">
+        <div class="availdot ${n.avail==='soon'?'soon':''}"><i></i>${n.avail==='now'?'Disponible maintenant':'Bientôt disponible'}</div>
+        <div class="ncard-price"><b>${n.rate}€</b><small>/heure</small></div>
+      </div>
+    </article>`).join('');
+}
+
+/* ====================== FILTER EVENTS ====================== */
+function bindChips(groupId, key){
+  document.querySelectorAll(`#${groupId} .chip`).forEach(chip=>{
+    chip.addEventListener('click',()=>{
+      chip.classList.toggle('active');
+      const v = chip.dataset.f;
+      const arr = state[key];
+      const i = arr.indexOf(v);
+      if(i>-1) arr.splice(i,1); else arr.push(v);
+      render();
+    });
+  });
+}
+bindChips('f-type','types');
+bindChips('f-avail','avail');
+bindChips('f-cert','certs');
+
+document.getElementById('f-city').addEventListener('change',e=>{state.city=e.target.value;render();});
+document.getElementById('f-rate').addEventListener('input',e=>{
+  state.rateMax=+e.target.value;
+  document.getElementById('rate-out').textContent=e.target.value;
+  render();
+});
+document.getElementById('sort').addEventListener('change',e=>{state.sort=e.target.value;render();});
+document.getElementById('reset').addEventListener('click',()=>{
+  state.city="all";state.types=[];state.rateMax=20;state.avail=[];state.certs=[];
+  document.getElementById('f-city').value="all";
+  document.getElementById('f-rate').value=20;
+  document.getElementById('rate-out').textContent="20";
+  document.querySelectorAll('.chip.active').forEach(c=>c.classList.remove('active'));
+  render();
+  toast('Filtres réinitialisés');
+});
+
+render();
+
+/* ====================== MODAL ====================== */
+const modalBack = document.getElementById('modal-back');
+const modalEl = document.getElementById('modal');
+function openModal(id){
+  const n = NOUNOUS.find(x=>x.id===id);
+  modalEl.innerHTML = `
+    <div class="modal-hero">
+      <button class="modal-close" onclick="closeModal()">×</button>
+      <div class="m-av" style="background-image:url('https://i.pravatar.cc/200?img=${n.img}')"></div>
+      <div>
+        <h3>${n.name}</h3>
+        <div class="m-meta">${n.city} · ${n.exp} ans d'expérience · Profil vérifié ✓</div>
+        <div class="m-rate"><span class="stars" style="color:var(--honey)">${stars(n.score)}</span> ${n.score} · ${n.reviews} avis</div>
+      </div>
+    </div>
+    <div class="modal-body">
+      <div class="m-sec"><h4>À propos</h4><p style="color:var(--ink-soft);font-size:15px">${n.bio}</p></div>
+      <div class="m-sec"><h4>Types de garde</h4><div class="m-tags">${n.types.map(t=>`<span class="t">${t}</span>`).join('')}</div></div>
+      <div class="m-sec"><h4>Garanties & diplômes</h4><div class="m-tags">${n.certs.map(c=>`<span class="t">🛡️ ${c}</span>`).join('')}</div></div>
+      <div class="m-sec"><h4>Langues parlées</h4><div class="m-tags">${n.langs.map(l=>`<span class="t">${l}</span>`).join('')}</div></div>
+      <div class="m-sec"><h4>Disponibilités cette semaine</h4>
+        <div class="m-avail">${n.days.map((d,i)=>`<div class="d ${d?'on':'off'}">${DAYS_FR[i]}<small>${d?'Libre':'—'}</small></div>`).join('')}</div>
+      </div>
+    </div>
+    <div class="modal-foot">
+      <div class="mf-price"><b>${n.rate}€</b> <small>/ heure · sans commission</small></div>
+      <div style="display:flex;gap:10px">
+        <button class="btn btn-ghost btn-sm" onclick="toast('Message envoyé à ${n.name.split(' ')[0]} 💬')">Envoyer un message</button>
+        <button class="btn btn-berry btn-sm" onclick="toast('Demande de garde envoyée à ${n.name.split(' ')[0]} ✨');closeModal()">Réserver un créneau</button>
+      </div>
+    </div>`;
+  modalBack.classList.add('open');
+  document.body.style.overflow='hidden';
+}
+function closeModal(){modalBack.classList.remove('open');document.body.style.overflow='';}
+modalBack.addEventListener('click',e=>{if(e.target===modalBack)closeModal();});
+document.addEventListener('keydown',e=>{if(e.key==='Escape')closeModal();});
+
+/* ====================== TOAST ====================== */
+let toastTimer;
+function toast(msg){
+  document.getElementById('toast-msg').textContent=msg;
+  const t=document.getElementById('toast');
+  t.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer=setTimeout(()=>t.classList.remove('show'),2800);
+}
+
+/* ====================== SCROLL REVEAL ====================== */
+const io = new IntersectionObserver((entries)=>{
+  entries.forEach(en=>{
+    if(en.isIntersecting){
+      en.target.classList.add('in');
+      // animate bars + counters inside
+      en.target.querySelectorAll('.bar-fill').forEach(b=>b.style.width=b.dataset.w);
+      io.unobserve(en.target);
+    }
+  });
+},{threshold:.15});
+document.querySelectorAll('.reveal').forEach(el=>io.observe(el));
+
+/* ====================== COUNTERS ====================== */
+const counters = document.querySelectorAll('.num[data-count]');
+const cio = new IntersectionObserver((entries)=>{
+  entries.forEach(en=>{
+    if(!en.isIntersecting) return;
+    const el = en.target, target = +el.dataset.count, suf = el.dataset.suffix||"";
+    let cur = 0; const step = target/60;
+    const tick = ()=>{
+      cur += step;
+      if(cur<target){ el.textContent = Math.floor(cur).toLocaleString('fr-FR')+suf; requestAnimationFrame(tick); }
+      else el.textContent = target.toLocaleString('fr-FR')+suf;
+    };
+    tick();
+    cio.unobserve(el);
+  });
+},{threshold:.5});
+counters.forEach(c=>cio.observe(c));
+
+/* ====================== NAV SCROLL ====================== */
+const nav = document.getElementById('nav');
+window.addEventListener('scroll',()=>{nav.classList.toggle('scrolled', window.scrollY>20);});
+
+/* ====================== BURGER ====================== */
+document.getElementById('burger').addEventListener('click',()=>{
+  toast('Menu mobile — naviguez via les sections ✨');
+});
+</script>
+</body>
+</html>
