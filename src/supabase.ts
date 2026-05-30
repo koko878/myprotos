@@ -37,6 +37,10 @@ export const supabase: SupabaseClient | null = supabaseDisponible()
         persistSession: true,
         detectSessionInUrl: false,
         flowType: 'implicit',
+        // Désactive le verrou de navigateur (Web Locks). Sans ça, plusieurs
+        // onglets GetExp ouverts se bloquent mutuellement -> "connexion trop
+        // longue". On n'a pas besoin de synchroniser l'auth entre onglets.
+        lock: (async (_name: string, _ttl: number, fn: () => Promise<any>) => fn()) as any,
       },
     })
   : null;
