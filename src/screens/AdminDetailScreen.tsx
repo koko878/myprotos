@@ -31,11 +31,10 @@ export default function AdminDetailScreen({ useCaseId }: { useCaseId: string }) 
     if (uc) telechargerDossierProjet(uc);
   }
 
-  async function deposer() {
-    const html = htmlColle.trim();
-    if (!html) return;
+  // Dépose le HTML (collé ou importé) comme nouvelle version du prototype.
+  async function deposerHtml(html: string) {
     if (!/<html[\s>]/i.test(html) && !/<!doctype html/i.test(html)) {
-      setErreur('Le contenu collé ne ressemble pas à un document HTML (balise <html> manquante).');
+      setErreur('Le fichier ne ressemble pas à un document HTML (balise <html> manquante).');
       return;
     }
     setErreur(null);
@@ -44,6 +43,18 @@ export default function AdminDetailScreen({ useCaseId }: { useCaseId: string }) 
     setHtmlColle('');
     setMoteur('claude'); // déposé manuellement = qualité Claude (généré ici)
     setDiag(null);
+  }
+
+  async function deposer() {
+    const html = htmlColle.trim();
+    if (!html) return;
+    await deposerHtml(html);
+  }
+
+  // Import d'un fichier .html (méthode principale, plus simple que coller).
+  async function uploader() {
+    const fichier = await lireFichierTexte();
+    if (fichier) await deposerHtml(fichier.contenu);
   }
 
   async function generer() {
