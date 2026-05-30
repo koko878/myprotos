@@ -1,0 +1,38 @@
+{
+  "cli": {
+    "version": ">= 5.0.0",
+    "appVersionSource": "remote"
+  },
+  "build": {
+    "preview": {
+      "android": {
+        "buildType": "apk"
+      },
+      "distribution": "internal",
+      "channel": "preview",
+      "env": {
+        "EXPO_PUBLIC_SUPABASE_URL": "https://ezepronuemczkvykabdr.supabase.co",
+        "EXPO_PUBLIC_SUPABASE_ANON_KEY": "sb_publishable_5D2m2GTx2gfIM7BCQkjt7g_3c_mHe-Q",
+        "EXPO_PUBLIC_LLM_PROXY_URL": "https://myprotos-llm-proxy.pro-kohen.workers.dev",
+        "EXPO_PUBLIC_GEMINI_API_KEY": "AQ.Ab8RN6KDEQ1Wk-06gSpTwAv0F6ni3F8ROHE0CXL1nrkkXHVBoQ",
+        "EXPO_PUBLIC_GEMINI_MODEL": "gemini-2.5-flash"
+      }
+    },
+    "production": {
+      "android": {
+        "buildType": "app-bundle"
+      },
+      "channel": "production",
+      "env": {
+        "EXPO_PUBLIC_SUPABASE_URL": "https://ezepronuemczkvykabdr.supabase.co",
+        "EXPO_PUBLIC_SUPABASE_ANON_KEY": "sb_publishable_5D2m2GTx2gfIM7BCQkjt7g_3c_mHe-Q",
+        "EXPO_PUBLIC_LLM_PROXY_URL": "https://myprotos-llm-proxy.pro-kohen.workers.dev",
+        "EXPO_PUBLIC_GEMINI_API_KEY": "AQ.Ab8RN6KDEQ1Wk-06gSpTwAv0F6ni3F8ROHE0CXL1nrkkXHVBoQ",
+        "EXPO_PUBLIC_GEMINI_MODEL": "gemini-2.5-flash"
+      }
+    }
+  },
+  "submit": {
+    "production": {}
+  }
+}
