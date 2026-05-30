@@ -1,6 +1,8 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { Modal, Pressable, SafeAreaView, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { deverrouillerAdmin, estAdminDeverrouille, verifierPin, verrouillerAdmin } from '../admin';
+import { deconnexion } from '../auth';
+import { useAuth } from '../authContext';
 import Logo from '../components/Logo';
 import { Bouton, Carte } from '../components/ui';
 import { useNav } from '../navigation';
@@ -8,20 +10,25 @@ import { colors, font, radius, spacing } from '../theme';
 
 export default function HomeScreen() {
   const { aller } = useNav();
-  const [adminOuvert, setAdminOuvert] = useState(false); // accès admin déverrouillé
+  const { authRequise, estAdmin, user } = useAuth();
+  // En mode auth (Supabase) : l'accès admin dépend du rôle DB.
+  // En mode local/démo : déverrouillage par code PIN (5 taps sur le logo).
+  const [adminLocal, setAdminLocal] = useState(false);
   const [modalPin, setModalPin] = useState(false);
   const [pin, setPin] = useState('');
   const [erreurPin, setErreurPin] = useState(false);
   const taps = useRef(0);
   const dernierTap = useRef(0);
 
-  useEffect(() => {
-    estAdminDeverrouille().then(setAdminOuvert);
-  }, []);
+  const adminOuvert = authRequise ? estAdmin : adminLocal;
 
-  // 5 appuis rapides sur le logo ouvrent la saisie du code admin (réservé proprio).
+  useEffect(() => {
+    if (!authRequise) estAdminDeverrouille().then(setAdminLocal);
+  }, [authRequise]);
+
+  // 5 appuis rapides sur le logo ouvrent la saisie du code admin (mode démo).
   function tapLogo() {
-    if (adminOuvert) return;
+    if (authRequise || adminLocal) return;
     const now = Date.now();
     taps.current = now - dernierTap.current < 800 ? taps.current + 1 : 1;
     dernierTap.current = now;
@@ -36,7 +43,7 @@ export default function HomeScreen() {
   async function validerPin() {
     if (verifierPin(pin)) {
       await deverrouillerAdmin();
-      setAdminOuvert(true);
+      setAdminLocal(true);
       setModalPin(false);
     } else {
       setErreurPin(true);
@@ -45,7 +52,7 @@ export default function HomeScreen() {
 
   async function quitterAdmin() {
     await verrouillerAdmin();
-    setAdminOuvert(false);
+    setAdminLocal(false);
   }
 
   return (
@@ -81,14 +88,23 @@ export default function HomeScreen() {
           <Etape n="4" titre="Certification" texte="Sécurité vérifiée avant déploiement." />
         </View>
 
-        {/* Accès admin : visible uniquement après déverrouillage par code (proprio). */}
+        {/* Accès admin : par rôle (mode auth) ou par code (mode démo). */}
         {adminOuvert && (
           <View style={styles.adminZone}>
             <Bouton titre="🛠️ Espace admin" variante="secondaire" onPress={() => aller({ nom: 'admin' })} />
-            <Pressable onPress={quitterAdmin} hitSlop={8} style={styles.adminLien}>
-              <Text style={styles.adminTxt}>Quitter le mode admin</Text>
-            </Pressable>
+            {!authRequise && (
+              <Pressable onPress={quitterAdmin} hitSlop={8} style={styles.adminLien}>
+                <Text style={styles.adminTxt}>Quitter le mode admin</Text>
+              </Pressable>
+            )}
           </View>
+        )}
+
+        {/* Compte connecté : déconnexion. */}
+        {authRequise && user && (
+          <Pressable onPress={deconnexion} hitSlop={8} style={styles.adminLien}>
+            <Text style={styles.adminTxt}>{user.email} · Se déconnecter</Text>
+          </Pressable>
         )}
       </ScrollView>
 

@@ -18,7 +18,7 @@ import {
 } from '../cadrageAssistant';
 import { uidMessage } from '../components/ChatIA';
 import { useNav } from '../navigation';
-import { ajouterUseCase } from '../storage';
+import { creerEtId } from '../storage';
 import { colors, font, radius, spacing } from '../theme';
 import { Message } from '../types';
 
@@ -81,7 +81,7 @@ export default function CadrageScripte() {
       setMessages([...apresUser, { id: uidMessage(), role: 'assistant', texte: '⏳ Je structure votre projet…' }]);
       setTermine(true);
       synthetiserUseCaseIA(nouvellesReponses).then((uc) =>
-        ajouterUseCase(uc).then(() => aller({ nom: 'recap', useCaseId: uc.id }))
+        creerEtId(uc).then((id) => aller({ nom: 'recap', useCaseId: id }))
       );
     }
   }

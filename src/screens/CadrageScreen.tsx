@@ -3,7 +3,7 @@ import { tourCadrageIA } from '../cadrageAssistant';
 import ChatIA, { ResultatTour, uidMessage } from '../components/ChatIA';
 import { iaDisponible } from '../llm';
 import { useNav } from '../navigation';
-import { ajouterUseCase } from '../storage';
+import { creerEtId } from '../storage';
 import { Message, UseCase } from '../types';
 import CadrageScripte from './CadrageScripte';
 
@@ -45,8 +45,8 @@ export default function CadrageScreen() {
   async function onTermine() {
     const uc = useCaseFinal.current;
     if (!uc) return;
-    await ajouterUseCase(uc);
-    aller({ nom: 'recap', useCaseId: uc.id });
+    const id = await creerEtId(uc);
+    aller({ nom: 'recap', useCaseId: id });
   }
 
   return (

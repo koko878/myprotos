@@ -1,12 +1,19 @@
-// Persistance locale des use cases (prototype sans backend).
-// En production : remplacer par une API / base de données.
+// Persistance des use cases. DEUX MODES, transparent pour les écrans :
+//   - Supabase configuré -> base de données partagée (auth + rôles)
+//   - sinon -> AsyncStorage local (mode démo / hors-ligne)
+// Toutes les fonctions dérivées (prototype, remarques, pièces jointes…) passent
+// par ces fonctions de base, donc héritent automatiquement du bon mode.
 
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import * as remote from './projets';
+import { supabaseDisponible } from './supabase';
 import { CadrageTechnique, PieceJointe, RemarqueClient, StatutUseCase, UseCase } from './types';
 
 const CLE = 'usecases_v1';
+const distant = () => supabaseDisponible();
 
 export async function chargerUseCases(): Promise<UseCase[]> {
+  if (distant()) return remote.listerProjets();
   try {
     const brut = await AsyncStorage.getItem(CLE);
     if (!brut) return [];
@@ -17,6 +24,7 @@ export async function chargerUseCases(): Promise<UseCase[]> {
 }
 
 export async function sauvegarderUseCases(liste: UseCase[]): Promise<void> {
+  // Utilisé uniquement en mode local.
   try {
     await AsyncStorage.setItem(CLE, JSON.stringify(liste));
   } catch {
@@ -25,13 +33,29 @@ export async function sauvegarderUseCases(liste: UseCase[]): Promise<void> {
 }
 
 export async function ajouterUseCase(uc: UseCase): Promise<UseCase[]> {
+  if (distant()) {
+    await remote.creerProjet(uc);
+    return remote.listerProjets();
+  }
   const liste = await chargerUseCases();
   const nouvelle = [uc, ...liste];
   await sauvegarderUseCases(nouvelle);
   return nouvelle;
 }
 
+// Crée un projet et renvoie son ID réel (DB en mode distant, sinon l'id local).
+// À utiliser pour naviguer juste après création.
+export async function creerEtId(uc: UseCase): Promise<string> {
+  if (distant()) {
+    const id = await remote.creerProjet(uc);
+    return id ?? uc.id;
+  }
+  await ajouterUseCase(uc);
+  return uc.id;
+}
+
 export async function trouverUseCase(id: string): Promise<UseCase | undefined> {
+  if (distant()) return remote.trouverProjet(id);
   const liste = await chargerUseCases();
   return liste.find((u) => u.id === id);
 }
@@ -40,10 +64,7 @@ export async function mettreAJourStatut(
   id: string,
   statut: StatutUseCase
 ): Promise<UseCase[]> {
-  const liste = await chargerUseCases();
-  const nouvelle = liste.map((u) => (u.id === id ? { ...u, statut } : u));
-  await sauvegarderUseCases(nouvelle);
-  return nouvelle;
+  return modifierUseCase(id, (u) => ({ ...u, statut }));
 }
 
 // Applique une transformation à un use case et persiste.
@@ -51,6 +72,10 @@ export async function modifierUseCase(
   id: string,
   maj: (uc: UseCase) => UseCase
 ): Promise<UseCase[]> {
+  if (distant()) {
+    await remote.modifierProjet(id, maj);
+    return remote.listerProjets();
+  }
   const liste = await chargerUseCases();
   const nouvelle = liste.map((u) => (u.id === id ? maj(u) : u));
   await sauvegarderUseCases(nouvelle);
