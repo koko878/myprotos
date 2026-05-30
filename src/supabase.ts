@@ -18,21 +18,24 @@ export function supabaseDisponible(): boolean {
   return URL.length > 0 && ANON.length > 0;
 }
 
-// Sur le web, le lien magique revient avec le jeton dans l'URL : supabase-js
-// doit le détecter automatiquement. Sur natif (APK), on gère le deep link.
 const surWeb = Platform.OS === 'web';
+
+// Stockage de session : sur web, le localStorage natif du navigateur est plus
+// fiable qu'AsyncStorage (qui peut introduire un verrou bloquant l'auth). Sur
+// natif (APK), on garde AsyncStorage.
+const stockage =
+  surWeb && typeof window !== 'undefined' && window.localStorage
+    ? window.localStorage
+    : (AsyncStorage as any);
 
 // Un seul client réutilisé. `null` si non configuré.
 export const supabase: SupabaseClient | null = supabaseDisponible()
   ? createClient(URL, ANON, {
       auth: {
-        storage: AsyncStorage as any,
+        storage: stockage,
         autoRefreshToken: true,
         persistSession: true,
-        detectSessionInUrl: surWeb,
-        // Flow "implicit" : le jeton arrive directement dans l'URL de retour,
-        // sans "code_verifier" à retrouver — fiable pour un lien magique ouvert
-        // dans un autre contexte/navigateur (cas fréquent sur mobile).
+        detectSessionInUrl: false,
         flowType: 'implicit',
       },
     })
