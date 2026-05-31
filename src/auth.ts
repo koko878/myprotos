@@ -59,6 +59,25 @@ export function sessionToken(): string | null {
   return lireSession()?.access_token ?? null;
 }
 
+// Rafraîchit le token via le refresh_token (les access_token expirent ~1h).
+// Renvoie le nouveau token, ou null si échec. Met à jour la session stockée.
+export async function rafraichirSession(): Promise<string | null> {
+  const s = lireSession();
+  if (!s?.refresh_token || !supabaseDisponible()) return null;
+  try {
+    const r = await poste('/auth/v1/token?grant_type=refresh_token', {
+      refresh_token: s.refresh_token,
+    });
+    if (r.ok && r.data?.access_token) {
+      ecrireSession(r.data);
+      return r.data.access_token as string;
+    }
+  } catch {
+    /* ignore */
+  }
+  return null;
+}
+
 // --- fetch avec timeout (jamais de blocage infini) ---------------------------
 async function poste(path: string, body: object, ms = 12000): Promise<{ ok: boolean; status: number; data: any }> {
   const ctrl = new AbortController();
@@ -137,13 +156,23 @@ export async function utilisateurCourant(): Promise<Utilisateur | null> {
 
   let role: Role = 'client';
   try {
-    const ctrl = new AbortController();
-    const t = setTimeout(() => ctrl.abort(), 5000);
-    const r = await fetch(`${URL}/rest/v1/profiles?id=eq.${s.user.id}&select=role`, {
-      headers: { apikey: ANON, Authorization: `Bearer ${s.access_token}` },
-      signal: ctrl.signal,
-    });
-    clearTimeout(t);
+    const lire = async (token: string) => {
+      const ctrl = new AbortController();
+      const t = setTimeout(() => ctrl.abort(), 5000);
+      try {
+        return await fetch(`${URL}/rest/v1/profiles?id=eq.${s.user.id}&select=role`, {
+          headers: { apikey: ANON, Authorization: `Bearer ${token}` },
+          signal: ctrl.signal,
+        });
+      } finally {
+        clearTimeout(t);
+      }
+    };
+    let r = await lire(s.access_token);
+    if (r.status === 401) {
+      const frais = await rafraichirSession();
+      if (frais) r = await lire(frais);
+    }
     const arr = await r.json().catch(() => []);
     if (Array.isArray(arr) && arr[0]?.role === 'admin') role = 'admin';
   } catch {

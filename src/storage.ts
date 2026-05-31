@@ -13,14 +13,15 @@ const CLE = 'usecases_v1';
 const distant = () => supabaseDisponible();
 
 export async function chargerUseCases(): Promise<UseCase[]> {
-  if (distant()) return remote.listerProjets();
-  try {
-    const brut = await AsyncStorage.getItem(CLE);
-    if (!brut) return [];
-    return JSON.parse(brut) as UseCase[];
-  } catch {
-    return [];
+  if (distant()) {
+    // Base distante + éventuels projets locaux (repli) non encore en base.
+    const distants = await remote.listerProjets();
+    const locaux = await chargerUseCasesLocal();
+    const idsDistants = new Set(distants.map((u) => u.id));
+    const seulementLocaux = locaux.filter((u) => !idsDistants.has(u.id));
+    return [...seulementLocaux, ...distants];
   }
+  return chargerUseCasesLocal();
 }
 
 export async function sauvegarderUseCases(liste: UseCase[]): Promise<void> {
@@ -88,20 +89,35 @@ export async function mettreAJourStatut(
   return modifierUseCase(id, (u) => ({ ...u, statut }));
 }
 
-// Applique une transformation à un use case et persiste.
+// Applique une transformation à un use case et renvoie l'ÉLÉMENT mis à jour
+// (ou undefined si introuvable). Cohérent : opère là où vit réellement le projet
+// (base distante OU local), pour ne jamais "perdre" un projet.
+export async function modifierEtTrouver(
+  id: string,
+  maj: (uc: UseCase) => UseCase
+): Promise<UseCase | undefined> {
+  if (distant()) {
+    const r = await remote.modifierProjet(id, maj);
+    if (r) return r;
+    // Pas en base -> peut-être un projet local (repli). On modifie en local.
+  }
+  const liste = await chargerUseCasesLocal();
+  const item = liste.find((u) => u.id === id);
+  if (!item) return undefined;
+  const majItem = maj(item);
+  await sauvegarderUseCases(liste.map((u) => (u.id === id ? majItem : u)));
+  return majItem;
+}
+
+// Compat : applique une transformation et renvoie la liste à jour.
 export async function modifierUseCase(
   id: string,
   maj: (uc: UseCase) => UseCase
 ): Promise<UseCase[]> {
-  if (distant()) {
-    await remote.modifierProjet(id, maj);
-    return remote.listerProjets();
-  }
-  const liste = await chargerUseCases();
-  const nouvelle = liste.map((u) => (u.id === id ? maj(u) : u));
-  await sauvegarderUseCases(nouvelle);
-  return nouvelle;
+  await modifierEtTrouver(id, maj);
+  return chargerUseCases();
 }
+
 
 // Enregistre le prototype HTML généré (côté admin) et passe le use case en
 // "prototype_genere" pour validation par le client. Incrémente la version

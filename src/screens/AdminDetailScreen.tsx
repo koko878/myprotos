@@ -41,7 +41,7 @@ export default function AdminDetailScreen({ useCaseId }: { useCaseId: string }) 
     }
     setErreur(null);
     const liste = await deposerPrototypeHtml(useCaseId, html);
-    setUc(liste.find((u) => u.id === useCaseId) ?? null);
+    setUc((prev) => liste.find((u) => u.id === useCaseId) ?? prev);
     setHtmlColle('');
     setMoteur('claude'); // déposé manuellement = qualité Claude (généré ici)
     setDiag(null);
@@ -56,7 +56,7 @@ export default function AdminDetailScreen({ useCaseId }: { useCaseId: string }) 
   // Envoie le prototype au client (le rend visible côté client).
   async function envoyer() {
     const liste = await envoyerPrototypeAuClient(useCaseId);
-    setUc(liste.find((u) => u.id === useCaseId) ?? null);
+    setUc((prev) => liste.find((u) => u.id === useCaseId) ?? prev);
   }
 
 
@@ -82,7 +82,7 @@ export default function AdminDetailScreen({ useCaseId }: { useCaseId: string }) 
       setDiag('Backend Claude indisponible (' + res.backendErreur + ') → repli Gemini.');
     }
     const liste = await enregistrerPrototype(useCaseId, res.html);
-    setUc(liste.find((u) => u.id === useCaseId) ?? null);
+    setUc((prev) => liste.find((u) => u.id === useCaseId) ?? prev);
   }
 
   if (!uc) {
