@@ -618,6 +618,7 @@ OBJECTIF : ${uc.objectif}
 UTILISATEURS CIBLES : ${uc.utilisateurs}
 APPROCHE : ${uc.approcheSuggeree}
 KPIS À METTRE EN AVANT : ${uc.kpis.join(', ')}
+${uc.langues?.length ? `LANGUES DE L'INTERFACE : ${uc.langues.join(', ')}` : ''}
 ${spec ? `RÉSUMÉ DU PROTOTYPE : ${spec.resume}
 FONCTIONNALITÉS À DÉMONTRER : ${spec.fonctionnalites.join(' ; ')}
 DONNÉES D'EXEMPLE : ${spec.donneesEntree}
@@ -904,6 +905,82 @@ export async function tourChallengeIA(
     };
     if (tour.done) {
       tour.remarques = liste(j?.remarques, []).slice(0, 6);
+    }
+    return tour;
+  } catch {
+    return null;
+  }
+}
+
+// ============================================================================
+// CHALLENGE DU CADRAGE MÉTIER — l'IA affine le use case avec le client
+// ============================================================================
+
+const SYSTEM_CHALLENGE_CADRAGE = `Tu es un consultant senior en data/IA. Le client a déjà un cadrage de son projet (résumé fourni plus bas). Il veut le CHALLENGER / l'AFFINER : corriger, préciser, ou changer des éléments (problème, objectif, KPIs, données, utilisateurs, contraintes, budget, approche).
+
+Règles :
+- Réponds en français, ton chaleureux et expert.
+- UNE question courte à la fois pour comprendre ce qu'il veut ajuster, en t'appuyant sur le cadrage existant.
+- Propose jusqu'à 3 suggestions concrètes adaptées à son cas.
+- Après 2 à 4 échanges (ou s'il dit que c'est bon), TERMINE : mets "done": true et produis le use case MIS À JOUR complet.
+
+Réponds TOUJOURS en JSON strict, sans texte autour :
+{
+  "reply": "ton message",
+  "suggestions": ["...", "...", "..."],
+  "done": false,
+  "useCase": null
+}
+
+Quand "done" vaut true, "useCase" reprend EXACTEMENT le même schéma que le cadrage initial (titre, domaine, probleme, objectif, kpis, donnees, utilisateurs, contraintes, approcheSuggeree, complexite, budgetEstime, roi{...}, spec{...}) en intégrant les modifications demandées. Conserve les valeurs existantes pour ce qui n'a pas changé.`;
+
+export interface TourChallengeCadrage {
+  reply: string;
+  suggestions: string[];
+  done: boolean;
+  useCase?: UseCase;
+}
+
+/**
+ * Un tour de l'entretien de challenge du CADRAGE. `actuel` = use case courant
+ * (sert de base/contexte). Sur done, renvoie le use case mis à jour.
+ */
+export async function tourChallengeCadrageIA(
+  actuel: UseCase,
+  messages: Message[],
+  forceFinish: boolean
+): Promise<TourChallengeCadrage | null> {
+  if (!iaDisponible()) return null;
+  const premierUser = messages.findIndex((m) => m.role === 'user');
+  if (premierUser === -1) return null;
+
+  const historique = messages.slice(premierUser).map((m) => ({
+    role: (m.role === 'assistant' ? 'model' : 'user') as 'model' | 'user',
+    text: m.texte,
+  }));
+
+  const resume = `Cadrage actuel — Titre: ${actuel.titre} | Domaine: ${actuel.domaine} | Problème: ${actuel.probleme} | Objectif: ${actuel.objectif} | KPIs: ${(actuel.kpis || []).join(', ')} | Données: ${actuel.donnees} | Utilisateurs: ${actuel.utilisateurs} | Contraintes: ${actuel.contraintes} | Approche: ${actuel.approcheSuggeree} | Budget: ${actuel.budgetEstime}`;
+
+  const sys =
+    SYSTEM_CHALLENGE_CADRAGE +
+    `\n\n${resume}` +
+    (forceFinish ? '\n\nIMPORTANT : termine maintenant ("done": true) avec le use case mis à jour.' : '');
+
+  const brut = await chatGemini(sys, historique, { json: true, temperature: 0.5 });
+  if (!brut) return null;
+
+  try {
+    const j = JSON.parse(brut);
+    const tour: TourChallengeCadrage = {
+      reply: s(j?.reply, 'Que souhaitez-vous ajuster dans le cadrage ?'),
+      suggestions: Array.isArray(j?.suggestions) ? j.suggestions.slice(0, 3).map(String) : [],
+      done: j?.done === true,
+    };
+    if (tour.done) {
+      // On fusionne : la base reste l'actuel, écrasé par les champs renvoyés.
+      const maj = normaliserUseCase({ ...actuel, ...(j?.useCase ?? {}) });
+      // On conserve l'id et le statut d'origine (ne pas régénérer).
+      tour.useCase = { ...maj, id: actuel.id, statut: actuel.statut };
     }
     return tour;
   } catch {

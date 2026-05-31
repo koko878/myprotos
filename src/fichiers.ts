@@ -159,6 +159,7 @@ export function construirePromptComplet(uc: UseCase): string {
   L.push('- Utilisateurs cibles : ' + uc.utilisateurs);
   L.push('- Approche : ' + uc.approcheSuggeree);
   if (uc.kpis?.length) L.push('- KPIs à mettre en avant : ' + uc.kpis.join(', '));
+  if (uc.langues?.length) L.push('- Langues de l’interface : ' + uc.langues.join(', '));
   if (uc.donnees) L.push('- Données disponibles : ' + uc.donnees);
   if (uc.contraintes) L.push('- Contraintes : ' + uc.contraintes);
   if (uc.spec?.resume) L.push('- Résumé du prototype : ' + uc.spec.resume);

@@ -3,10 +3,13 @@ import { Pressable, SafeAreaView, ScrollView, StyleSheet, Text, View } from 'rea
 import UseCaseView from '../components/UseCaseView';
 import { Bouton, Carte } from '../components/ui';
 import { choisirFichiers, tailleLisible } from '../fichiers';
+import { iaDisponible } from '../llm';
 import { useNav } from '../navigation';
-import { ajouterPiecesJointes, mettreAJourStatut, supprimerPieceJointe, trouverUseCase } from '../storage';
+import { ajouterPiecesJointes, definirLangues, mettreAJourStatut, supprimerPieceJointe, trouverUseCase } from '../storage';
 import { colors, font, radius, spacing } from '../theme';
 import { UseCase } from '../types';
+
+const LANGUES = ['Français', 'Arabe', 'Anglais', 'Espagnol', 'Amazigh'];
 
 export default function RecapScreen({ useCaseId }: { useCaseId: string }) {
   const { aller, retour } = useNav();
@@ -15,6 +18,17 @@ export default function RecapScreen({ useCaseId }: { useCaseId: string }) {
   useEffect(() => {
     trouverUseCase(useCaseId).then((u) => setUc(u ?? null));
   }, [useCaseId]);
+
+  // Bascule une langue (coché/décoché) et persiste.
+  async function basculerLangue(langue: string) {
+    if (!uc) return;
+    const actuelles = uc.langues ?? [];
+    const maj = actuelles.includes(langue)
+      ? actuelles.filter((l) => l !== langue)
+      : [...actuelles, langue];
+    const liste = await definirLangues(useCaseId, maj);
+    setUc(liste.find((u) => u.id === useCaseId) ?? null);
+  }
 
   // Le client soumet son projet : notre équipe génère ensuite le prototype.
   async function soumettre() {
@@ -61,7 +75,41 @@ export default function RecapScreen({ useCaseId }: { useCaseId: string }) {
             Relisez-le, puis soumettez-le : nous préparons votre prototype.
           </Text>
         </View>
+        {/* Challenger / affiner le cadrage avant de soumettre */}
+        {uc.statut === 'brouillon' && iaDisponible() && (
+          <Bouton
+            titre="✏️ Challenger / affiner le cadrage"
+            variante="secondaire"
+            onPress={() => aller({ nom: 'challengeCadrage', useCaseId })}
+          />
+        )}
+
+        <View style={{ height: spacing.lg }} />
         <UseCaseView uc={uc} />
+
+        {/* Langues de l'application */}
+        <Carte style={{ marginTop: spacing.lg, gap: spacing.md }}>
+          <Text style={styles.pjTitre}>🌐 Langues de l’application</Text>
+          <Text style={styles.pjSous}>
+            Dans quelle(s) langue(s) votre application doit-elle être disponible ?
+          </Text>
+          <View style={styles.langues}>
+            {LANGUES.map((l) => {
+              const actif = (uc.langues ?? []).includes(l);
+              return (
+                <Pressable
+                  key={l}
+                  onPress={() => basculerLangue(l)}
+                  style={[styles.langue, actif && styles.langueActif]}
+                >
+                  <Text style={[styles.langueTxt, actif && styles.langueTxtActif]}>
+                    {actif ? '✓ ' : ''}{l}
+                  </Text>
+                </Pressable>
+              );
+            })}
+          </View>
+        </Carte>
 
         {/* Pièces jointes : logo, charte graphique, documents… */}
         <Carte style={{ marginTop: spacing.lg, gap: spacing.md }}>
@@ -122,6 +170,18 @@ const styles = StyleSheet.create({
   banniereTxt: { color: colors.text, fontSize: font.small, lineHeight: 20 },
   pjTitre: { color: colors.text, fontSize: font.h3, fontWeight: '800' },
   pjSous: { color: colors.textMuted, fontSize: font.small, lineHeight: 19 },
+  langues: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm },
+  langue: {
+    paddingHorizontal: spacing.md,
+    paddingVertical: 8,
+    borderRadius: radius.pill,
+    borderWidth: 1,
+    borderColor: colors.border,
+    backgroundColor: colors.surfaceAlt,
+  },
+  langueActif: { borderColor: colors.primary, backgroundColor: colors.primary + '22' },
+  langueTxt: { color: colors.textMuted, fontSize: font.small, fontWeight: '600' },
+  langueTxtActif: { color: colors.primary },
   pjLigne: {
     flexDirection: 'row',
     alignItems: 'center',

@@ -113,6 +113,7 @@ export interface UseCase {
   remarques?: RemarqueClient[]; // remarques/besoins du client pour challenger le prototype
   piecesJointes?: PieceJointe[]; // logo, charte, docs fournis par le client
   cadrageTechnique?: CadrageTechnique; // résultat du cadrage technique infra
+  langues?: string[]; // langues choisies pour l'app (ex: ['Français','Arabe'])
   statut: StatutUseCase;
   creeLe: number;
 }

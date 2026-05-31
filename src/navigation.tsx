@@ -8,6 +8,7 @@ export type Route =
   | { nom: 'home' }
   | { nom: 'cadrage' } // cadrage métier (IA consultant)
   | { nom: 'recap'; useCaseId: string }
+  | { nom: 'challengeCadrage'; useCaseId: string } // affiner le cadrage (IA)
   | { nom: 'liste' }
   | { nom: 'detail'; useCaseId: string }
   | { nom: 'prototype'; useCaseId: string } // aperçu du prototype HTML (client)

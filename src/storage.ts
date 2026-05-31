@@ -185,3 +185,16 @@ export async function deposerPrototypeHtml(
 export async function envoyerPrototypeAuClient(useCaseId: string): Promise<UseCase[]> {
   return modifierUseCase(useCaseId, (u) => ({ ...u, statut: 'prototype_genere' }));
 }
+
+// Enregistre les langues choisies pour l'app.
+export async function definirLangues(useCaseId: string, langues: string[]): Promise<UseCase[]> {
+  return modifierUseCase(useCaseId, (u) => ({ ...u, langues }));
+}
+
+// Met à jour les champs métier du use case (après challenge du cadrage par l'IA).
+export async function appliquerCadrage(
+  useCaseId: string,
+  champs: Partial<UseCase>
+): Promise<UseCase[]> {
+  return modifierUseCase(useCaseId, (u) => ({ ...u, ...champs }));
+}

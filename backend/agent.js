@@ -147,6 +147,7 @@ OBJECTIF : ${uc.objectif}
 UTILISATEURS : ${uc.utilisateurs}
 APPROCHE : ${uc.approcheSuggeree}
 KPIS : ${(uc.kpis || []).join(', ')}
+${(uc.langues || []).length ? `LANGUES DE L'INTERFACE : ${uc.langues.join(', ')} (prévois un sélecteur de langue si plusieurs)` : ''}
 ${spec.resume ? `RÉSUMÉ : ${spec.resume}` : ''}
 ${spec.fonctionnalites ? `FONCTIONNALITÉS : ${spec.fonctionnalites.join(' ; ')}` : ''}
 ${spec.donneesEntree ? `DONNÉES : ${spec.donneesEntree}` : ''}${blocRemarques}

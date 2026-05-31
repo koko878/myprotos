@@ -7,6 +7,7 @@ import { colors } from './src/theme';
 import AdminDetailScreen from './src/screens/AdminDetailScreen';
 import AdminScreen from './src/screens/AdminScreen';
 import CadrageScreen from './src/screens/CadrageScreen';
+import CadrageChallengeScreen from './src/screens/CadrageChallengeScreen';
 import ChallengeScreen from './src/screens/ChallengeScreen';
 import DetailScreen from './src/screens/DetailScreen';
 import HomeScreen from './src/screens/HomeScreen';
@@ -26,6 +27,8 @@ function Routeur() {
       return <CadrageScreen />;
     case 'recap':
       return <RecapScreen useCaseId={route.useCaseId} />;
+    case 'challengeCadrage':
+      return <CadrageChallengeScreen useCaseId={route.useCaseId} />;
     case 'liste':
       return <ListeScreen />;
     case 'detail':

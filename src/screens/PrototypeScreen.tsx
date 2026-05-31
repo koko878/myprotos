@@ -124,15 +124,19 @@ export default function PrototypeScreen({ useCaseId }: { useCaseId: string }) {
           <View style={styles.footer}>
             <Bouton titre="✅ Valider le prototype" onPress={valider} />
             {iaDisponible() ? (
-              // Assistant IA qui aide à formuler le challenge.
-              <Pressable onPress={() => aller({ nom: 'challenge', useCaseId })} style={styles.lien}>
-                <Text style={styles.lienTxt}>✏️ Challenger / demander des ajustements</Text>
-              </Pressable>
+              // Assistant IA qui aide à challenger/affiner le prototype.
+              <Bouton
+                titre="✏️ Challenger / affiner le prototype"
+                variante="secondaire"
+                onPress={() => aller({ nom: 'challenge', useCaseId })}
+              />
             ) : (
               // Repli sans IA : champ libre.
-              <Pressable onPress={() => setChallenge((c) => !c)} style={styles.lien}>
-                <Text style={styles.lienTxt}>{challenge ? 'Annuler' : '✏️ Demander des ajustements'}</Text>
-              </Pressable>
+              <Bouton
+                titre={challenge ? 'Annuler' : '✏️ Demander des ajustements'}
+                variante="secondaire"
+                onPress={() => setChallenge((c) => !c)}
+              />
             )}
           </View>
         ) : (
