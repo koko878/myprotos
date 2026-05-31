@@ -1,62 +1,86 @@
-// Accès aux projets via Supabase (DB partagée). Mappe la table `projets`
-// (donnees jsonb) vers le type UseCase de l'app.
-//
-// Toutes les fonctions retombent silencieusement (renvoient [] / undefined) si
-// Supabase n'est pas configuré — l'app peut alors utiliser le store local.
-import { supabase } from './supabase';
+// Accès aux projets via Supabase (DB partagée) — APPELS REST DIRECTS.
+// Cohérent avec auth.ts (session gérée par nous) : on utilise le token courant.
+import { sessionToken, supabaseDisponible } from './auth';
 import { UseCase } from './types';
 
+const URL = (process.env.EXPO_PUBLIC_SUPABASE_URL || '').replace(/\/$/, '');
+const ANON = process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY || '';
+
+function headers(extra: Record<string, string> = {}): Record<string, string> {
+  const t = sessionToken() || ANON;
+  return { apikey: ANON, Authorization: `Bearer ${t}`, 'Content-Type': 'application/json', ...extra };
+}
+
+// fetch avec timeout (jamais de blocage infini).
+async function req(path: string, init: RequestInit, ms = 12000): Promise<Response | null> {
+  const ctrl = new AbortController();
+  const t = setTimeout(() => ctrl.abort(), ms);
+  try {
+    return await fetch(`${URL}${path}`, { ...init, signal: ctrl.signal });
+  } catch {
+    return null;
+  } finally {
+    clearTimeout(t);
+  }
+}
+
 function versUseCase(row: any): UseCase {
-  // `donnees` contient l'objet complet ; on force id + statut depuis la ligne.
   return { ...(row.donnees as UseCase), id: row.id, statut: row.statut };
 }
 
-// Liste les projets visibles (RLS : client = les siens, admin = tous).
+// uid de l'utilisateur courant (depuis la session locale).
+function uidCourant(): string | null {
+  try {
+    if (typeof localStorage !== 'undefined') {
+      const s = localStorage.getItem('getexp_session_v1');
+      if (s) return JSON.parse(s)?.user?.id ?? null;
+    }
+  } catch {
+    /* ignore */
+  }
+  return null;
+}
+
 export async function listerProjets(): Promise<UseCase[]> {
-  if (!supabase) return [];
-  const { data, error } = await supabase
-    .from('projets')
-    .select('id, donnees, statut, cree_le')
-    .order('cree_le', { ascending: false });
-  if (error || !data) return [];
-  return data.map(versUseCase);
+  if (!supabaseDisponible()) return [];
+  const r = await req('/rest/v1/projets?select=id,donnees,statut,cree_le&order=cree_le.desc', { headers: headers() });
+  if (!r || !r.ok) return [];
+  const data = await r.json().catch(() => []);
+  return Array.isArray(data) ? data.map(versUseCase) : [];
 }
 
 export async function trouverProjet(id: string): Promise<UseCase | undefined> {
-  if (!supabase) return undefined;
-  const { data } = await supabase
-    .from('projets')
-    .select('id, donnees, statut')
-    .eq('id', id)
-    .single();
-  return data ? versUseCase(data) : undefined;
+  if (!supabaseDisponible()) return undefined;
+  const r = await req(`/rest/v1/projets?id=eq.${id}&select=id,donnees,statut`, { headers: headers() });
+  if (!r || !r.ok) return undefined;
+  const data = await r.json().catch(() => []);
+  return Array.isArray(data) && data[0] ? versUseCase(data[0]) : undefined;
 }
 
-// Crée un projet pour l'utilisateur courant. Renvoie l'id créé, ou null.
 export async function creerProjet(uc: UseCase): Promise<string | null> {
-  if (!supabase) return null;
-  const { data: sess } = await supabase.auth.getSession();
-  const uid = sess.session?.user.id;
+  if (!supabaseDisponible()) return null;
+  const uid = uidCourant();
   if (!uid) return null;
-  const { data, error } = await supabase
-    .from('projets')
-    .insert({ proprietaire: uid, donnees: uc, statut: uc.statut })
-    .select('id')
-    .single();
-  return error || !data ? null : data.id;
+  const r = await req('/rest/v1/projets', {
+    method: 'POST',
+    headers: headers({ Prefer: 'return=representation' }),
+    body: JSON.stringify({ proprietaire: uid, donnees: uc, statut: uc.statut }),
+  });
+  if (!r || !r.ok) return null;
+  const data = await r.json().catch(() => []);
+  return Array.isArray(data) && data[0]?.id ? data[0].id : null;
 }
 
-// Met à jour un projet existant (objet complet + statut).
 export async function majProjet(id: string, uc: UseCase): Promise<boolean> {
-  if (!supabase) return false;
-  const { error } = await supabase
-    .from('projets')
-    .update({ donnees: uc, statut: uc.statut, maj_le: new Date().toISOString() })
-    .eq('id', id);
-  return !error;
+  if (!supabaseDisponible()) return false;
+  const r = await req(`/rest/v1/projets?id=eq.${id}`, {
+    method: 'PATCH',
+    headers: headers(),
+    body: JSON.stringify({ donnees: uc, statut: uc.statut, maj_le: new Date().toISOString() }),
+  });
+  return !!r && r.ok;
 }
 
-// Applique une transformation à un projet (lecture -> maj).
 export async function modifierProjet(
   id: string,
   fn: (uc: UseCase) => UseCase
