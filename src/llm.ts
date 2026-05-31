@@ -73,11 +73,17 @@ async function postJson(
   tentatives: number
 ): Promise<{ status: number; data: any } | null> {
   for (let i = 0; i < tentatives; i++) {
+    // Timeout dur : une connexion qui ne répond jamais ne doit PAS figer le
+    // chat (spinner infini). 45 s laisse le temps aux gros prompts, mais coupe
+    // toute requête fantôme -> l'appelant reçoit null et affiche « Réessayer ».
+    const ctrl = new AbortController();
+    const minuteur = setTimeout(() => ctrl.abort(), 45000);
     try {
       const reponse = await fetch(url, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', ...headers },
         body: JSON.stringify(body),
+        signal: ctrl.signal,
       });
       if (reponse.ok) return { status: reponse.status, data: await reponse.json() };
       if (reponse.status === 429 || reponse.status === 503) {
@@ -94,6 +100,8 @@ async function postJson(
         continue;
       }
       return null;
+    } finally {
+      clearTimeout(minuteur);
     }
   }
   return null;

@@ -93,8 +93,16 @@ export default function ChatIA({ titre, ouverture, jouerTour, onTermine, progres
   async function tour(base: Message[]) {
     setEchec(null);
     setLoading(true);
-    const res = await jouerTour(base);
-    setLoading(false);
+    let res: ResultatTour | null = null;
+    try {
+      res = await jouerTour(base);
+    } catch {
+      // Toute erreur inattendue = échec récupérable. On ne laisse JAMAIS le
+      // spinner bloqué : setLoading(false) est garanti par le finally.
+      res = null;
+    } finally {
+      setLoading(false);
+    }
 
     if (!res) {
       setEchec({ base });
