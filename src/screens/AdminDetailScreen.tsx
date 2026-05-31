@@ -2,8 +2,9 @@ import React, { useEffect, useState } from 'react';
 import { ActivityIndicator, Platform, Pressable, SafeAreaView, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { backendDisponible, genererPrototypeHtml } from '../cadrageAssistant';
 import HtmlPreview from '../components/HtmlPreview';
+import FileButton from '../components/FileButton';
 import { Bouton, Carte } from '../components/ui';
-import { lireFichierTexte, telechargerDossierProjet } from '../fichiers';
+import { telechargerDossierProjet } from '../fichiers';
 import { iaDisponible } from '../llm';
 import { useNav } from '../navigation';
 import { deposerPrototypeHtml, enregistrerPrototype, trouverUseCase } from '../storage';
@@ -51,11 +52,6 @@ export default function AdminDetailScreen({ useCaseId }: { useCaseId: string }) 
     await deposerHtml(html);
   }
 
-  // Import d'un fichier .html (méthode principale, plus simple que coller).
-  async function uploader() {
-    const fichier = await lireFichierTexte();
-    if (fichier) await deposerHtml(fichier.contenu);
-  }
 
   async function generer() {
     if (!uc || loading) return;
@@ -156,7 +152,7 @@ export default function AdminDetailScreen({ useCaseId }: { useCaseId: string }) 
           {erreur && <Text style={styles.erreur}>⚠️ {erreur}</Text>}
 
           {/* Méthode principale : upload d'un fichier .html */}
-          <Bouton titre="📄 Importer un fichier .html" onPress={uploader} />
+          <FileButton titre="📄 Importer un fichier .html" onTexte={(_n, contenu) => deposerHtml(contenu)} />
 
           {/* Méthode de secours : coller le code */}
           <Pressable onPress={() => setColleVisible((v) => !v)} hitSlop={6} style={styles.toggleColle}>
