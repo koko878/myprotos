@@ -22,8 +22,15 @@ export async function choisirFichiers(accept = '*/*'): Promise<PieceJointe[]> {
     input.style.position = 'fixed';
     input.style.opacity = '0';
     input.style.pointerEvents = 'none';
+    let resolu = false;
     const nettoyer = () => {
       try { document.body.removeChild(input); } catch { /* déjà retiré */ }
+    };
+    const terminer = (pieces: PieceJointe[]) => {
+      if (resolu) return;
+      resolu = true;
+      nettoyer();
+      resolve(pieces);
     };
     input.onchange = async () => {
       const files = Array.from(input.files || []);
@@ -46,10 +53,21 @@ export async function choisirFichiers(accept = '*/*'): Promise<PieceJointe[]> {
           });
         }
       }
-      nettoyer();
-      resolve(pieces);
+      terminer(pieces);
     };
-    // Si l'utilisateur annule, onchange ne se déclenche pas : on ne bloque pas.
+    // Annulation : l'événement 'cancel' (navigateurs modernes) OU un repli au
+    // retour de focus garantissent qu'on résout TOUJOURS (promesse jamais
+    // suspendue, input jamais laissé dans le DOM).
+    input.oncancel = () => terminer([]);
+    const surFocus = () => {
+      window.removeEventListener('focus', surFocus);
+      // Au retour de focus : si AUCUN fichier choisi, c'est une annulation.
+      // Si des fichiers sont présents, on laisse onchange finir (lecture async).
+      setTimeout(() => {
+        if (!input.files || input.files.length === 0) terminer([]);
+      }, 300);
+    };
+    window.addEventListener('focus', surFocus);
     document.body.appendChild(input);
     input.click();
   });
@@ -98,21 +116,38 @@ export async function lireFichierTexte(
     input.style.position = 'fixed';
     input.style.opacity = '0';
     input.style.pointerEvents = 'none';
+    let resolu = false;
     const nettoyer = () => {
       try { document.body.removeChild(input); } catch { /* déjà retiré */ }
+    };
+    const terminer = (val: { nom: string; contenu: string } | null) => {
+      if (resolu) return;
+      resolu = true;
+      nettoyer();
+      resolve(val);
     };
     input.onchange = () => {
       const f = (input.files || [])[0];
       if (!f) {
-        nettoyer();
-        resolve(null);
+        terminer(null);
         return;
       }
       const reader = new FileReader();
-      reader.onload = () => { nettoyer(); resolve({ nom: f.name, contenu: String(reader.result || '') }); };
-      reader.onerror = () => { nettoyer(); resolve(null); };
+      reader.onload = () => terminer({ nom: f.name, contenu: String(reader.result || '') });
+      reader.onerror = () => terminer(null);
       reader.readAsText(f);
     };
+    // Annulation : 'cancel' moderne + repli au retour de focus (promesse jamais
+    // suspendue, input jamais laissé dans le DOM).
+    input.oncancel = () => terminer(null);
+    const surFocus = () => {
+      window.removeEventListener('focus', surFocus);
+      // Au retour de focus : annulation seulement si aucun fichier choisi.
+      setTimeout(() => {
+        if (!input.files || input.files.length === 0) terminer(null);
+      }, 300);
+    };
+    window.addEventListener('focus', surFocus);
     document.body.appendChild(input);
     input.click();
   });
