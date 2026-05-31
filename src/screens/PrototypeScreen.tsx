@@ -13,6 +13,7 @@ import HtmlPreview from '../components/HtmlPreview';
 import { Bouton, Carte } from '../components/ui';
 import { iaDisponible } from '../llm';
 import { useNav } from '../navigation';
+import { ouvrirHtmlNouvelOnglet } from '../ouvrir';
 import { ajouterRemarque, mettreAJourStatut, trouverUseCase } from '../storage';
 import { colors, font, radius, spacing } from '../theme';
 import { UseCase } from '../types';
@@ -41,14 +42,7 @@ export default function PrototypeScreen({ useCaseId }: { useCaseId: string }) {
   }
 
   function pleinEcran() {
-    if (Platform.OS === 'web' && uc?.prototypeHtml && typeof window !== 'undefined') {
-      const w = window.open('', '_blank');
-      if (w) {
-        w.document.open();
-        w.document.write(uc.prototypeHtml);
-        w.document.close();
-      }
-    }
+    if (uc?.prototypeHtml) ouvrirHtmlNouvelOnglet(uc.prototypeHtml);
   }
 
   if (!uc) {
@@ -86,9 +80,7 @@ export default function PrototypeScreen({ useCaseId }: { useCaseId: string }) {
         <Text style={styles.headerTitre} numberOfLines={1}>
           Prototype{uc.prototypeVersion ? ` v${uc.prototypeVersion}` : ''}
         </Text>
-        <Pressable onPress={pleinEcran} hitSlop={12}>
-          <Text style={[styles.retour, { textAlign: 'right' }]}>⤢ Plein écran</Text>
-        </Pressable>
+        <View style={{ width: 90 }} />
       </View>
 
       <View style={styles.banniere}>
@@ -105,6 +97,12 @@ export default function PrototypeScreen({ useCaseId }: { useCaseId: string }) {
           <Text style={styles.chargement}>Prototype indisponible.</Text>
         )}
       </View>
+
+      {Platform.OS === 'web' && !!uc.prototypeHtml && (
+        <Pressable onPress={pleinEcran} style={styles.ouvrir}>
+          <Text style={styles.ouvrirTxt}>🔗 Ouvrir dans le navigateur (plein écran)</Text>
+        </Pressable>
+      )}
 
       <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
         {challenge && !dejaValide && (
@@ -174,6 +172,16 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
     backgroundColor: '#fff',
   },
+  ouvrir: {
+    marginHorizontal: spacing.lg,
+    marginBottom: spacing.sm,
+    paddingVertical: spacing.sm,
+    borderRadius: radius.pill,
+    borderWidth: 1.5,
+    borderColor: colors.primary,
+    alignItems: 'center',
+  },
+  ouvrirTxt: { color: colors.primary, fontSize: font.small, fontWeight: '700' },
   challengeBox: { marginHorizontal: spacing.lg, marginBottom: spacing.sm, gap: spacing.md },
   challengeTitre: { color: colors.text, fontSize: font.body, fontWeight: '700' },
   input: {

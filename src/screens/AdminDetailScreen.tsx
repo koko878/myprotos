@@ -8,6 +8,7 @@ import { telechargerDossierProjet } from '../fichiers';
 import { iaDisponible } from '../llm';
 import { useNav } from '../navigation';
 import { deposerPrototypeHtml, enregistrerPrototype, envoyerPrototypeAuClient, trouverUseCase } from '../storage';
+import { ouvrirHtmlNouvelOnglet } from '../ouvrir';
 import { colors, font, radius, spacing } from '../theme';
 import { UseCase } from '../types';
 
@@ -234,6 +235,13 @@ export default function AdminDetailScreen({ useCaseId }: { useCaseId: string }) 
         {dejaGenere && (
           <Carte style={{ gap: spacing.sm }}>
             <Text style={styles.h}>Aperçu (v{uc.prototypeVersion ?? 1})</Text>
+            {Platform.OS === 'web' && (
+              <Bouton
+                titre="🔗 Ouvrir dans le navigateur (plein écran)"
+                variante="secondaire"
+                onPress={() => ouvrirHtmlNouvelOnglet(uc.prototypeHtml!)}
+              />
+            )}
             <View style={styles.preview}>
               <HtmlPreview html={uc.prototypeHtml!} />
             </View>
