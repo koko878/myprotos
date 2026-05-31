@@ -15,8 +15,28 @@ export default function RecapScreen({ useCaseId }: { useCaseId: string }) {
   const { aller, retour } = useNav();
   const [uc, setUc] = useState<UseCase | null>(null);
 
+  const [introuvable, setIntrouvable] = useState(false);
+
   useEffect(() => {
-    trouverUseCase(useCaseId).then((u) => setUc(u ?? null));
+    let actif = true;
+    // Le projet vient peut-être d'être créé en base : on réessaie quelques fois
+    // (latence d'écriture/lecture) avant d'abandonner — jamais de blocage infini.
+    async function charger() {
+      for (let i = 0; i < 6 && actif; i++) {
+        const u = await trouverUseCase(useCaseId);
+        if (!actif) return;
+        if (u) {
+          setUc(u);
+          return;
+        }
+        await new Promise((r) => setTimeout(r, 600));
+      }
+      if (actif) setIntrouvable(true);
+    }
+    charger();
+    return () => {
+      actif = false;
+    };
   }, [useCaseId]);
 
   // Bascule une langue (coché/décoché) et persiste.
@@ -53,7 +73,14 @@ export default function RecapScreen({ useCaseId }: { useCaseId: string }) {
   if (!uc) {
     return (
       <SafeAreaView style={styles.safe}>
-        <Text style={styles.chargement}>Chargement…</Text>
+        {introuvable ? (
+          <View style={{ flex: 1, justifyContent: 'center', padding: spacing.xl, gap: spacing.lg }}>
+            <Text style={styles.chargement}>Projet introuvable pour le moment.</Text>
+            <Bouton titre="Voir mes projets" onPress={() => aller({ nom: 'liste' })} />
+          </View>
+        ) : (
+          <Text style={styles.chargement}>Chargement…</Text>
+        )}
       </SafeAreaView>
     );
   }

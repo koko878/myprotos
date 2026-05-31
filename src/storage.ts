@@ -44,18 +44,39 @@ export async function ajouterUseCase(uc: UseCase): Promise<UseCase[]> {
 }
 
 // Crée un projet et renvoie son ID réel (DB en mode distant, sinon l'id local).
-// À utiliser pour naviguer juste après création.
+// À utiliser pour naviguer juste après création. Si l'insertion distante échoue,
+// on bascule sur le stockage local pour ne JAMAIS naviguer vers un id fantôme.
 export async function creerEtId(uc: UseCase): Promise<string> {
   if (distant()) {
     const id = await remote.creerProjet(uc);
-    return id ?? uc.id;
+    if (id) return id;
+    // Échec distant -> repli local (le projet reste accessible/visible).
+    const liste = await chargerUseCasesLocal();
+    await sauvegarderUseCases([uc, ...liste]);
+    return uc.id;
   }
   await ajouterUseCase(uc);
   return uc.id;
 }
 
+// Lecture locale brute (utilisée comme repli, indépendamment du mode).
+async function chargerUseCasesLocal(): Promise<UseCase[]> {
+  try {
+    const brut = await AsyncStorage.getItem(CLE);
+    return brut ? (JSON.parse(brut) as UseCase[]) : [];
+  } catch {
+    return [];
+  }
+}
+
 export async function trouverUseCase(id: string): Promise<UseCase | undefined> {
-  if (distant()) return remote.trouverProjet(id);
+  if (distant()) {
+    const r = await remote.trouverProjet(id);
+    if (r) return r;
+    // Repli local (cas d'un projet créé en local après échec d'insertion distante).
+    const local = await chargerUseCasesLocal();
+    return local.find((u) => u.id === id);
+  }
   const liste = await chargerUseCases();
   return liste.find((u) => u.id === id);
 }
