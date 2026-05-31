@@ -13,21 +13,35 @@ const VISIBLES: UseCase['statut'][] = [
   'soumis',
   'prototype_pret_admin',
   'prototype_genere',
+  'revision_demandee',
   'prototype_valide',
   'cadrage_technique',
   'pret_a_packager',
   'certifie',
 ];
 
+// Statuts qui demandent une action de l'admin -> remontés en haut de liste.
+const PRIORITAIRES: UseCase['statut'][] = ['soumis', 'revision_demandee', 'prototype_pret_admin'];
+
 export default function AdminScreen() {
   const { aller, retour } = useNav();
   const [liste, setListe] = useState<UseCase[] | null>(null);
 
   useEffect(() => {
-    chargerUseCases().then((l) => setListe(l.filter((u) => VISIBLES.includes(u.statut))));
+    chargerUseCases().then((l) => {
+      const visibles = l.filter((u) => VISIBLES.includes(u.statut));
+      // Les projets nécessitant une action passent en tête.
+      visibles.sort((a, b) => {
+        const pa = PRIORITAIRES.includes(a.statut) ? 0 : 1;
+        const pb = PRIORITAIRES.includes(b.statut) ? 0 : 1;
+        return pa - pb;
+      });
+      setListe(visibles);
+    });
   }, []);
 
   const aTraiter = liste?.filter((u) => u.statut === 'soumis').length ?? 0;
+  const aRevoir = liste?.filter((u) => u.statut === 'revision_demandee').length ?? 0;
 
   return (
     <SafeAreaView style={styles.safe}>
@@ -43,6 +57,15 @@ export default function AdminScreen() {
         <Text style={styles.intro}>
           Projets soumis par les clients. {aTraiter > 0 ? `${aTraiter} en attente de prototype.` : 'Aucun nouveau projet à traiter.'}
         </Text>
+
+        {aRevoir > 0 && (
+          <View style={styles.alerteRevision}>
+            <Text style={styles.alerteRevisionTxt}>
+              🔔 {aRevoir} prototype{aRevoir > 1 ? 's' : ''} challengé{aRevoir > 1 ? 's' : ''} par le client —
+              à retravailler. Ouvrez le projet pour voir les remarques et récupérer le prompt.
+            </Text>
+          </View>
+        )}
 
         {liste && liste.length === 0 && (
           <View style={styles.vide}>
@@ -64,8 +87,13 @@ export default function AdminScreen() {
             >
               <View style={styles.cardTop}>
                 <Etiquette texte={st.texte} couleur={st.couleur} />
-                {aGenerer && <Text style={styles.action}>⚙️ À générer</Text>}
-                {aEnvoyer && <Text style={styles.action}>📤 À envoyer</Text>}
+                {uc.statut === 'revision_demandee' ? (
+                  <Text style={styles.action}>🔔 Challengé — à revoir</Text>
+                ) : aGenerer ? (
+                  <Text style={styles.action}>⚙️ À générer</Text>
+                ) : (
+                  aEnvoyer && <Text style={styles.action}>📤 À envoyer</Text>
+                )}
               </View>
               <Text style={styles.cardTitre}>{uc.titre}</Text>
               <View style={styles.tags}>
@@ -93,6 +121,15 @@ const styles = StyleSheet.create({
   headerTitre: { color: colors.text, fontSize: font.h3, fontWeight: '800' },
   content: { padding: spacing.lg, paddingBottom: spacing.xxl },
   intro: { color: colors.textMuted, fontSize: font.small, lineHeight: 20, marginBottom: spacing.lg },
+  alerteRevision: {
+    backgroundColor: colors.warn + '1A',
+    borderColor: colors.warn + '66',
+    borderWidth: 1,
+    borderRadius: 12,
+    padding: spacing.md,
+    marginBottom: spacing.lg,
+  },
+  alerteRevisionTxt: { color: colors.text, fontSize: font.small, lineHeight: 19, fontWeight: '600' },
   cardTop: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
   action: { color: colors.warn, fontSize: font.small, fontWeight: '800' },
   cardTitre: { color: colors.text, fontSize: font.h3, fontWeight: '700', lineHeight: 22 },
