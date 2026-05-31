@@ -31,6 +31,9 @@
       "eas": {
         "projectId": "b87ab987-f53c-442c-b5c6-49faea663a48"
       }
+    },
+    "experiments": {
+      "baseUrl": "/myprotos"
     }
   }
 }
