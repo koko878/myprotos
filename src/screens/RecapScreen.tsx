@@ -40,14 +40,16 @@ export default function RecapScreen({ useCaseId }: { useCaseId: string }) {
   }, [useCaseId]);
 
   // Bascule une langue (coché/décoché) et persiste.
+  // Mise à jour OPTIMISTE : on met à jour l'écran immédiatement, puis on persiste
+  // en arrière-plan. On ne remet JAMAIS `uc` à null (sinon écran "Chargement…").
   async function basculerLangue(langue: string) {
     if (!uc) return;
     const actuelles = uc.langues ?? [];
     const maj = actuelles.includes(langue)
       ? actuelles.filter((l) => l !== langue)
       : [...actuelles, langue];
-    const liste = await definirLangues(useCaseId, maj);
-    setUc(liste.find((u) => u.id === useCaseId) ?? null);
+    setUc({ ...uc, langues: maj });
+    definirLangues(useCaseId, maj).catch(() => {});
   }
 
   // Le client soumet son projet : notre équipe génère ensuite le prototype.
@@ -58,16 +60,18 @@ export default function RecapScreen({ useCaseId }: { useCaseId: string }) {
   }
 
   async function joindre() {
+    if (!uc) return;
     const pieces = await choisirFichiers();
     if (pieces.length) {
-      const liste = await ajouterPiecesJointes(useCaseId, pieces);
-      setUc(liste.find((u) => u.id === useCaseId) ?? null);
+      setUc({ ...uc, piecesJointes: [...(uc.piecesJointes ?? []), ...pieces] });
+      ajouterPiecesJointes(useCaseId, pieces).catch(() => {});
     }
   }
 
   async function retirer(pieceId: string) {
-    const liste = await supprimerPieceJointe(useCaseId, pieceId);
-    setUc(liste.find((u) => u.id === useCaseId) ?? null);
+    if (!uc) return;
+    setUc({ ...uc, piecesJointes: (uc.piecesJointes ?? []).filter((p) => p.id !== pieceId) });
+    supprimerPieceJointe(useCaseId, pieceId).catch(() => {});
   }
 
   if (!uc) {
