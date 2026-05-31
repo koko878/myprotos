@@ -46,7 +46,9 @@ export default function DetailScreen({ useCaseId }: { useCaseId: string }) {
 
 // Bandeau d'action contextuel selon l'étape du cycle de vie.
 function EtapeSuivante({ uc, aller }: { uc: UseCase; aller: (r: any) => void }) {
-  if (uc.statut === 'soumis') {
+  // 'prototype_pret_admin' = déposé côté admin mais pas encore envoyé : pour le
+  // client, c'est toujours "en préparation".
+  if (uc.statut === 'soumis' || uc.statut === 'prototype_pret_admin') {
     return (
       <Carte style={[styles.etape, { borderColor: colors.accent + '55' }]}>
         <Text style={styles.etapeTitre}>⏳ Projet soumis</Text>

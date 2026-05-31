@@ -11,6 +11,7 @@ import { UseCase } from '../types';
 // On masque les brouillons (pas encore soumis par le client).
 const VISIBLES: UseCase['statut'][] = [
   'soumis',
+  'prototype_pret_admin',
   'prototype_genere',
   'prototype_valide',
   'cadrage_technique',
@@ -52,16 +53,19 @@ export default function AdminScreen() {
 
         {liste?.map((uc) => {
           const st = libelleStatut(uc.statut);
-          const aGenerer = uc.statut === 'soumis';
+          const aGenerer = uc.statut === 'soumis' || uc.statut === 'revision_demandee';
+          const aEnvoyer = uc.statut === 'prototype_pret_admin';
+          const aAgir = aGenerer || aEnvoyer;
           return (
             <Carte
               key={uc.id}
-              style={{ marginBottom: spacing.md, gap: spacing.sm, borderColor: aGenerer ? colors.warn + '66' : colors.border }}
+              style={{ marginBottom: spacing.md, gap: spacing.sm, borderColor: aAgir ? colors.warn + '66' : colors.border }}
               onPress={() => aller({ nom: 'adminDetail', useCaseId: uc.id })}
             >
               <View style={styles.cardTop}>
                 <Etiquette texte={st.texte} couleur={st.couleur} />
                 {aGenerer && <Text style={styles.action}>⚙️ À générer</Text>}
+                {aEnvoyer && <Text style={styles.action}>📤 À envoyer</Text>}
               </View>
               <Text style={styles.cardTitre}>{uc.titre}</Text>
               <View style={styles.tags}>

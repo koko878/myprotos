@@ -9,6 +9,7 @@ const eur = (n: number) => n.toLocaleString('fr-FR') + ' €';
 export const LIBELLE_STATUT: Record<StatutUseCase, { texte: string; couleur: string }> = {
   brouillon: { texte: 'Cadré · à soumettre', couleur: colors.textMuted },
   soumis: { texte: 'Soumis', couleur: colors.accent },
+  prototype_pret_admin: { texte: 'À envoyer au client', couleur: colors.warn },
   prototype_genere: { texte: 'Prototype prêt', couleur: colors.warn },
   revision_demandee: { texte: 'Révision demandée', couleur: colors.warn },
   prototype_valide: { texte: 'Prototype validé', couleur: colors.success },

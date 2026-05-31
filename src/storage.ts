@@ -89,12 +89,13 @@ export async function enregistrerPrototype(
   useCaseId: string,
   prototypeHtml: string
 ): Promise<UseCase[]> {
+  // Généré automatiquement -> aperçu admin (à envoyer ensuite au client).
   return modifierUseCase(useCaseId, (u) => ({
     ...u,
     prototypeHtml,
     prototypeGenereLe: Date.now(),
     prototypeVersion: (u.prototypeVersion ?? 0) + 1,
-    statut: 'prototype_genere',
+    statut: 'prototype_pret_admin',
   }));
 }
 
@@ -169,11 +170,18 @@ export async function deposerPrototypeHtml(
   useCaseId: string,
   html: string
 ): Promise<UseCase[]> {
+  // Le prototype est d'abord en aperçu ADMIN ; il n'est visible du client
+  // qu'après "Envoyer au client" (envoyerPrototypeAuClient).
   return modifierUseCase(useCaseId, (u) => ({
     ...u,
     prototypeHtml: html,
     prototypeGenereLe: Date.now(),
     prototypeVersion: (u.prototypeVersion ?? 0) + 1,
-    statut: 'prototype_genere',
+    statut: 'prototype_pret_admin',
   }));
+}
+
+// L'admin envoie le prototype au client (le rend visible côté client).
+export async function envoyerPrototypeAuClient(useCaseId: string): Promise<UseCase[]> {
+  return modifierUseCase(useCaseId, (u) => ({ ...u, statut: 'prototype_genere' }));
 }

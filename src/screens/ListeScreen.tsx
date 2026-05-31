@@ -80,6 +80,8 @@ function prochaineAction(statut: UseCase['statut']): string {
       return '👉 À soumettre pour lancer le prototype';
     case 'soumis':
       return '⏳ Prototype en préparation';
+    case 'prototype_pret_admin':
+      return '⏳ Prototype en préparation';
     case 'prototype_genere':
       return '👉 Votre prototype est prêt — à voir et valider';
     case 'revision_demandee':

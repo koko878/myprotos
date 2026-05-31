@@ -13,7 +13,8 @@ export type Complexite = 'Faible' | 'Moyenne' | 'Élevée';
 export type StatutUseCase =
   | 'brouillon' // cadrage métier terminé, pas encore soumis
   | 'soumis' // soumis par le client — en attente de génération (admin)
-  | 'prototype_genere' // prototype HTML généré — en attente de validation client
+  | 'prototype_pret_admin' // HTML déposé par l'admin, pas encore envoyé au client
+  | 'prototype_genere' // prototype envoyé au client — en attente de sa validation
   | 'revision_demandee' // le client a challengé le prototype — à régénérer (admin)
   | 'prototype_valide' // prototype validé par le client
   | 'cadrage_technique' // cadrage technique infra en cours

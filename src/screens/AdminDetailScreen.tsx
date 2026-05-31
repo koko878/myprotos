@@ -7,7 +7,7 @@ import { Bouton, Carte } from '../components/ui';
 import { telechargerDossierProjet } from '../fichiers';
 import { iaDisponible } from '../llm';
 import { useNav } from '../navigation';
-import { deposerPrototypeHtml, enregistrerPrototype, trouverUseCase } from '../storage';
+import { deposerPrototypeHtml, enregistrerPrototype, envoyerPrototypeAuClient, trouverUseCase } from '../storage';
 import { colors, font, radius, spacing } from '../theme';
 import { UseCase } from '../types';
 
@@ -52,6 +52,12 @@ export default function AdminDetailScreen({ useCaseId }: { useCaseId: string }) 
     await deposerHtml(html);
   }
 
+  // Envoie le prototype au client (le rend visible côté client).
+  async function envoyer() {
+    const liste = await envoyerPrototypeAuClient(useCaseId);
+    setUc(liste.find((u) => u.id === useCaseId) ?? null);
+  }
+
 
   async function generer() {
     if (!uc || loading) return;
@@ -90,6 +96,8 @@ export default function AdminDetailScreen({ useCaseId }: { useCaseId: string }) 
   const enRevision = uc.statut === 'revision_demandee';
   const aGenerer = uc.statut === 'soumis' || enRevision;
   const dejaGenere = !!uc.prototypeHtml;
+  const pretAEnvoyer = uc.statut === 'prototype_pret_admin'; // déposé, pas encore envoyé
+  const envoye = uc.statut === 'prototype_genere'; // visible par le client
 
   return (
     <SafeAreaView style={styles.safe}>
@@ -172,6 +180,26 @@ export default function AdminDetailScreen({ useCaseId }: { useCaseId: string }) 
             </>
           )}
         </Carte>
+
+        {/* ENVOI AU CLIENT */}
+        {pretAEnvoyer && (
+          <Carte style={{ gap: spacing.md, borderColor: colors.warn + '66' }}>
+            <Text style={styles.h}>📤 Prototype prêt à envoyer</Text>
+            <Text style={styles.sub}>
+              Le prototype (v{uc.prototypeVersion ?? 1}) est déposé. Vérifiez l’aperçu ci-dessous,
+              puis envoyez-le au client pour validation.
+            </Text>
+            <Bouton titre="📤 Envoyer au client" onPress={envoyer} />
+          </Carte>
+        )}
+        {envoye && (
+          <Carte style={{ gap: spacing.sm, borderColor: colors.success + '66' }}>
+            <Text style={styles.h}>✅ Envoyé au client</Text>
+            <Text style={styles.sub}>
+              Le client peut voir et valider le prototype (v{uc.prototypeVersion ?? 1}).
+            </Text>
+          </Carte>
+        )}
 
         {/* GÉNÉRATION AUTO (option repliée) */}
         <Carte style={{ gap: spacing.md }}>
