@@ -5,6 +5,7 @@ import HtmlPreview from '../components/HtmlPreview';
 import FileButton from '../components/FileButton';
 import { Bouton, Carte } from '../components/ui';
 import { telechargerDossierProjet } from '../fichiers';
+import { dateHeure } from '../format';
 import { iaDisponible } from '../llm';
 import { useNav } from '../navigation';
 import { deposerPrototypeHtml, enregistrerPrototype, envoyerPrototypeAuClient, trouverUseCase } from '../storage';
@@ -111,6 +112,18 @@ export default function AdminDetailScreen({ useCaseId }: { useCaseId: string }) 
       </View>
 
       <ScrollView contentContainerStyle={styles.content}>
+        {/* Identité du client + soumission */}
+        {(uc.client || uc.soumisLe) && (
+          <Carte style={{ gap: spacing.sm, borderColor: colors.accent + '44' }}>
+            <Text style={styles.h}>👤 Client</Text>
+            {uc.client?.email && <Ligne label="Email" v={uc.client.email} />}
+            {uc.client?.entreprise && <Ligne label="Entreprise" v={uc.client.entreprise} />}
+            {uc.client?.secteur && <Ligne label="Secteur du client" v={uc.client.secteur} />}
+            {typeof uc.client?.age === 'number' && <Ligne label="Âge" v={String(uc.client.age)} />}
+            {uc.soumisLe && <Ligne label="Soumis le" v={dateHeure(uc.soumisLe)} />}
+          </Carte>
+        )}
+
         {/* Brief métier condensé pour l'admin */}
         <Carte style={{ gap: spacing.sm }}>
           <Text style={styles.h}>Brief</Text>

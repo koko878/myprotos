@@ -1,11 +1,14 @@
 import { StatusBar } from 'expo-status-bar';
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { ActivityIndicator, SafeAreaView, StyleSheet, View } from 'react-native';
 import { AuthProvider, useAuth } from './src/authContext';
 import { NavigationProvider, useNav } from './src/navigation';
+import { profilComplet } from './src/profil';
+import ProfilScreen from './src/screens/ProfilScreen';
 import { colors } from './src/theme';
 import AdminDetailScreen from './src/screens/AdminDetailScreen';
 import AdminScreen from './src/screens/AdminScreen';
+import BanqueScreen from './src/screens/BanqueScreen';
 import CadrageScreen from './src/screens/CadrageScreen';
 import CadrageChallengeScreen from './src/screens/CadrageChallengeScreen';
 import ChallengeScreen from './src/screens/ChallengeScreen';
@@ -44,14 +47,33 @@ function Routeur() {
       return estAdmin ? <AdminScreen /> : <HomeScreen />;
     case 'adminDetail':
       return estAdmin ? <AdminDetailScreen useCaseId={route.useCaseId} /> : <HomeScreen />;
+    case 'banque':
+      return estAdmin ? <BanqueScreen /> : <HomeScreen />;
     default:
       return <HomeScreen />;
   }
 }
 
-// Décide : écran de chargement, login (si auth requise et non connecté), ou app.
+// Décide : écran de chargement, login (si auth requise et non connecté),
+// collecte du profil client (une fois), ou app.
 function Porte() {
-  const { pret, user, authRequise } = useAuth();
+  const { pret, user, authRequise, estAdmin } = useAuth();
+  // null = on ne sait pas encore ; true/false = profil complet ou non.
+  const [profilOk, setProfilOk] = useState<boolean | null>(null);
+
+  // Identité de session : recharge l'état du profil quand on (dé)connecte.
+  const cleSession = authRequise ? user?.id ?? 'anon' : 'local';
+
+  useEffect(() => {
+    let actif = true;
+    profilComplet()
+      .then((ok) => actif && setProfilOk(ok))
+      .catch(() => actif && setProfilOk(true)); // en cas d'erreur, ne pas bloquer
+    return () => {
+      actif = false;
+    };
+  }, [cleSession]);
+
   if (!pret) {
     return (
       <SafeAreaView style={styles.centre}>
@@ -60,6 +82,19 @@ function Porte() {
     );
   }
   if (authRequise && !user) return <LoginScreen />;
+
+  // Collecte du profil (clients uniquement ; l'admin n'en a pas besoin).
+  if (!estAdmin) {
+    if (profilOk === null) {
+      return (
+        <SafeAreaView style={styles.centre}>
+          <ActivityIndicator color={colors.primary} />
+        </SafeAreaView>
+      );
+    }
+    if (!profilOk) return <ProfilScreen onTermine={() => setProfilOk(true)} />;
+  }
+
   return (
     <NavigationProvider>
       <Routeur />

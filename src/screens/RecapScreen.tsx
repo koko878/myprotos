@@ -5,7 +5,8 @@ import { Bouton, Carte } from '../components/ui';
 import { choisirFichiers, tailleLisible } from '../fichiers';
 import { iaDisponible } from '../llm';
 import { useNav } from '../navigation';
-import { ajouterPiecesJointes, definirLangues, mettreAJourStatut, supprimerPieceJointe, trouverUseCase } from '../storage';
+import { ajouterPiecesJointes, definirLangues, soumettreProjet, supprimerPieceJointe, trouverUseCase } from '../storage';
+import { chargerProfil } from '../profil';
 import { colors, font, radius, spacing } from '../theme';
 import { UseCase } from '../types';
 
@@ -53,9 +54,11 @@ export default function RecapScreen({ useCaseId }: { useCaseId: string }) {
   }
 
   // Le client soumet son projet : notre équipe génère ensuite le prototype.
+  // On fige le profil client (qui soumet) + l'horodatage de soumission.
   async function soumettre() {
     if (!uc) return;
-    await mettreAJourStatut(useCaseId, 'soumis');
+    const profil = await chargerProfil();
+    await soumettreProjet(useCaseId, profil);
     aller({ nom: 'detail', useCaseId });
   }
 

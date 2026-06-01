@@ -9,8 +9,16 @@ create table if not exists public.profiles (
   id uuid primary key references auth.users on delete cascade,
   email text,
   role text not null default 'client' check (role in ('client','admin')),
+  age int,
+  secteur text,
+  entreprise text,
   cree_le timestamptz not null default now()
 );
+
+-- Migration (si la table existe déjà) : ajoute les colonnes de profil client.
+alter table public.profiles add column if not exists age int;
+alter table public.profiles add column if not exists secteur text;
+alter table public.profiles add column if not exists entreprise text;
 
 alter table public.profiles enable row level security;
 

@@ -10,6 +10,20 @@
 
 export type Complexite = 'Faible' | 'Moyenne' | 'Élevée';
 
+/**
+ * Profil du client, collecté à l'inscription. Sert à (1) identifier qui a soumis
+ * un projet, (2) alimenter la banque d'idées (segmentation par secteur client).
+ * Stocké localement ET copié (snapshot) dans chaque projet créé par le client,
+ * pour rester visible côté admin sans dépendre d'une jointure / migration DB.
+ */
+export interface ProfilClient {
+  email?: string;
+  age?: number;
+  secteur: string; // secteur d'activité du client (son industrie)
+  entreprise?: string;
+  saisiLe?: number;
+}
+
 export type StatutUseCase =
   | 'brouillon' // cadrage métier terminé, pas encore soumis
   | 'soumis' // soumis par le client — en attente de génération (admin)
@@ -114,6 +128,8 @@ export interface UseCase {
   piecesJointes?: PieceJointe[]; // logo, charte, docs fournis par le client
   cadrageTechnique?: CadrageTechnique; // résultat du cadrage technique infra
   langues?: string[]; // langues choisies pour l'app (ex: ['Français','Arabe'])
+  client?: ProfilClient; // snapshot du profil client (qui a soumis l'idée)
+  soumisLe?: number; // date/heure de soumission par le client
   statut: StatutUseCase;
   creeLe: number;
 }

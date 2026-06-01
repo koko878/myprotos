@@ -7,7 +7,7 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as remote from './projets';
 import { supabaseDisponible } from './supabase';
-import { CadrageTechnique, PieceJointe, RemarqueClient, StatutUseCase, UseCase } from './types';
+import { CadrageTechnique, PieceJointe, ProfilClient, RemarqueClient, StatutUseCase, UseCase } from './types';
 
 const CLE = 'usecases_v1';
 const distant = () => supabaseDisponible();
@@ -87,6 +87,20 @@ export async function mettreAJourStatut(
   statut: StatutUseCase
 ): Promise<UseCase[]> {
   return modifierUseCase(id, (u) => ({ ...u, statut }));
+}
+
+// Soumission du projet par le client : passe en "soumis", horodate la
+// soumission et fige un snapshot du profil client (qui a soumis l'idée).
+export async function soumettreProjet(
+  id: string,
+  profil?: ProfilClient | null
+): Promise<UseCase[]> {
+  return modifierUseCase(id, (u) => ({
+    ...u,
+    statut: 'soumis',
+    soumisLe: Date.now(),
+    client: profil ?? u.client,
+  }));
 }
 
 // Applique une transformation à un use case et renvoie l'ÉLÉMENT mis à jour
