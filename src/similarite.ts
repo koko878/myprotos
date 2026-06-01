@@ -23,6 +23,57 @@ function normaliser(s: string): string {
     .replace(/[^a-z0-9\s]/g, ' ');
 }
 
+// --- Taxonomie canonique des secteurs ----------------------------------------
+// L'IA produit des libellés de domaine en texte libre (FR/EN, formulations
+// variées) : "Beauty & Wellness", "Esthétique et coiffure", "institut de
+// beauté"… désignent le MÊME secteur. On rattache chaque idée à un secteur
+// canonique par mots-clés (sur le domaine + titre + problème), pour un
+// regroupement fiable de la banque.
+interface SecteurCanon {
+  libelle: string;
+  motsCles: string[];
+}
+
+const TAXONOMIE: SecteurCanon[] = [
+  { libelle: 'Beauté & bien-être', motsCles: ['beaute', 'beauty', 'wellness', 'esthetique', 'coiffure', 'institut', 'spa', 'cosmetique', 'salon', 'massage', 'soin', 'bien etre', 'maquillage', 'ongle', 'barbier'] },
+  { libelle: 'Santé & médical', motsCles: ['sante', 'health', 'medical', 'medecin', 'hopital', 'clinique', 'patient', 'pharmacie', 'soin', 'medicament', 'cabinet', 'dentaire', 'therapie', 'diagnostic'] },
+  { libelle: 'Finance & banque', motsCles: ['finance', 'banque', 'bank', 'paiement', 'payment', 'credit', 'pret', 'comptable', 'comptabilite', 'facture', 'invoice', 'budget', 'tresorerie', 'fintech', 'investissement'] },
+  { libelle: 'Assurance', motsCles: ['assurance', 'insurance', 'sinistre', 'police', 'mutuelle'] },
+  { libelle: 'Commerce & retail', motsCles: ['commerce', 'retail', 'boutique', 'magasin', 'vente', 'ecommerce', 'e commerce', 'shop', 'produit', 'catalogue', 'panier', 'marchand', 'distribution', 'caisse'] },
+  { libelle: 'Marketing & vente', motsCles: ['marketing', 'commerciale', 'commercial', 'publicite', 'pub', 'campagne', 'crm', 'lead', 'prospection', 'fidelisation', 'chiffre d affaires', 'acquisition', 'churn', 'client'] },
+  { libelle: 'Restauration & hôtellerie', motsCles: ['restaurant', 'restauration', 'hotel', 'hotellerie', 'tourisme', 'cafe', 'menu', 'reservation', 'food', 'cuisine', 'traiteur'] },
+  { libelle: 'Immobilier & décoration', motsCles: ['immobilier', 'real estate', 'decoration', 'design interieur', 'interieur', 'amenagement', 'mobilier', 'logement', 'location', 'bien immobilier', 'architecture'] },
+  { libelle: 'Industrie & logistique', motsCles: ['industrie', 'usine', 'production', 'logistique', 'transport', 'supply', 'stock', 'entrepot', 'livraison', 'fabrication', 'maintenance', 'chaine'] },
+  { libelle: 'Éducation & formation', motsCles: ['education', 'formation', 'ecole', 'cours', 'apprentissage', 'etudiant', 'eleve', 'enseignement', 'elearning', 'e learning', 'universite', 'tutorat'] },
+  { libelle: 'Agriculture', motsCles: ['agriculture', 'agricole', 'ferme', 'culture', 'elevage', 'recolte', 'agro'] },
+  { libelle: 'Énergie & environnement', motsCles: ['energie', 'energy', 'environnement', 'ecologie', 'solaire', 'electricite', 'carbone', 'recyclage', 'dechet'] },
+  { libelle: 'RH & recrutement', motsCles: ['rh', 'ressources humaines', 'recrutement', 'recruitment', 'talent', 'paie', 'employe', 'collaborateur', 'candidat'] },
+  { libelle: 'Juridique', motsCles: ['juridique', 'legal', 'droit', 'avocat', 'contrat', 'conformite', 'notaire'] },
+  { libelle: 'Gestion documentaire', motsCles: ['document', 'archivage', 'gestion documentaire', 'fichier', 'numerisation', 'classement', 'dossier'] },
+  { libelle: 'Tech & logiciel', motsCles: ['logiciel', 'software', 'application', 'plateforme', 'saas', 'developpement', 'informatique', 'data', 'donnees', 'ia', 'intelligence artificielle'] },
+];
+
+// Rattache une idée à son secteur canonique (ou son domaine d'origine si aucun
+// mot-clé ne ressort). On pondère le domaine plus fort que le reste du texte.
+export function secteurCanonique(uc: UseCase): string {
+  const domaine = normaliser(uc.domaine);
+  const reste = normaliser([uc.titre, uc.probleme, uc.objectif].filter(Boolean).join(' '));
+  let meilleur: { libelle: string; score: number } | null = null;
+  for (const sec of TAXONOMIE) {
+    let score = 0;
+    for (const mc of sec.motsCles) {
+      if (domaine.includes(mc)) score += 3; // le domaine prime
+      else if (reste.includes(mc)) score += 1;
+    }
+    if (score > 0 && (!meilleur || score > meilleur.score)) {
+      meilleur = { libelle: sec.libelle, score };
+    }
+  }
+  if (meilleur) return meilleur.libelle;
+  // Aucun mot-clé : on garde le libellé d'origine (proprement formaté).
+  return (uc.domaine || 'Non classé').trim() || 'Non classé';
+}
+
 function tokens(uc: UseCase): Set<string> {
   const texte = [uc.titre, uc.probleme, uc.objectif, uc.domaine, uc.approcheSuggeree]
     .filter(Boolean)
@@ -42,14 +93,12 @@ function jaccard(a: Set<string>, b: Set<string>): number {
   return union === 0 ? 0 : inter / union;
 }
 
-// Score de similarité (0..1) entre deux use cases : Jaccard texte + bonus domaine.
+// Score de similarité (0..1) entre deux use cases : Jaccard texte + bonus si
+// même secteur canonique (ex. "Beauty & Wellness" ≈ "Esthétique et coiffure").
 export function similarite(a: UseCase, b: UseCase): number {
   const base = jaccard(tokens(a), tokens(b));
-  const memeDomaine =
-    !!a.domaine && !!b.domaine &&
-    normaliser(a.domaine).trim() === normaliser(b.domaine).trim();
-  // Le domaine commun renforce la proximité sans écraser le signal textuel.
-  const score = base * (memeDomaine ? 1.25 : 1) + (memeDomaine ? 0.05 : 0);
+  const memeSecteur = secteurCanonique(a) === secteurCanonique(b);
+  const score = base * (memeSecteur ? 1.3 : 1) + (memeSecteur ? 0.12 : 0);
   return Math.min(score, 1);
 }
 
@@ -77,19 +126,18 @@ export interface GroupeDomaine {
   items: UseCase[];
 }
 
-// Regroupe les use cases par domaine (clé normalisée, libellé d'origine conservé),
-// triés par taille de groupe décroissante.
+// Regroupe les use cases par SECTEUR CANONIQUE (libellés variés de l'IA ramenés
+// à une taxonomie fixe), triés par taille de groupe décroissante.
 export function grouperParDomaine(tous: UseCase[]): GroupeDomaine[] {
-  const map = new Map<string, { libelle: string; items: UseCase[] }>();
+  const map = new Map<string, UseCase[]>();
   for (const u of tous) {
-    const libelle = (u.domaine || 'Non classé').trim() || 'Non classé';
-    const cle = normaliser(libelle).trim() || 'non classe';
-    const g = map.get(cle);
-    if (g) g.items.push(u);
-    else map.set(cle, { libelle, items: [u] });
+    const secteur = secteurCanonique(u);
+    const g = map.get(secteur);
+    if (g) g.push(u);
+    else map.set(secteur, [u]);
   }
-  return Array.from(map.values())
-    .map((g) => ({ domaine: g.libelle, items: g.items }))
+  return Array.from(map.entries())
+    .map(([domaine, items]) => ({ domaine, items }))
     .sort((a, b) => b.items.length - a.items.length || a.domaine.localeCompare(b.domaine));
 }
 
