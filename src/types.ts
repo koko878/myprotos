@@ -58,6 +58,28 @@ export interface PieceJointe {
 }
 
 /**
+ * Une solution du marché qui répond déjà (en tout ou partie) au besoin du client.
+ * Sert à l'analyse Make vs Buy : on confronte l'idée à l'existant.
+ */
+export interface SolutionMarche {
+  nom: string;       // nom du produit/acteur (ex. "Calendly", "Salesforce")
+  description: string; // ce qu'il fait, en une phrase
+  prixIndicatif?: string; // ordre de grandeur du coût (ex. "~15 €/utilisateur/mois")
+  limite?: string;   // pourquoi il ne couvre pas parfaitement le besoin
+}
+
+/**
+ * Recommandation Make (développer) vs Buy (acheter/s'abonner), produite par l'IA
+ * pour aider le client à décider de façon factuelle.
+ */
+export interface MakeOrBuy {
+  recommandation: 'make' | 'buy' | 'hybride';
+  justification: string; // pourquoi, en 1-3 phrases (coût, différenciation, délai…)
+  argumentsMake: string[]; // raisons de développer sur-mesure
+  argumentsBuy: string[];  // raisons d'acheter une solution existante
+}
+
+/**
  * Estimation du retour sur investissement, produite par l'IA à partir des
  * volumes et coûts actuels collectés pendant le cadrage métier.
  */
@@ -165,6 +187,8 @@ export interface UseCase {
   cadrageTechnique?: CadrageTechnique; // résultat du cadrage technique infra
   langues?: string[]; // langues choisies pour l'app (ex: ['Français','Arabe'])
   processusADigitaliser?: string[]; // processus métier concrets à digitaliser
+  solutionsMarche?: SolutionMarche[]; // solutions existantes du marché (Make vs Buy)
+  makeOrBuy?: MakeOrBuy; // recommandation développer vs acheter
   parcoursUtilisateur?: string[]; // étapes du parcours utilisateur cible dans l'app
   paysClient?: string; // pays du client
   paysDeploiement?: string; // pays de déploiement cible (contraintes légales locales)

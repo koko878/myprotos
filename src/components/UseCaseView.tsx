@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Modal, Pressable, StyleSheet, Text, View } from 'react-native';
 import { colors, font, radius, spacing } from '../theme';
-import { CoutRun, EstimationROI, StatutUseCase, UseCase, VentilationPrix } from '../types';
+import { CoutRun, EstimationROI, MakeOrBuy, StatutUseCase, UseCase, VentilationPrix } from '../types';
 import { Carte, Etiquette, ScoreCadrage, couleurComplexite } from './ui';
 
 const eur = (n: number) => n.toLocaleString('fr-FR') + ' €';
@@ -114,6 +114,24 @@ export default function UseCaseView({ uc }: { uc: UseCase }) {
         )}
       </Carte>
 
+      {!!uc.solutionsMarche?.length && (
+        <Carte style={{ gap: spacing.md, borderColor: colors.warn + '44' }}>
+          <Text style={styles.blocTitre}>🔎 Solutions existantes sur le marché</Text>
+          {uc.solutionsMarche.map((sol, i) => (
+            <View key={i} style={styles.solItem}>
+              <View style={styles.solHead}>
+                <Text style={styles.solNom}>{sol.nom}</Text>
+                {!!sol.prixIndicatif && <Text style={styles.solPrix}>{sol.prixIndicatif}</Text>}
+              </View>
+              <Text style={styles.solDesc}>{sol.description}</Text>
+              {!!sol.limite && <Text style={styles.solLimite}>Limite : {sol.limite}</Text>}
+            </View>
+          ))}
+        </Carte>
+      )}
+
+      {uc.makeOrBuy && <MakeBuyBloc mb={uc.makeOrBuy} />}
+
       {uc.coutRun && <RunBloc run={uc.coutRun} />}
 
       {uc.roi && <RoiBloc roi={uc.roi} />}
@@ -161,6 +179,39 @@ function ModalPrix({ visible, onClose, v }: { visible: boolean; onClose: () => v
         </Pressable>
       </Pressable>
     </Modal>
+  );
+}
+
+// Recommandation Make (développer) vs Buy (acheter) pour aider à décider.
+function MakeBuyBloc({ mb }: { mb: MakeOrBuy }) {
+  const lib =
+    mb.recommandation === 'make' ? { txt: '🛠️ Développer (Make)', c: colors.primary }
+    : mb.recommandation === 'buy' ? { txt: '🛒 Acheter (Buy)', c: colors.warn }
+    : { txt: '🔀 Hybride', c: colors.accent };
+  return (
+    <Carte style={{ gap: spacing.md, borderColor: lib.c + '66' }}>
+      <Text style={styles.blocTitre}>⚖️ Make vs Buy — recommandation</Text>
+      <View style={[styles.mbBadge, { backgroundColor: lib.c + '22', borderColor: lib.c + '66' }]}>
+        <Text style={[styles.mbBadgeTxt, { color: lib.c }]}>{lib.txt}</Text>
+      </View>
+      <Text style={styles.blocTexte}>{mb.justification}</Text>
+      <View style={styles.mbCols}>
+        <View style={styles.mbCol}>
+          <Text style={styles.mbColTitre}>Pour développer</Text>
+          {mb.argumentsMake.map((a, i) => (
+            <View key={i} style={styles.kpiRow}><View style={styles.puce} /><Text style={styles.mbArg}>{a}</Text></View>
+          ))}
+          {mb.argumentsMake.length === 0 && <Text style={styles.mbArg}>—</Text>}
+        </View>
+        <View style={styles.mbCol}>
+          <Text style={styles.mbColTitre}>Pour acheter</Text>
+          {mb.argumentsBuy.map((a, i) => (
+            <View key={i} style={styles.kpiRow}><View style={styles.puce} /><Text style={styles.mbArg}>{a}</Text></View>
+          ))}
+          {mb.argumentsBuy.length === 0 && <Text style={styles.mbArg}>—</Text>}
+        </View>
+      </View>
+    </Carte>
   );
 }
 
@@ -239,6 +290,18 @@ const styles = StyleSheet.create({
   tagRow: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm },
   titre: { color: colors.text, fontSize: font.h1, fontWeight: '800', lineHeight: 32 },
   blocTitre: { color: colors.text, fontSize: font.h3, fontWeight: '700' },
+  solItem: { gap: 2, borderTopWidth: 1, borderTopColor: colors.border, paddingTop: spacing.sm },
+  solHead: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', gap: spacing.sm },
+  solNom: { color: colors.text, fontSize: font.body, fontWeight: '800', flex: 1 },
+  solPrix: { color: colors.warn, fontSize: font.tiny, fontWeight: '700' },
+  solDesc: { color: colors.textMuted, fontSize: font.small, lineHeight: 19 },
+  solLimite: { color: colors.text, fontSize: font.tiny, fontStyle: 'italic', lineHeight: 16 },
+  mbBadge: { alignSelf: 'flex-start', borderWidth: 1, borderRadius: radius.pill, paddingHorizontal: spacing.md, paddingVertical: 6 },
+  mbBadgeTxt: { fontSize: font.small, fontWeight: '800' },
+  mbCols: { flexDirection: 'row', gap: spacing.md },
+  mbCol: { flex: 1, gap: 4 },
+  mbColTitre: { color: colors.text, fontSize: font.small, fontWeight: '800' },
+  mbArg: { color: colors.textMuted, fontSize: font.tiny, lineHeight: 16, flex: 1 },
   etapeRow: { flexDirection: 'row', alignItems: 'flex-start', gap: spacing.sm },
   etapeNum: {
     color: '#fff',

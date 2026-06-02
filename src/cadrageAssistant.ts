@@ -22,8 +22,10 @@ import {
   Complexite,
   CoutRun,
   EstimationROI,
+  MakeOrBuy,
   Message,
   PostePrix,
+  SolutionMarche,
   SpecPrototype,
   UseCase,
   VentilationPrix,
@@ -414,10 +416,10 @@ Contexte : tu as DÉJÀ salué le client et lui as demandé son idée en une phr
 POSTURE DE CONSEIL (essentiel) :
 - CREUSE le problème métier réel ("first principles") : pourquoi ce problème existe, qui souffre, combien ça coûte aujourd'hui, qu'a-t-il déjà essayé. Ne te contente jamais de "je veux une app" — un client veut un RÉSULTAT, pas une app pour faire une app.
 - CHALLENGE l'idée avec tact, en au moins un échange dédié :
-  • Existant marché : des solutions/produits font-ils déjà cela ? Cite des exemples concrets quand c'est pertinent.
-  • Build vs Buy : pourquoi développer du sur-mesure plutôt qu'acheter/abonner une solution existante ? Quel est le vrai facteur différenciant qui justifie de construire ?
-  • Si l'idée semble peu différenciante ou déjà couverte par le marché, DIS-LE franchement et propose un angle plus défendable (niche, intégration au SI, donnée propriétaire, workflow spécifique…).
-- Le but n'est pas de décourager mais d'aboutir à un projet qui a un vrai sens économique et un angle défendable.
+  • Existant marché (OBLIGATOIRE, fais un VRAI effort) : NOMME explicitement 2 à 4 solutions/produits réels et connus qui répondent déjà, en tout ou partie, au besoin — avec ce qu'ils font, leur ordre de prix, et leur limite vis-à-vis du cas du client. Ne réponds jamais "il existe des solutions" en restant vague : CITE des noms concrets. Si tu n'es vraiment pas sûr d'un nom, dis-le, mais cherche d'abord sérieusement.
+  • Make vs Buy : aide le client à DÉCIDER entre développer du sur-mesure (Make) et acheter/s'abonner à une solution existante (Buy). Pèse coût total (build + run vs abonnement), délai, différenciation, dépendance fournisseur, intégration au SI. Donne une recommandation claire (make / buy / hybride) et assume-la.
+  • Si l'idée est peu différenciante ou déjà bien couverte, DIS-LE franchement et propose soit un angle plus défendable, soit honnêtement d'acheter une solution existante.
+- Le but n'est pas de vendre du dev à tout prix : c'est de conseiller le client objectivement, quitte à recommander d'acheter plutôt que de construire.
 
 OBJECTIF DU CADRAGE — à la fin tu dois disposer d'assez d'éléments pour :
 1) estimer un RETOUR SUR INVESTISSEMENT (ROI) crédible : ORDRES DE GRANDEUR CHIFFRÉS (volumes, temps/coût actuels, taille d'équipe). Si le client ne sait pas, propose des fourchettes plausibles à valider ;
@@ -459,6 +461,15 @@ Quand "done" vaut true, "useCase" doit valoir EXACTEMENT ce schéma (chiffres = 
   "paysClient": "pays du client (ex: Maroc, France)",
   "paysDeploiement": "pays de déploiement cible de l'app (souvent le même)",
   "contraintes": "contraintes (budget/délai/conformité), EN INCLUANT les contraintes légales locales du pays de déploiement (protection des données, hébergement, secteur réglementé…)",
+  "solutionsMarche": [
+    { "nom": "Nom réel d'un produit/acteur existant", "description": "ce qu'il fait en une phrase", "prixIndicatif": "ordre de prix (ex: ~15 €/utilisateur/mois)", "limite": "pourquoi il ne couvre pas parfaitement le besoin du client" }
+  ],
+  "makeOrBuy": {
+    "recommandation": "make | buy | hybride",
+    "justification": "pourquoi cette reco (coût total, différenciation, délai, dépendance) en 1-3 phrases",
+    "argumentsMake": ["raison de développer sur-mesure", "..."],
+    "argumentsBuy": ["raison d'acheter une solution existante", "..."]
+  },
   "approcheSuggeree": "piste technique recommandée (1 phrase)",
   "complexite": "Faible | Moyenne | Élevée",
   "budgetEstime": "fourchette en euros, ex: 12 000 € – 30 000 €",
@@ -587,6 +598,33 @@ function normaliserCoutRun(j: any): CoutRun | undefined {
   };
 }
 
+function normaliserSolutionsMarche(j: any): SolutionMarche[] | undefined {
+  if (!Array.isArray(j)) return undefined;
+  const out = j
+    .map((x: any) => ({
+      nom: s(x?.nom, '').trim(),
+      description: s(x?.description, '').trim(),
+      prixIndicatif: s(x?.prixIndicatif, '').trim() || undefined,
+      limite: s(x?.limite, '').trim() || undefined,
+    }))
+    .filter((x: SolutionMarche) => x.nom.length > 0)
+    .slice(0, 5);
+  return out.length ? out : undefined;
+}
+
+function normaliserMakeOrBuy(j: any): MakeOrBuy | undefined {
+  if (!j || typeof j !== 'object') return undefined;
+  const reco = ['make', 'buy', 'hybride'].includes(j.recommandation) ? j.recommandation : 'make';
+  const justification = s(j.justification, '').trim();
+  if (!justification) return undefined;
+  return {
+    recommandation: reco,
+    justification,
+    argumentsMake: liste(j.argumentsMake, []).slice(0, 5),
+    argumentsBuy: liste(j.argumentsBuy, []).slice(0, 5),
+  };
+}
+
 function normaliserSpec(j: any): SpecPrototype | undefined {
   if (!j || typeof j !== 'object') return undefined;
   const resume = s(j.resume, '');
@@ -630,6 +668,8 @@ function normaliserUseCase(j: any): UseCase {
     processusADigitaliser: Array.isArray(j?.processusADigitaliser)
       ? j.processusADigitaliser.map(String).map((x: string) => x.trim()).filter(Boolean).slice(0, 6)
       : undefined,
+    solutionsMarche: normaliserSolutionsMarche(j?.solutionsMarche),
+    makeOrBuy: normaliserMakeOrBuy(j?.makeOrBuy),
     parcoursUtilisateur: Array.isArray(j?.parcoursUtilisateur)
       ? j.parcoursUtilisateur.map(String).map((x: string) => x.trim()).filter(Boolean).slice(0, 8)
       : undefined,
