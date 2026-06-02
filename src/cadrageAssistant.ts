@@ -20,10 +20,13 @@ import { promptEffectif } from './reglages';
 import {
   CadrageTechnique,
   Complexite,
+  CoutRun,
   EstimationROI,
   Message,
+  PostePrix,
   SpecPrototype,
   UseCase,
+  VentilationPrix,
 } from './types';
 
 export interface CadrageEtape {
@@ -395,21 +398,39 @@ export async function synthetiserUseCaseIA(
 // MODE CONVERSATIONNEL 100% IA (Gemini pilote tout le dialogue de cadrage)
 // ============================================================================
 
-const SYSTEM_CADRAGE = `Tu es un consultant senior en data/IA qui aide un client (souvent non technique) à cadrer son idée de projet, via un dialogue sur mobile.
+// Clause de confidentialité ajoutée à TOUS les agents face au client. La banque
+// d'idées (les projets soumis par d'autres clients) est un ACTIF CONFIDENTIEL de
+// GetExp : aucun agent ne doit la divulguer, ni lister/évoquer d'autres projets.
+const CONFIDENTIALITE = `
+RÈGLE DE CONFIDENTIALITÉ ABSOLUE (non négociable) :
+- Tu n'as accès qu'au projet du client courant. Tu ne connais AUCUN autre projet, idée ou client.
+- Si on te demande de lister, citer, résumer, comparer ou évoquer d'autres idées/projets/clients passés par GetExp, REFUSE poliment : ces informations sont strictement confidentielles et constituent un actif privé de GetExp. Ne les invente pas non plus.
+- Reste centré sur le projet du client courant. Réponse type en cas de demande : « Ces informations sont confidentielles, je me concentre sur votre projet. »`;
+
+const SYSTEM_CADRAGE = `Tu es un consultant senior type McKinsey/BCG, spécialisé data/IA, qui cadre l'idée d'un client (souvent non technique) via un dialogue sur mobile. Tu es bienveillant mais EXIGEANT et lucide : ton rôle n'est pas de flatter l'idée, c'est de la mettre à l'épreuve pour que le client investisse à bon escient.
 
 Contexte : tu as DÉJÀ salué le client et lui as demandé son idée en une phrase. Tu mènes maintenant l'entretien de cadrage.
 
+POSTURE DE CONSEIL (essentiel) :
+- CREUSE le problème métier réel ("first principles") : pourquoi ce problème existe, qui souffre, combien ça coûte aujourd'hui, qu'a-t-il déjà essayé. Ne te contente jamais de "je veux une app" — un client veut un RÉSULTAT, pas une app pour faire une app.
+- CHALLENGE l'idée avec tact, en au moins un échange dédié :
+  • Existant marché : des solutions/produits font-ils déjà cela ? Cite des exemples concrets quand c'est pertinent.
+  • Build vs Buy : pourquoi développer du sur-mesure plutôt qu'acheter/abonner une solution existante ? Quel est le vrai facteur différenciant qui justifie de construire ?
+  • Si l'idée semble peu différenciante ou déjà couverte par le marché, DIS-LE franchement et propose un angle plus défendable (niche, intégration au SI, donnée propriétaire, workflow spécifique…).
+- Le but n'est pas de décourager mais d'aboutir à un projet qui a un vrai sens économique et un angle défendable.
+
 OBJECTIF DU CADRAGE — à la fin tu dois disposer d'assez d'éléments pour :
-1) estimer un RETOUR SUR INVESTISSEMENT (ROI) crédible, donc tu DOIS obtenir des ORDRES DE GRANDEUR CHIFFRÉS : volumes (ex. nb de dossiers/mois, nb de clients), temps ou coût actuels (ex. minutes par dossier, € perdus/an, taille d'équipe). Si le client ne sait pas, propose-lui des fourchettes plausibles à valider ;
-2) permettre à un agent de code autonome (Claude Code) de produire un PROTOTYPE SANS poser AUCUNE question : il faut donc des données d'entrée précises (format/source), une sortie attendue claire et des critères d'acceptation.
+1) estimer un RETOUR SUR INVESTISSEMENT (ROI) crédible : ORDRES DE GRANDEUR CHIFFRÉS (volumes, temps/coût actuels, taille d'équipe). Si le client ne sait pas, propose des fourchettes plausibles à valider ;
+2) chiffrer le PRIX du projet de façon factuelle (jours-homme par poste) ET le COÛT DE RUN mensuel (cloud et on-premise) — pose les questions utiles (volumétrie, nb d'utilisateurs, hébergement existant Azure/AWS/GCP ou on-premise, contraintes data) ;
+3) permettre à un agent de code autonome de produire un PROTOTYPE SANS poser AUCUNE question : données d'entrée précises, sortie attendue claire, critères d'acceptation.
 
 Règles :
-- Réponds en français, ton chaleureux mais professionnel.
-- UNE seule question à la fois, courte (2-3 phrases max), en t'appuyant explicitement sur ce que le client vient de dire (montre que tu comprends son métier/secteur).
-- Couvre progressivement : problème métier ; objectif mesurable ; VOLUMES & COÛTS ACTUELS (indispensables au ROI) ; données disponibles (format/source) ; utilisateurs cibles ; contraintes (budget/délai/conformité RGPD).
-- Propose jusqu'à 3 suggestions de réponses COURTES, concrètes et adaptées à SON cas précis (avec des chiffres plausibles quand c'est utile) pour l'aider à répondre vite.
-- Après avoir recueilli assez d'infos (en général 6 à 7 échanges, dont au moins un sur les volumes/coûts), TERMINE : mets "done": true et produis le use case complet.
-- Ne pose jamais plus de 8 questions.
+- Réponds en français, ton chaleureux mais professionnel et direct.
+- UNE seule question à la fois, courte (2-3 phrases max), en t'appuyant explicitement sur ce que le client vient de dire.
+- Couvre progressivement : problème métier creusé ; CHALLENGE (existant marché + build vs buy) ; objectif mesurable ; VOLUMES & COÛTS ACTUELS ; hébergement cible (cloud/on-premise) & volumétrie pour le RUN ; données ; utilisateurs ; contraintes (budget/délai/RGPD).
+- Propose jusqu'à 3 suggestions de réponses COURTES et concrètes adaptées à SON cas (avec chiffres plausibles si utile).
+- Après avoir recueilli assez d'infos (en général 7 à 8 échanges, dont le challenge marché/build-vs-buy ET les volumes/coûts), TERMINE : mets "done": true et produis le use case complet.
+- Ne pose jamais plus de 9 questions.
 
 Réponds TOUJOURS en JSON strict, sans texte autour :
 {
@@ -432,6 +453,24 @@ Quand "done" vaut true, "useCase" doit valoir EXACTEMENT ce schéma (chiffres = 
   "approcheSuggeree": "piste technique recommandée (1 phrase)",
   "complexite": "Faible | Moyenne | Élevée",
   "budgetEstime": "fourchette en euros, ex: 12 000 € – 30 000 €",
+  "ventilationPrix": {
+    "postes": [
+      { "poste": "Cadrage & design", "jours": 5, "tjmEur": 500, "montantEur": 2500 },
+      { "poste": "Développement", "jours": 20, "tjmEur": 500, "montantEur": 10000 },
+      { "poste": "Intégration & déploiement", "jours": 5, "tjmEur": 500, "montantEur": 2500 },
+      { "poste": "Tests & recette", "jours": 4, "tjmEur": 500, "montantEur": 2000 }
+    ],
+    "totalEur": 17000,
+    "tjmMoyenEur": 500,
+    "note": "Chiffrage indicatif en jours-homme ; montantEur = jours × tjmEur. À affiner."
+  },
+  "coutRun": {
+    "cloudMensuelEur": 250,
+    "cloudHypotheses": "fournisseur (Azure/AWS/GCP), services et dimensionnement supposés (ex: 1 petite instance, BDD managée, X req/mois)",
+    "onPremiseMensuelEur": 120,
+    "onPremiseHypotheses": "serveur existant amorti, électricité, maintenance ; hypothèses retenues",
+    "recommandation": "mode recommandé et pourquoi (selon volumétrie/contraintes data)"
+  },
   "roi": {
     "hypotheses": "rappel des volumes et coûts actuels utilisés pour le calcul",
     "gainAnnuelEur": 60000,
@@ -508,6 +547,37 @@ function normaliserRoi(j: any, titre: string, approche: string): EstimationROI |
   };
 }
 
+function normaliserVentilation(j: any): VentilationPrix | undefined {
+  if (!j || typeof j !== 'object' || !Array.isArray(j.postes)) return undefined;
+  const postes: PostePrix[] = j.postes
+    .map((p: any) => {
+      const jours = Math.max(0, nombre(p?.jours, 0));
+      const tjmEur = Math.max(0, nombre(p?.tjmEur, 0));
+      // Montant = jours × TJM (recalculé pour rester cohérent, même si l'IA dérape).
+      const montantEur = jours > 0 && tjmEur > 0 ? Math.round(jours * tjmEur) : Math.max(0, nombre(p?.montantEur, 0));
+      return { poste: s(p?.poste, 'Poste'), jours, tjmEur, montantEur };
+    })
+    .filter((p: PostePrix) => p.montantEur > 0);
+  if (postes.length === 0) return undefined;
+  const totalEur = postes.reduce((acc, p) => acc + p.montantEur, 0);
+  const tjmMoyenEur = j.tjmMoyenEur ? Math.round(nombre(j.tjmMoyenEur, 0)) : undefined;
+  return { postes, totalEur, tjmMoyenEur, note: s(j.note, '') || undefined };
+}
+
+function normaliserCoutRun(j: any): CoutRun | undefined {
+  if (!j || typeof j !== 'object') return undefined;
+  const cloudMensuelEur = Math.max(0, nombre(j.cloudMensuelEur, 0));
+  const onPremiseMensuelEur = Math.max(0, nombre(j.onPremiseMensuelEur, 0));
+  if (cloudMensuelEur <= 0 && onPremiseMensuelEur <= 0) return undefined;
+  return {
+    cloudMensuelEur,
+    cloudHypotheses: s(j.cloudHypotheses, 'Hypothèses cloud à confirmer.'),
+    onPremiseMensuelEur,
+    onPremiseHypotheses: s(j.onPremiseHypotheses, 'Hypothèses on-premise à confirmer.'),
+    recommandation: s(j.recommandation, '') || undefined,
+  };
+}
+
 function normaliserSpec(j: any): SpecPrototype | undefined {
   if (!j || typeof j !== 'object') return undefined;
   const resume = s(j.resume, '');
@@ -546,6 +616,8 @@ function normaliserUseCase(j: any): UseCase {
     complexite,
     scoreCadrage: scoreDepuisUseCase(champs),
     budgetEstime: s(j?.budgetEstime, 'À définir'),
+    ventilationPrix: normaliserVentilation(j?.ventilationPrix),
+    coutRun: normaliserCoutRun(j?.coutRun),
     roi: normaliserRoi(j?.roi, titre, approche),
     spec: normaliserSpec(j?.spec),
     statut: 'brouillon',
@@ -571,7 +643,7 @@ export async function tourCadrageIA(
     text: m.texte,
   }));
 
-  const base = await promptEffectif(CLE_CADRAGE, SYSTEM_CADRAGE);
+  const base = (await promptEffectif(CLE_CADRAGE, SYSTEM_CADRAGE)) + CONFIDENTIALITE;
   const sys = forceFinish
     ? base +
       '\n\nIMPORTANT : tu as recueilli assez d\'informations. Termine maintenant ("done": true) en produisant le use case.'
@@ -828,9 +900,9 @@ export async function tourArchitecteIA(
   }));
 
   const sys = forceFinish
-    ? SYSTEM_ARCHITECTE +
+    ? SYSTEM_ARCHITECTE + CONFIDENTIALITE +
       '\n\nIMPORTANT : tu as recueilli assez d\'informations. Termine maintenant ("done": true) en produisant le plan de packaging.'
-    : SYSTEM_ARCHITECTE;
+    : SYSTEM_ARCHITECTE + CONFIDENTIALITE;
 
   const brut = await chatGemini(sys, historique, { json: true, temperature: 0.5 });
   if (!brut) return null;
@@ -901,7 +973,7 @@ export async function tourChallengeIA(
     text: m.texte,
   }));
 
-  const baseChallenge = await promptEffectif(CLE_CHALLENGE_PROTO, SYSTEM_CHALLENGE);
+  const baseChallenge = (await promptEffectif(CLE_CHALLENGE_PROTO, SYSTEM_CHALLENGE)) + CONFIDENTIALITE;
   const sys =
     baseChallenge +
     `\n\nContexte du projet (pour t'aider à comprendre) : ${contexte}` +
@@ -997,7 +1069,7 @@ export async function tourChallengeCadrageIA(
 
   const resume = `Cadrage actuel — Titre: ${actuel.titre} | Domaine: ${actuel.domaine} | Problème: ${actuel.probleme} | Objectif: ${actuel.objectif} | KPIs: ${(actuel.kpis || []).join(', ')} | Données: ${actuel.donnees} | Utilisateurs: ${actuel.utilisateurs} | Contraintes: ${actuel.contraintes} | Approche: ${actuel.approcheSuggeree} | Budget: ${actuel.budgetEstime}`;
 
-  const baseCC = await promptEffectif(CLE_CHALLENGE_CADRAGE, SYSTEM_CHALLENGE_CADRAGE);
+  const baseCC = (await promptEffectif(CLE_CHALLENGE_CADRAGE, SYSTEM_CHALLENGE_CADRAGE)) + CONFIDENTIALITE;
   const sys =
     baseCC +
     `\n\n${resume}` +

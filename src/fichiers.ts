@@ -204,6 +204,10 @@ export function construirePromptComplet(uc: UseCase): string {
   if (uc.langues?.length) L.push('- Langues de l’interface : ' + uc.langues.join(', '));
   if (uc.donnees) L.push('- Données disponibles : ' + uc.donnees);
   if (uc.contraintes) L.push('- Contraintes : ' + uc.contraintes);
+  if (uc.ventilationPrix) L.push('- Prix projet estimé : ' + uc.ventilationPrix.totalEur.toLocaleString('fr-FR') + ' €');
+  if (uc.coutRun) {
+    L.push('- Coût de RUN estimé : ' + uc.coutRun.cloudMensuelEur.toLocaleString('fr-FR') + ' €/mois (cloud) ou ' + uc.coutRun.onPremiseMensuelEur.toLocaleString('fr-FR') + ' €/mois (on-premise)');
+  }
   if (uc.spec?.resume) L.push('- Résumé du prototype : ' + uc.spec.resume);
   if (uc.spec?.fonctionnalites?.length) {
     L.push('- Fonctionnalités à démontrer : ' + uc.spec.fonctionnalites.join(' ; '));

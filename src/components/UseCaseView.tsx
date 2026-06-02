@@ -1,7 +1,7 @@
-import React from 'react';
-import { StyleSheet, Text, View } from 'react-native';
+import React, { useState } from 'react';
+import { Modal, Pressable, StyleSheet, Text, View } from 'react-native';
 import { colors, font, radius, spacing } from '../theme';
-import { EstimationROI, StatutUseCase, UseCase } from '../types';
+import { CoutRun, EstimationROI, StatutUseCase, UseCase, VentilationPrix } from '../types';
 import { Carte, Etiquette, ScoreCadrage, couleurComplexite } from './ui';
 
 const eur = (n: number) => n.toLocaleString('fr-FR') + ' €';
@@ -31,6 +31,7 @@ export function libelleStatut(statut: string): { texte: string; couleur: string 
 
 export default function UseCaseView({ uc }: { uc: UseCase }) {
   const statut = libelleStatut(uc.statut);
+  const [detailPrix, setDetailPrix] = useState(false);
   return (
     <View style={{ gap: spacing.lg }}>
       <View style={{ gap: spacing.sm }}>
@@ -66,14 +67,91 @@ export default function UseCaseView({ uc }: { uc: UseCase }) {
       <Carte style={{ borderColor: colors.primary + '66', backgroundColor: colors.primarySoft }}>
         <Text style={styles.blocTitre}>🤖 Approche suggérée par l’IA</Text>
         <Text style={[styles.blocTexte, { marginTop: spacing.sm }]}>{uc.approcheSuggeree}</Text>
-        <View style={styles.budgetRow}>
-          <Text style={styles.budgetLabel}>Budget indicatif</Text>
-          <Text style={styles.budgetVal}>{uc.budgetEstime}</Text>
-        </View>
+        {uc.ventilationPrix ? (
+          <Pressable style={styles.budgetRow} onPress={() => setDetailPrix(true)}>
+            <View>
+              <Text style={styles.budgetLabel}>Prix du projet</Text>
+              <Text style={styles.budgetDetailLien}>Voir le détail du calcul ›</Text>
+            </View>
+            <Text style={styles.budgetVal}>{eur(uc.ventilationPrix.totalEur)}</Text>
+          </Pressable>
+        ) : (
+          <View style={styles.budgetRow}>
+            <Text style={styles.budgetLabel}>Budget indicatif</Text>
+            <Text style={styles.budgetVal}>{uc.budgetEstime}</Text>
+          </View>
+        )}
       </Carte>
 
+      {uc.coutRun && <RunBloc run={uc.coutRun} />}
+
       {uc.roi && <RoiBloc roi={uc.roi} />}
+
+      {uc.ventilationPrix && (
+        <ModalPrix
+          visible={detailPrix}
+          onClose={() => setDetailPrix(false)}
+          v={uc.ventilationPrix}
+        />
+      )}
     </View>
+  );
+}
+
+// Détail factuel du prix : un poste par ligne (jours × TJM = montant).
+function ModalPrix({ visible, onClose, v }: { visible: boolean; onClose: () => void; v: VentilationPrix }) {
+  return (
+    <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
+      <Pressable style={styles.modalFond} onPress={onClose}>
+        <Pressable style={styles.modalCarte} onPress={() => {}}>
+          <Text style={styles.modalTitre}>Détail du prix</Text>
+          <View style={styles.tEntete}>
+            <Text style={[styles.tCol, styles.tPoste]}>Poste</Text>
+            <Text style={[styles.tCol, styles.tNum]}>Jours</Text>
+            <Text style={[styles.tCol, styles.tNum]}>TJM</Text>
+            <Text style={[styles.tCol, styles.tMontant]}>Montant</Text>
+          </View>
+          {v.postes.map((p, i) => (
+            <View key={i} style={styles.tLigne}>
+              <Text style={[styles.tCol, styles.tPoste, styles.tTxt]}>{p.poste}</Text>
+              <Text style={[styles.tCol, styles.tNum, styles.tTxt]}>{p.jours}</Text>
+              <Text style={[styles.tCol, styles.tNum, styles.tTxt]}>{eur(p.tjmEur)}</Text>
+              <Text style={[styles.tCol, styles.tMontant, styles.tTxtFort]}>{eur(p.montantEur)}</Text>
+            </View>
+          ))}
+          <View style={styles.tTotal}>
+            <Text style={styles.tTotalLabel}>Total</Text>
+            <Text style={styles.tTotalVal}>{eur(v.totalEur)}</Text>
+          </View>
+          {!!v.note && <Text style={styles.modalNote}>{v.note}</Text>}
+          <Pressable style={styles.modalFermer} onPress={onClose}>
+            <Text style={styles.modalFermerTxt}>Fermer</Text>
+          </Pressable>
+        </Pressable>
+      </Pressable>
+    </Modal>
+  );
+}
+
+// Coût de fonctionnement (RUN) mensuel : cloud vs on-premise.
+function RunBloc({ run }: { run: CoutRun }) {
+  return (
+    <Carte style={{ borderColor: colors.accent + '44', gap: spacing.md }}>
+      <Text style={styles.blocTitre}>🖥️ Coût de fonctionnement (RUN) estimé</Text>
+      <View style={styles.runGrid}>
+        <View style={styles.runBox}>
+          <Text style={styles.runMode}>☁️ Cloud</Text>
+          <Text style={styles.runVal}>{eur(run.cloudMensuelEur)}<Text style={styles.runMois}> /mois</Text></Text>
+          <Text style={styles.runHypo}>{run.cloudHypotheses}</Text>
+        </View>
+        <View style={styles.runBox}>
+          <Text style={styles.runMode}>🏢 On-premise</Text>
+          <Text style={styles.runVal}>{eur(run.onPremiseMensuelEur)}<Text style={styles.runMois}> /mois</Text></Text>
+          <Text style={styles.runHypo}>{run.onPremiseHypotheses}</Text>
+        </View>
+      </View>
+      {!!run.recommandation && <Text style={styles.runReco}>💡 {run.recommandation}</Text>}
+    </Carte>
   );
 }
 
@@ -135,7 +213,61 @@ const styles = StyleSheet.create({
     borderTopColor: colors.border,
   },
   budgetLabel: { color: colors.textMuted, fontSize: font.small },
+  budgetDetailLien: { color: colors.accent, fontSize: font.tiny, fontWeight: '700', marginTop: 2 },
   budgetVal: { color: colors.accent, fontSize: font.h3, fontWeight: '800' },
+  // Coût de RUN
+  runGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm },
+  runBox: {
+    flexGrow: 1,
+    flexBasis: '45%',
+    backgroundColor: colors.surfaceAlt,
+    borderRadius: radius.md,
+    padding: spacing.md,
+    gap: 4,
+  },
+  runMode: { color: colors.text, fontSize: font.small, fontWeight: '800' },
+  runVal: { color: colors.accent, fontSize: font.h3, fontWeight: '800' },
+  runMois: { color: colors.textMuted, fontSize: font.tiny, fontWeight: '600' },
+  runHypo: { color: colors.textMuted, fontSize: font.tiny, lineHeight: 16 },
+  runReco: { color: colors.text, fontSize: font.small, lineHeight: 19 },
+  // Modal détail prix
+  modalFond: { flex: 1, backgroundColor: '#000000AA', justifyContent: 'center', padding: spacing.lg },
+  modalCarte: {
+    backgroundColor: colors.surface,
+    borderRadius: radius.lg,
+    borderWidth: 1,
+    borderColor: colors.border,
+    padding: spacing.lg,
+    gap: spacing.sm,
+  },
+  modalTitre: { color: colors.text, fontSize: font.h3, fontWeight: '800', marginBottom: spacing.sm },
+  tEntete: { flexDirection: 'row', paddingBottom: spacing.xs, borderBottomWidth: 1, borderBottomColor: colors.border },
+  tLigne: { flexDirection: 'row', paddingVertical: 6 },
+  tCol: { fontSize: font.tiny },
+  tPoste: { flex: 1, paddingRight: spacing.xs },
+  tNum: { width: 52, textAlign: 'right' },
+  tMontant: { width: 80, textAlign: 'right' },
+  tTxt: { color: colors.textMuted },
+  tTxtFort: { color: colors.text, fontWeight: '700' },
+  tTotal: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginTop: spacing.sm,
+    paddingTop: spacing.sm,
+    borderTopWidth: 1,
+    borderTopColor: colors.border,
+  },
+  tTotalLabel: { color: colors.text, fontSize: font.body, fontWeight: '800' },
+  tTotalVal: { color: colors.accent, fontSize: font.h3, fontWeight: '800' },
+  modalNote: { color: colors.textMuted, fontSize: font.tiny, lineHeight: 16, fontStyle: 'italic', marginTop: spacing.xs },
+  modalFermer: {
+    marginTop: spacing.md,
+    backgroundColor: colors.primary,
+    borderRadius: radius.pill,
+    paddingVertical: 12,
+    alignItems: 'center',
+  },
+  modalFermerTxt: { color: '#fff', fontWeight: '800', fontSize: font.body },
   // ROI
   roiGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm },
   kpiBox: {

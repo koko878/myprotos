@@ -70,6 +70,39 @@ export interface EstimationROI {
 }
 
 /**
+ * Un poste de la ventilation du prix projet. Granularité transparente :
+ * montant = jours × tjmEur (tarif journalier moyen).
+ */
+export interface PostePrix {
+  poste: string;   // ex. "Cadrage & design", "Développement", "Tests & recette"
+  jours: number;   // nombre de jours-homme
+  tjmEur: number;  // tarif journalier moyen (€)
+  montantEur: number; // jours × tjmEur
+}
+
+/**
+ * Ventilation détaillée et factuelle du prix projet (affichée au clic sur le prix).
+ */
+export interface VentilationPrix {
+  postes: PostePrix[];
+  totalEur: number;        // somme des postes
+  tjmMoyenEur?: number;    // TJM moyen indicatif
+  note?: string;           // hypothèses / précisions sur le chiffrage
+}
+
+/**
+ * Estimation du coût de fonctionnement (RUN) mensuel, en cloud ET on-premise,
+ * exposée à la restitution pour éclairer le choix de déploiement.
+ */
+export interface CoutRun {
+  cloudMensuelEur: number;   // coût mensuel estimé en cloud (€)
+  cloudHypotheses: string;   // fournisseur, services, dimensionnement supposés
+  onPremiseMensuelEur: number; // coût mensuel estimé on-premise (€, amorti)
+  onPremiseHypotheses: string; // matériel, maintenance, hypothèses
+  recommandation?: string;   // quel mode l'IA recommande et pourquoi
+}
+
+/**
  * Spécification du prototype (usage INTERNE / admin). Sert de contexte à l'IA
  * pour générer le prototype HTML auto-porté. Non affichée au client.
  */
@@ -119,6 +152,8 @@ export interface UseCase {
   complexite: Complexite;
   scoreCadrage: number; // 0-100 : maturité du cadrage métier
   budgetEstime: string;
+  ventilationPrix?: VentilationPrix; // détail factuel du prix (clic sur le prix)
+  coutRun?: CoutRun; // coût de fonctionnement mensuel (cloud + on-premise)
   roi?: EstimationROI;
   spec?: SpecPrototype; // contexte interne pour la génération du prototype
   prototypeHtml?: string; // prototype HTML auto-porté généré par l'IA

@@ -42,10 +42,21 @@ liste d'idées de produits/applications (issues de cadrages métier). Tu dois, e
    - "original" : peu ou pas d'acteur connu sur ce créneau précis
    N'invente jamais d'acteur : si tu n'es pas sûr, mets une liste vide et explique.
 
-2) LICORNES : identifie UNIQUEMENT les idées avec un vrai potentiel de très forte croissance
-   (marché immense, scalabilité, effet réseau, timing). NE FORCE RIEN : s'il n'y a aucune
-   idée à potentiel licorne, renvoie une liste "licornes" VIDE et explique-le dans
-   "syntheseLicornes". Mieux vaut zéro licorne qu'une licorne inventée.
+2) LICORNES : sois TRÈS EXIGEANT et SCEPTIQUE. Une "licorne" (>1 Md€) est rarissime.
+   Le défaut par défaut est : AUCUNE licorne. Ne qualifie une idée de potentiel licorne que si
+   TOUS ces critères sont réunis :
+   - marché immense (TAM de plusieurs milliards) ET en croissance ;
+   - un angle RÉELLEMENT différenciant et défendable (techno propriétaire, donnée unique,
+     effet de réseau, "moat") — pas juste "une app de plus" ;
+   - le marché n'est PAS déjà saturé d'acteurs établis qui font la même chose.
+   RÈGLE ANTI-COMPLAISANCE : une idée générique sur un marché saturé (ex. "un assistant IA",
+   "un chatbot", "une app de gestion" sans angle unique) N'EST PAS une licorne — même si la
+   techno est à la mode. Dans le doute, ce n'est PAS une licorne.
+   S'il n'y a aucune idée à potentiel licorne (cas le plus fréquent), renvoie une liste
+   "licornes" VIDE et explique honnêtement pourquoi dans "syntheseLicornes" (marché saturé,
+   manque de différenciation…). Mieux vaut zéro licorne qu'une fausse licorne.
+   Quand tu en identifies une, "raison" DOIT expliciter le facteur différenciant ET pourquoi
+   les acteurs existants ne couvrent pas déjà ce créneau.
 
 Réponds STRICTEMENT en JSON, sans texte autour, au format :
 {
@@ -89,6 +100,8 @@ export async function analyserBanque(ideas: UseCase[]): Promise<AnalyseBanque | 
         u.domaine ? `domaine: ${u.domaine}` : '',
         u.probleme ? `problème: ${u.probleme}` : '',
         u.objectif ? `objectif: ${u.objectif}` : '',
+        u.utilisateurs ? `utilisateurs: ${u.utilisateurs}` : '',
+        u.approcheSuggeree ? `approche: ${u.approcheSuggeree}` : '',
       ].filter(Boolean);
       return bits.join(' | ');
     })
