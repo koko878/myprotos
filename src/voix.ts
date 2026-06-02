@@ -30,15 +30,17 @@ export function demarrerDictee(
   reco.interimResults = true;
 
   reco.onresult = (e: any) => {
-    let interim = '';
-    let final = '';
-    for (let i = e.resultIndex; i < e.results.length; i++) {
-      const t = e.results[i][0].transcript;
-      if (e.results[i].isFinal) final += t;
-      else interim += t;
+    // En mode continu, e.results ACCUMULE tous les segments de la session.
+    // On reconstruit donc la transcription COMPLÈTE à chaque événement (final +
+    // interim) et on l'émet en entier — le consommateur remplace (ne concatène
+    // pas), ce qui évite les doublons / triplements de mots.
+    let texte = '';
+    let tousFinaux = true;
+    for (let i = 0; i < e.results.length; i++) {
+      texte += e.results[i][0].transcript;
+      if (!e.results[i].isFinal) tousFinaux = false;
     }
-    if (final) onTexte(final, true);
-    else if (interim) onTexte(interim, false);
+    onTexte(texte.trim(), tousFinaux);
   };
   reco.onerror = () => onFin();
   reco.onend = () => onFin();

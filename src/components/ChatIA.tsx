@@ -76,11 +76,13 @@ export default function ChatIA({ titre, ouverture, jouerTour, onTermine, progres
       sessionDictee.current?.stop();
       return;
     }
+    // Texte déjà saisi AVANT la dictée : la transcription (toujours complète,
+    // cf. voix.ts) lui est simplement ajoutée. On REMPLACE la saisie à chaque
+    // résultat (jamais d'accumulation) -> plus de mots en double/triple.
     baseSaisie.current = saisie ? saisie + ' ' : '';
     const session = demarrerDictee(
-      (texte, fin) => {
-        setSaisie(baseSaisie.current + texte);
-        if (fin) baseSaisie.current = baseSaisie.current + texte + ' ';
+      (texte) => {
+        setSaisie((baseSaisie.current + texte).trimStart());
       },
       () => {
         setDictee(false);
