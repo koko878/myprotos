@@ -4,6 +4,7 @@ import { Carte, Etiquette } from '../components/ui';
 import { libelleStatut } from '../components/UseCaseView';
 import { dateHeure, identiteClient } from '../format';
 import { useNav } from '../navigation';
+import { marquerIdeesVues } from '../notifications';
 import { chargerUseCases } from '../storage';
 import { colors, font, spacing } from '../theme';
 import { UseCase } from '../types';
@@ -39,6 +40,9 @@ export default function AdminScreen() {
       });
       setListe(visibles);
     });
+    // L'admin consulte la liste : on marque les idées soumises comme vues
+    // (réinitialise le compteur de notifications in-app).
+    marquerIdeesVues();
   }, []);
 
   const aTraiter = liste?.filter((u) => u.statut === 'soumis').length ?? 0;

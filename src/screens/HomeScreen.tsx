@@ -6,6 +6,8 @@ import { useAuth } from '../authContext';
 import Logo from '../components/Logo';
 import { Bouton, Carte } from '../components/ui';
 import { useNav } from '../navigation';
+import { compterNouvelles, dernierVuLe } from '../notifications';
+import { chargerUseCases } from '../storage';
 import { colors, font, radius, spacing } from '../theme';
 
 export default function HomeScreen() {
@@ -21,10 +23,24 @@ export default function HomeScreen() {
   const dernierTap = useRef(0);
 
   const adminOuvert = authRequise ? estAdmin : adminLocal;
+  const [nouvelles, setNouvelles] = useState(0);
 
   useEffect(() => {
     if (!authRequise) estAdminDeverrouille().then(setAdminLocal);
   }, [authRequise]);
+
+  // Compte les idées soumises non encore vues (notification in-app admin).
+  useEffect(() => {
+    if (!adminOuvert) return;
+    let actif = true;
+    (async () => {
+      const [liste, vuLe] = await Promise.all([chargerUseCases(), dernierVuLe()]);
+      if (actif) setNouvelles(compterNouvelles(liste, vuLe));
+    })().catch(() => {});
+    return () => {
+      actif = false;
+    };
+  }, [adminOuvert]);
 
   // 5 appuis rapides sur le logo ouvrent la saisie du code admin (mode démo).
   function tapLogo() {
@@ -91,7 +107,14 @@ export default function HomeScreen() {
         {/* Accès admin : par rôle (mode auth) ou par code (mode démo). */}
         {adminOuvert && (
           <View style={styles.adminZone}>
-            <Bouton titre="🛠️ Espace admin" variante="secondaire" onPress={() => aller({ nom: 'admin' })} />
+            <Bouton
+              titre={nouvelles > 0 ? `🛠️ Espace admin · ${nouvelles} nouvelle${nouvelles > 1 ? 's' : ''} idée${nouvelles > 1 ? 's' : ''}` : '🛠️ Espace admin'}
+              variante="secondaire"
+              onPress={() => aller({ nom: 'admin' })}
+            />
+            {nouvelles > 0 && (
+              <Text style={styles.notif}>🔔 {nouvelles} idée{nouvelles > 1 ? 's' : ''} soumise{nouvelles > 1 ? 's' : ''} en attente</Text>
+            )}
             {!authRequise && (
               <Pressable onPress={quitterAdmin} hitSlop={8} style={styles.adminLien}>
                 <Text style={styles.adminTxt}>Quitter le mode admin</Text>
@@ -174,6 +197,7 @@ const styles = StyleSheet.create({
   etapeTitre: { color: colors.text, fontSize: font.body, fontWeight: '700' },
   etapeTexte: { color: colors.textMuted, fontSize: font.small },
   adminZone: { marginTop: spacing.xxl, gap: spacing.xs },
+  notif: { color: colors.warn, fontSize: font.small, fontWeight: '700', textAlign: 'center', marginTop: spacing.xs },
   adminLien: { alignItems: 'center', paddingVertical: spacing.sm },
   adminTxt: { color: colors.textMuted, fontSize: font.small, fontWeight: '600' },
   modalFond: {
