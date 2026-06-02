@@ -39,7 +39,8 @@ const GEMINI_MODELES = Array.from(
 
 // Disponibilité de chaque fournisseur. Groq : via proxy (clé cachée) ou clé
 // directe. Gemini : clé directe (Google joignable) ou proxy en dernier recours.
-const groqDispo = UTILISE_PROXY || (typeof GROQ_KEY === 'string' && GROQ_KEY.length > 0);
+const GROQ_DIRECT = typeof GROQ_KEY === 'string' && GROQ_KEY.length > 0;
+const groqDispo = GROQ_DIRECT || UTILISE_PROXY;
 const GEMINI_DIRECT = typeof GEMINI_KEY === 'string' && GEMINI_KEY.length > 0;
 const geminiDispo = GEMINI_DIRECT || UTILISE_PROXY;
 const DEEPSEEK_DIRECT = typeof DEEPSEEK_KEY === 'string' && DEEPSEEK_KEY.length > 0;
@@ -125,8 +126,9 @@ async function appelerGroq(req: Requete): Promise<Resultat> {
     ...(req.json ? { response_format: { type: 'json_object' } } : {}),
   };
 
-  const url = UTILISE_PROXY ? `${PROXY_URL}/groq` : 'https://api.groq.com/openai/v1/chat/completions';
-  const headers: Record<string, string> = UTILISE_PROXY ? {} : { Authorization: `Bearer ${GROQ_KEY}` };
+  // Clé directe en priorité (comme Gemini) ; proxy en repli si pas de clé locale.
+  const url = GROQ_DIRECT ? 'https://api.groq.com/openai/v1/chat/completions' : `${PROXY_URL}/groq`;
+  const headers: Record<string, string> = GROQ_DIRECT ? { Authorization: `Bearer ${GROQ_KEY}` } : {};
 
   const res = await postJson(url, corps, headers, 2);
   if (!res) return { ok: false, transitoire: true };
