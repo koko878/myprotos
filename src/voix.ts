@@ -12,6 +12,28 @@ export interface SessionDictee {
   stop: () => void;
 }
 
+// Fusionne deux fragments de transcription en évitant les chevauchements.
+// Ex. fusionner("je veux", "je veux créer") -> "je veux créer" (et non "je veuxje veux créer").
+function fusionner(a: string, b: string): string {
+  if (!a) return b;
+  if (!b) return a;
+  const na = a.toLowerCase();
+  const nb = b.toLowerCase();
+  // b prolonge a (ou est identique) -> on garde b.
+  if (nb.startsWith(na)) return b;
+  // a contient déjà b -> on garde a.
+  if (na.endsWith(nb) || na.includes(nb)) return a;
+  // Chevauchement partiel : plus long suffixe de a == préfixe de b.
+  const max = Math.min(a.length, b.length);
+  for (let k = max; k > 0; k--) {
+    if (na.slice(na.length - k) === nb.slice(0, k)) {
+      return a + b.slice(k);
+    }
+  }
+  // Aucun chevauchement : segments distincts -> on concatène avec une espace.
+  return a + ' ' + b;
+}
+
 /**
  * Démarre la reconnaissance vocale (français). `onTexte` reçoit le texte
  * reconnu au fil de l'eau (résultats intermédiaires + finaux). `onFin` est
@@ -30,15 +52,19 @@ export function demarrerDictee(
   reco.interimResults = true;
 
   reco.onresult = (e: any) => {
-    // En mode continu, e.results ACCUMULE tous les segments de la session.
-    // On reconstruit donc la transcription COMPLÈTE à chaque événement (final +
-    // interim) et on l'émet en entier — le consommateur remplace (ne concatène
-    // pas), ce qui évite les doublons / triplements de mots.
+    // Reconstruit la transcription complète à chaque événement. Certains
+    // navigateurs (Chrome Android) empilent des segments qui SE CHEVAUCHENT
+    // (« je », « je veux », « je veux créer »…) -> une simple concaténation
+    // produirait « jeje veuxje veux créer ». On fusionne donc intelligemment :
+    // si le nouveau segment prolonge le texte courant (ou inversement), on garde
+    // le plus complet au lieu d'additionner.
     let texte = '';
     let tousFinaux = true;
     for (let i = 0; i < e.results.length; i++) {
-      texte += e.results[i][0].transcript;
+      const seg = String(e.results[i][0].transcript || '').trim();
       if (!e.results[i].isFinal) tousFinaux = false;
+      if (!seg) continue;
+      texte = fusionner(texte, seg);
     }
     onTexte(texte.trim(), tousFinaux);
   };
