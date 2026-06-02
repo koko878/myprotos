@@ -11,6 +11,13 @@
 
 import { appelerGemini, chatGemini, iaDisponible } from './llm';
 import {
+  CLE_CADRAGE,
+  CLE_CHALLENGE_CADRAGE,
+  CLE_CHALLENGE_PROTO,
+  enregistrerDefaut,
+} from './promptsAgents';
+import { promptEffectif } from './reglages';
+import {
   CadrageTechnique,
   Complexite,
   EstimationROI,
@@ -564,10 +571,11 @@ export async function tourCadrageIA(
     text: m.texte,
   }));
 
+  const base = await promptEffectif(CLE_CADRAGE, SYSTEM_CADRAGE);
   const sys = forceFinish
-    ? SYSTEM_CADRAGE +
+    ? base +
       '\n\nIMPORTANT : tu as recueilli assez d\'informations. Termine maintenant ("done": true) en produisant le use case.'
-    : SYSTEM_CADRAGE;
+    : base;
 
   const brut = await chatGemini(sys, historique, { json: true, temperature: 0.6 });
   if (!brut) return null;
@@ -886,8 +894,9 @@ export async function tourChallengeIA(
     text: m.texte,
   }));
 
+  const baseChallenge = await promptEffectif(CLE_CHALLENGE_PROTO, SYSTEM_CHALLENGE);
   const sys =
-    SYSTEM_CHALLENGE +
+    baseChallenge +
     `\n\nContexte du projet (pour t'aider à comprendre) : ${contexte}` +
     (forceFinish
       ? '\n\nIMPORTANT : tu as assez d\'éléments. Termine maintenant ("done": true) en produisant la liste des remarques.'
@@ -934,6 +943,26 @@ Réponds TOUJOURS en JSON strict, sans texte autour :
 
 Quand "done" vaut true, "useCase" reprend EXACTEMENT le même schéma que le cadrage initial (titre, domaine, probleme, objectif, kpis, donnees, utilisateurs, contraintes, approcheSuggeree, complexite, budgetEstime, roi{...}, spec{...}) en intégrant les modifications demandées. Conserve les valeurs existantes pour ce qui n'a pas changé.`;
 
+// Enregistre les prompts par défaut pour l'éditeur admin (au chargement du module).
+enregistrerDefaut(
+  CLE_CADRAGE,
+  '🧭 Cadrage métier',
+  "L'agent qui mène l'entretien de cadrage de l'idée avec le client (questions, ROI, génération du use case).",
+  SYSTEM_CADRAGE
+);
+enregistrerDefaut(
+  CLE_CHALLENGE_CADRAGE,
+  '✏️ Challenge du cadrage',
+  "L'agent qui aide le client à affiner / corriger son cadrage existant.",
+  SYSTEM_CHALLENGE_CADRAGE
+);
+enregistrerDefaut(
+  CLE_CHALLENGE_PROTO,
+  '🎨 Challenge du prototype',
+  "L'agent qui aide le client à formuler des retours clairs sur le prototype.",
+  SYSTEM_CHALLENGE
+);
+
 export interface TourChallengeCadrage {
   reply: string;
   suggestions: string[];
@@ -961,8 +990,9 @@ export async function tourChallengeCadrageIA(
 
   const resume = `Cadrage actuel — Titre: ${actuel.titre} | Domaine: ${actuel.domaine} | Problème: ${actuel.probleme} | Objectif: ${actuel.objectif} | KPIs: ${(actuel.kpis || []).join(', ')} | Données: ${actuel.donnees} | Utilisateurs: ${actuel.utilisateurs} | Contraintes: ${actuel.contraintes} | Approche: ${actuel.approcheSuggeree} | Budget: ${actuel.budgetEstime}`;
 
+  const baseCC = await promptEffectif(CLE_CHALLENGE_CADRAGE, SYSTEM_CHALLENGE_CADRAGE);
   const sys =
-    SYSTEM_CHALLENGE_CADRAGE +
+    baseCC +
     `\n\n${resume}` +
     (forceFinish ? '\n\nIMPORTANT : termine maintenant ("done": true) avec le use case mis à jour.' : '');
 

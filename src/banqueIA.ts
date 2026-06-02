@@ -6,6 +6,8 @@
 // Utilise la cascade LLM (Groq → Gemini → Deepseek) en sortie JSON.
 
 import { appelerGemini } from './llm';
+import { CLE_BANQUE, enregistrerDefaut } from './promptsAgents';
+import { promptEffectif } from './reglages';
 import { UseCase } from './types';
 
 export interface IdeeExistante {
@@ -58,6 +60,13 @@ Réponds STRICTEMENT en JSON, sans texte autour, au format :
   "syntheseLicornes": "..."
 }`;
 
+enregistrerDefaut(
+  CLE_BANQUE,
+  '🤖 Analyse de la banque',
+  "L'agent qui analyse la banque d'idées : repère ce qui existe déjà (avec évidences) et le potentiel licorne.",
+  SYSTEME
+);
+
 function s(v: any, def = ''): string {
   return typeof v === 'string' ? v : def;
 }
@@ -87,7 +96,8 @@ export async function analyserBanque(ideas: UseCase[]): Promise<AnalyseBanque | 
 
   const prompt = `Voici les idées de la banque (utilise EXACTEMENT les "id" fournis dans ta réponse) :\n\n${liste}`;
 
-  const brut = await appelerGemini(`${SYSTEME}\n\n${prompt}`, { json: true, temperature: 0.4 });
+  const systeme = await promptEffectif(CLE_BANQUE, SYSTEME);
+  const brut = await appelerGemini(`${systeme}\n\n${prompt}`, { json: true, temperature: 0.4 });
   if (!brut) return null;
 
   try {

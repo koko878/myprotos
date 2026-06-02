@@ -71,6 +71,9 @@ export default function AdminScreen() {
         <Pressable onPress={() => aller({ nom: 'banque' })} style={styles.banqueBtn}>
           <Text style={styles.banqueTxt}>📚 Banque d’idées — classement & similarités</Text>
         </Pressable>
+        <Pressable onPress={() => aller({ nom: 'prompts' })} style={styles.banqueBtn}>
+          <Text style={styles.banqueTxt}>⚙️ Prompts des agents IA</Text>
+        </Pressable>
 
         {liste && liste.length === 0 && (
           <View style={styles.vide}>

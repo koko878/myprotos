@@ -75,6 +75,27 @@ create policy "projets: maj" on public.projets
 create policy "projets: suppression" on public.projets
   for delete using (auth.uid() = proprietaire or public.est_admin());
 
--- 3) Te promouvoir ADMIN (à faire une fois, après ta 1ère connexion) --------
+-- 3) RÉGLAGES (overrides de prompts des agents IA) --------------------------
+-- Clé/valeur partagé : l'admin édite les prompts, TOUS les utilisateurs (clients
+-- inclus) les lisent — indispensable car les agents tournent côté client.
+create table if not exists public.reglages (
+  cle text primary key,
+  valeur text not null,
+  maj_le timestamptz not null default now()
+);
+
+alter table public.reglages enable row level security;
+
+-- Lecture pour tout utilisateur authentifié ; écriture réservée à l'admin.
+create policy "reglages: lecture" on public.reglages
+  for select using (auth.role() = 'authenticated');
+create policy "reglages: insertion admin" on public.reglages
+  for insert with check (public.est_admin());
+create policy "reglages: maj admin" on public.reglages
+  for update using (public.est_admin());
+create policy "reglages: suppression admin" on public.reglages
+  for delete using (public.est_admin());
+
+-- 4) Te promouvoir ADMIN (à faire une fois, après ta 1ère connexion) --------
 -- Remplace l'email puis exécute :
 --   update public.profiles set role = 'admin' where email = 'TON_EMAIL';

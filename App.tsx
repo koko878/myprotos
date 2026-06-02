@@ -9,6 +9,7 @@ import { colors } from './src/theme';
 import AdminDetailScreen from './src/screens/AdminDetailScreen';
 import AdminScreen from './src/screens/AdminScreen';
 import BanqueScreen from './src/screens/BanqueScreen';
+import PromptsScreen from './src/screens/PromptsScreen';
 import CadrageScreen from './src/screens/CadrageScreen';
 import CadrageChallengeScreen from './src/screens/CadrageChallengeScreen';
 import ChallengeScreen from './src/screens/ChallengeScreen';
@@ -49,6 +50,8 @@ function Routeur() {
       return estAdmin ? <AdminDetailScreen useCaseId={route.useCaseId} /> : <HomeScreen />;
     case 'banque':
       return estAdmin ? <BanqueScreen /> : <HomeScreen />;
+    case 'prompts':
+      return estAdmin ? <PromptsScreen /> : <HomeScreen />;
     default:
       return <HomeScreen />;
   }

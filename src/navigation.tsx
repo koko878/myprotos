@@ -16,7 +16,8 @@ export type Route =
   | { nom: 'technique'; useCaseId: string } // cadrage technique (IA architecte)
   | { nom: 'admin' } // espace admin : génération des prototypes
   | { nom: 'adminDetail'; useCaseId: string }
-  | { nom: 'banque' }; // banque d'idées : classement + similarités (admin)
+  | { nom: 'banque' } // banque d'idées : classement + similarités (admin)
+  | { nom: 'prompts' }; // réglage des prompts des agents IA (admin)
 
 interface NavContext {
   route: Route;
