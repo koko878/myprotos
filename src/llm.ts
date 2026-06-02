@@ -18,8 +18,10 @@ const UTILISE_PROXY = PROXY_URL.length > 0;
 
 const GROQ_KEY = process.env.EXPO_PUBLIC_GROQ_API_KEY;
 const GEMINI_KEY = process.env.EXPO_PUBLIC_GEMINI_API_KEY;
+const DEEPSEEK_KEY = process.env.EXPO_PUBLIC_DEEPSEEK_API_KEY;
 
 const GROQ_MODELE = process.env.EXPO_PUBLIC_GROQ_MODEL || 'llama-3.3-70b-versatile';
+const DEEPSEEK_MODELE = process.env.EXPO_PUBLIC_DEEPSEEK_MODEL || 'deepseek-chat';
 
 // Modèles Gemini (principal + secours) tentés dans l'ordre.
 const GEMINI_MODELES = Array.from(
@@ -40,9 +42,11 @@ const GEMINI_MODELES = Array.from(
 const groqDispo = UTILISE_PROXY || (typeof GROQ_KEY === 'string' && GROQ_KEY.length > 0);
 const GEMINI_DIRECT = typeof GEMINI_KEY === 'string' && GEMINI_KEY.length > 0;
 const geminiDispo = GEMINI_DIRECT || UTILISE_PROXY;
+const DEEPSEEK_DIRECT = typeof DEEPSEEK_KEY === 'string' && DEEPSEEK_KEY.length > 0;
+const deepseekDispo = DEEPSEEK_DIRECT || UTILISE_PROXY;
 
 export function iaDisponible(): boolean {
-  return groqDispo || geminiDispo;
+  return groqDispo || geminiDispo || deepseekDispo;
 }
 
 interface OptionsAppel {
@@ -172,11 +176,39 @@ async function appelerGeminiProvider(req: Requete): Promise<Resultat> {
   return { ok: false, transitoire: true };
 }
 
+// --- Fournisseur Deepseek (API OpenAI-compatible, directe ou via proxy) ------
+
+async function appelerDeepseek(req: Requete): Promise<Resultat> {
+  if (!deepseekDispo) return { ok: false, transitoire: true };
+  const corps = {
+    model: DEEPSEEK_MODELE,
+    messages: [
+      ...(req.system ? [{ role: 'system', content: req.system }] : []),
+      ...req.messages.map((m) => ({ role: m.role, content: m.text })),
+    ],
+    temperature: req.temperature,
+    ...(req.json ? { response_format: { type: 'json_object' } } : {}),
+  };
+
+  const url = UTILISE_PROXY ? `${PROXY_URL}/deepseek` : 'https://api.deepseek.com/chat/completions';
+  const headers: Record<string, string> = UTILISE_PROXY ? {} : { Authorization: `Bearer ${DEEPSEEK_KEY}` };
+
+  const res = await postJson(url, corps, headers, 2);
+  if (!res) return { ok: false, transitoire: true };
+  if (res.data) {
+    const texte: string | undefined = res.data?.choices?.[0]?.message?.content;
+    return { ok: true, texte: typeof texte === 'string' ? texte : null };
+  }
+  return { ok: false, transitoire: res.status === 429 || res.status === 503 };
+}
+
 // --- Cascade -----------------------------------------------------------------
 
+// Ordre de cascade : Groq → Gemini → Deepseek (au moins un répond).
 const FOURNISSEURS: ((req: Requete) => Promise<Resultat>)[] = [
   appelerGroq,
   appelerGeminiProvider,
+  appelerDeepseek,
 ];
 
 // Interroge les fournisseurs dans l'ordre, en basculant au suivant tant qu'un

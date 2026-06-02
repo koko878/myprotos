@@ -9,11 +9,15 @@
 //   GEMINI_API_KEY   (optionnel, fournisseur de secours)
 //
 // Endpoints :
-//   GET  /health  -> diagnostic : worker vivant + quels secrets sont configurés
-//   POST /groq    -> relaie vers l'API chat completions de Groq
-//   POST /gemini  -> relaie vers generateContent de Gemini (modèle dans ?model=)
+//   GET  /health   -> diagnostic : worker vivant + quels secrets sont configurés
+//   POST /groq     -> relaie vers l'API chat completions de Groq
+//   POST /gemini   -> relaie vers generateContent de Gemini (modèle dans ?model=)
+//   POST /deepseek -> relaie vers l'API chat completions de Deepseek
+//
+// Secret supplémentaire optionnel : DEEPSEEK_API_KEY (3e fournisseur de secours)
 
 const GROQ_URL = 'https://api.groq.com/openai/v1/chat/completions';
+const DEEPSEEK_URL = 'https://api.deepseek.com/chat/completions';
 
 const ALLOW_ORIGINS = [
   'https://koko878.github.io',
@@ -55,6 +59,7 @@ export default {
         worker: 'myprotos-llm-proxy',
         groqKeyConfigured: !!env.GROQ_API_KEY,
         geminiKeyConfigured: !!env.GEMINI_API_KEY,
+        deepseekKeyConfigured: !!env.DEEPSEEK_API_KEY,
       });
     }
 
@@ -95,6 +100,24 @@ export default {
             body: JSON.stringify(body),
           }
         );
+        const data = await r.text();
+        return new Response(data, {
+          status: r.status,
+          headers: { ...cors, 'Content-Type': 'application/json' },
+        });
+      }
+
+      // --- Deepseek (3e secours) --------------------------------------------
+      if (url.pathname === '/deepseek') {
+        if (!env.DEEPSEEK_API_KEY) return json({ error: 'DEEPSEEK_API_KEY non configurée' }, 500);
+        const r = await fetch(DEEPSEEK_URL, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${env.DEEPSEEK_API_KEY}`,
+          },
+          body: JSON.stringify(body),
+        });
         const data = await r.text();
         return new Response(data, {
           status: r.status,

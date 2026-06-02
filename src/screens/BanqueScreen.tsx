@@ -1,19 +1,30 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { Pressable, SafeAreaView, ScrollView, StyleSheet, Text, View } from 'react-native';
-import { Carte, Etiquette } from '../components/ui';
+import { ActivityIndicator, Pressable, SafeAreaView, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { AnalyseBanque, analyserBanque } from '../banqueIA';
+import { Bouton, Carte, Etiquette } from '../components/ui';
+import { iaDisponible } from '../llm';
 import { useNav } from '../navigation';
 import { chargerUseCases } from '../storage';
 import { grouperParDomaine, pairesSimilaires, trouverSimilaires } from '../similarite';
 import { colors, font, radius, spacing } from '../theme';
 import { UseCase } from '../types';
 
+const VERDICT_LIB: Record<string, { texte: string; couleur: string }> = {
+  existe_deja: { texte: 'Existe déjà', couleur: colors.danger },
+  partiellement: { texte: 'Partiellement', couleur: colors.warn },
+  original: { texte: 'Original', couleur: colors.success },
+};
+
 // Banque d'idées (admin) : tous les use cases classés par domaine, avec
-// détection des idées quasi-similaires (doublons potentiels).
+// détection des idées quasi-similaires (doublons potentiels) + analyse IA.
 export default function BanqueScreen() {
   const { aller, retour } = useNav();
   const [tous, setTous] = useState<UseCase[] | null>(null);
   const [domaineActif, setDomaineActif] = useState<string | null>(null);
   const [detail, setDetail] = useState<UseCase | null>(null);
+  const [analyse, setAnalyse] = useState<AnalyseBanque | null>(null);
+  const [analyseEnCours, setAnalyseEnCours] = useState(false);
+  const [analyseErreur, setAnalyseErreur] = useState<string | null>(null);
 
   useEffect(() => {
     chargerUseCases().then(setTous);
@@ -21,6 +32,21 @@ export default function BanqueScreen() {
 
   const groupes = useMemo(() => (tous ? grouperParDomaine(tous) : []), [tous]);
   const paires = useMemo(() => (tous ? pairesSimilaires(tous, 0.4) : []), [tous]);
+
+  async function lancerAnalyse() {
+    if (!tous || analyseEnCours) return;
+    setAnalyseEnCours(true);
+    setAnalyseErreur(null);
+    try {
+      const r = await analyserBanque(tous);
+      if (r) setAnalyse(r);
+      else setAnalyseErreur('L’analyse IA a échoué (moteurs indisponibles). Réessayez.');
+    } catch {
+      setAnalyseErreur('L’analyse IA a échoué. Réessayez.');
+    } finally {
+      setAnalyseEnCours(false);
+    }
+  }
 
   if (!tous) {
     return (
@@ -90,6 +116,96 @@ export default function BanqueScreen() {
           {tous.length} idée{tous.length > 1 ? 's' : ''} · {groupes.length} domaine
           {groupes.length > 1 ? 's' : ''}.
         </Text>
+
+        {/* Analyse IA : idées déjà existantes + potentiel licorne */}
+        {iaDisponible() && tous.length > 0 && (
+          <Carte style={{ gap: spacing.md, borderColor: colors.primary + '55' }}>
+            <Text style={styles.h}>🤖 Analyse IA de la banque</Text>
+            <Text style={styles.txt}>
+              Vérifie les idées qui existent déjà ailleurs (avec évidences) et repère
+              les éventuelles pépites à fort potentiel.
+            </Text>
+            {analyseEnCours ? (
+              <View style={styles.analyseLoad}>
+                <ActivityIndicator color={colors.primary} />
+                <Text style={styles.txt}>Analyse en cours…</Text>
+              </View>
+            ) : (
+              <Bouton
+                titre={analyse ? '↻ Relancer l’analyse' : '🔎 Analyser la banque'}
+                variante="secondaire"
+                onPress={lancerAnalyse}
+              />
+            )}
+            {analyseErreur && <Text style={styles.erreur}>⚠️ {analyseErreur}</Text>}
+
+            {analyse && (
+              <View style={{ gap: spacing.md }}>
+                {/* Licornes */}
+                <Text style={styles.sousSection}>🦄 Potentiel licorne</Text>
+                {analyse.licornes.length === 0 ? (
+                  <Text style={styles.txt}>
+                    {analyse.syntheseLicornes || 'Aucune idée à potentiel licorne identifiée.'}
+                  </Text>
+                ) : (
+                  <>
+                    {analyse.syntheseLicornes ? (
+                      <Text style={styles.txt}>{analyse.syntheseLicornes}</Text>
+                    ) : null}
+                    {analyse.licornes.map((l, i) => (
+                      <Pressable
+                        key={i}
+                        onPress={() => {
+                          const uc = tous.find((u) => u.id === l.id);
+                          if (uc) setDetail(uc);
+                        }}
+                        style={styles.licorne}
+                      >
+                        <View style={styles.simTop}>
+                          <Text style={styles.licorneTitre}>🦄 {l.titre}</Text>
+                          <Text style={styles.licornePot}>
+                            {l.potentiel === 'tres_fort' ? 'Très fort' : 'Fort'}
+                          </Text>
+                        </View>
+                        <Text style={styles.txt}>{l.raison}</Text>
+                        {!!l.marche && <Text style={styles.marche}>Marché : {l.marche}</Text>}
+                      </Pressable>
+                    ))}
+                  </>
+                )}
+
+                {/* Existant */}
+                <Text style={styles.sousSection}>🌍 Déjà sur le marché ?</Text>
+                {analyse.existantes.length === 0 ? (
+                  <Text style={styles.txt}>Aucune analyse d’existant disponible.</Text>
+                ) : (
+                  analyse.existantes.map((e, i) => {
+                    const v = VERDICT_LIB[e.verdict] ?? VERDICT_LIB.partiellement;
+                    return (
+                      <Pressable
+                        key={i}
+                        onPress={() => {
+                          const uc = tous.find((u) => u.id === e.id);
+                          if (uc) setDetail(uc);
+                        }}
+                        style={styles.existant}
+                      >
+                        <View style={styles.simTop}>
+                          <Text style={styles.existantTitre} numberOfLines={1}>{e.titre}</Text>
+                          <Etiquette texte={v.texte} couleur={v.couleur} />
+                        </View>
+                        {!!e.acteurs.length && (
+                          <Text style={styles.acteurs}>Existe déjà : {e.acteurs.join(', ')}</Text>
+                        )}
+                        <Text style={styles.txt}>{e.explication}</Text>
+                      </Pressable>
+                    );
+                  })
+                )}
+              </View>
+            )}
+          </Carte>
+        )}
 
         {/* Doublons potentiels */}
         {paires.length > 0 && (
@@ -169,6 +285,28 @@ const styles = StyleSheet.create({
   content: { padding: spacing.lg, paddingBottom: spacing.xxl, gap: spacing.md },
   intro: { color: colors.textMuted, fontSize: font.small },
   h: { color: colors.text, fontSize: font.body, fontWeight: '800' },
+  erreur: { color: colors.danger, fontSize: font.small, lineHeight: 19 },
+  analyseLoad: { flexDirection: 'row', alignItems: 'center', gap: spacing.md, paddingVertical: spacing.sm },
+  sousSection: { color: colors.text, fontSize: font.small, fontWeight: '800', marginTop: spacing.xs },
+  licorne: {
+    backgroundColor: colors.primarySoft,
+    borderColor: colors.primary + '44',
+    borderWidth: 1,
+    borderRadius: radius.md,
+    padding: spacing.md,
+    gap: 4,
+  },
+  licorneTitre: { color: colors.text, fontSize: font.small, fontWeight: '800', flex: 1 },
+  licornePot: { color: colors.primary, fontSize: font.tiny, fontWeight: '800' },
+  marche: { color: colors.textMuted, fontSize: font.tiny, fontStyle: 'italic', lineHeight: 16 },
+  existant: {
+    backgroundColor: colors.surfaceAlt,
+    borderRadius: radius.md,
+    padding: spacing.md,
+    gap: 4,
+  },
+  existantTitre: { color: colors.text, fontSize: font.small, fontWeight: '700', flex: 1 },
+  acteurs: { color: colors.warn, fontSize: font.tiny, fontWeight: '700', lineHeight: 16 },
   filtres: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm, marginTop: spacing.sm },
   filtre: {
     paddingHorizontal: spacing.md,
