@@ -60,9 +60,28 @@ export default function UseCaseView({ uc }: { uc: UseCase }) {
         ))}
       </Carte>
 
+      {!!uc.parcoursUtilisateur?.length && (
+        <Carte style={{ gap: spacing.sm }}>
+          <Text style={styles.blocTitre}>🧭 Parcours utilisateur</Text>
+          {uc.parcoursUtilisateur.map((etape, i) => (
+            <View key={i} style={styles.etapeRow}>
+              <Text style={styles.etapeNum}>{i + 1}</Text>
+              <Text style={styles.etapeTxt}>{etape}</Text>
+            </View>
+          ))}
+        </Carte>
+      )}
+
       <Bloc titre="🗄️ Données disponibles">{uc.donnees || '—'}</Bloc>
       <Bloc titre="👥 Utilisateurs cibles">{uc.utilisateurs || '—'}</Bloc>
-      <Bloc titre="⚙️ Contraintes">{uc.contraintes || '—'}</Bloc>
+      {(uc.paysClient || uc.paysDeploiement) && (
+        <Carte style={{ gap: spacing.sm }}>
+          <Text style={styles.blocTitre}>🌍 Localisation</Text>
+          {!!uc.paysClient && <Ligne2 label="Pays du client" v={uc.paysClient} />}
+          {!!uc.paysDeploiement && <Ligne2 label="Pays de déploiement" v={uc.paysDeploiement} />}
+        </Carte>
+      )}
+      <Bloc titre="⚙️ Contraintes (dont légales locales)">{uc.contraintes || '—'}</Bloc>
 
       <Carte style={{ borderColor: colors.primary + '66', backgroundColor: colors.primarySoft }}>
         <Text style={styles.blocTitre}>🤖 Approche suggérée par l’IA</Text>
@@ -186,6 +205,15 @@ function Kpi({ label, valeur, couleur }: { label: string; valeur: string; couleu
   );
 }
 
+function Ligne2({ label, v }: { label: string; v: string }) {
+  return (
+    <View style={styles.ligne2}>
+      <Text style={styles.ligne2Label}>{label}</Text>
+      <Text style={styles.ligne2Val}>{v}</Text>
+    </View>
+  );
+}
+
 function Bloc({ titre, children }: { titre: string; children: React.ReactNode }) {
   return (
     <Carte>
@@ -199,6 +227,23 @@ const styles = StyleSheet.create({
   tagRow: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm },
   titre: { color: colors.text, fontSize: font.h1, fontWeight: '800', lineHeight: 32 },
   blocTitre: { color: colors.text, fontSize: font.h3, fontWeight: '700' },
+  etapeRow: { flexDirection: 'row', alignItems: 'flex-start', gap: spacing.sm },
+  etapeNum: {
+    color: '#fff',
+    backgroundColor: colors.primary,
+    width: 20,
+    height: 20,
+    borderRadius: 10,
+    textAlign: 'center',
+    lineHeight: 20,
+    fontSize: font.tiny,
+    fontWeight: '800',
+    overflow: 'hidden',
+  },
+  etapeTxt: { color: colors.textMuted, fontSize: font.small, flex: 1, lineHeight: 20 },
+  ligne2: { flexDirection: 'row', justifyContent: 'space-between', gap: spacing.md },
+  ligne2Label: { color: colors.textMuted, fontSize: font.small },
+  ligne2Val: { color: colors.text, fontSize: font.small, fontWeight: '600', flex: 1, textAlign: 'right' },
   blocTexte: { color: colors.textMuted, fontSize: font.body, lineHeight: 22 },
   kpiRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
   puce: { width: 6, height: 6, borderRadius: 3, backgroundColor: colors.accent },

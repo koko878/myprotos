@@ -422,15 +422,19 @@ POSTURE DE CONSEIL (essentiel) :
 OBJECTIF DU CADRAGE — à la fin tu dois disposer d'assez d'éléments pour :
 1) estimer un RETOUR SUR INVESTISSEMENT (ROI) crédible : ORDRES DE GRANDEUR CHIFFRÉS (volumes, temps/coût actuels, taille d'équipe). Si le client ne sait pas, propose des fourchettes plausibles à valider ;
 2) chiffrer le PRIX du projet de façon factuelle (jours-homme par poste) ET le COÛT DE RUN mensuel (cloud et on-premise) — pose les questions utiles (volumétrie, nb d'utilisateurs, hébergement existant Azure/AWS/GCP ou on-premise, contraintes data) ;
-3) permettre à un agent de code autonome de produire un PROTOTYPE SANS poser AUCUNE question : données d'entrée précises, sortie attendue claire, critères d'acceptation.
+3) cartographier le PARCOURS UTILISATEUR cible de façon PRÉCISE : accompagne le client, étape par étape, pour décrire ce que l'utilisateur fait dans l'app du début à la fin (écran d'entrée, actions clés, décisions, résultat/sortie). Reformule et fais valider chaque étape. C'est essentiel pour un prototype fidèle ;
+4) connaître le PAYS du client et le PAYS DE DÉPLOIEMENT cible de l'app, afin d'intégrer les CONTRAINTES LÉGALES LOCALES pertinentes (protection des données type RGPD en UE / loi 09-08 au Maroc, hébergement local imposé, langue officielle, e-commerce, secteur réglementé…) ;
+5) permettre à un agent de code autonome de produire un PROTOTYPE SANS poser AUCUNE question : données d'entrée précises, sortie attendue claire, critères d'acceptation.
+
+DOCUMENTS DU CLIENT : si le client a partagé des documents (leur contenu apparaît dans la conversation, préfixé « [Document partagé … ] »), APPUIE-TOI DESSUS pour affiner le besoin : cite les éléments utiles, pose des questions ciblées sur ce que tu y lis, et intègre ces informations dans le cadrage.
 
 Règles :
 - Réponds en français, ton chaleureux mais professionnel et direct.
 - UNE seule question à la fois, courte (2-3 phrases max), en t'appuyant explicitement sur ce que le client vient de dire.
-- Couvre progressivement : problème métier creusé ; CHALLENGE (existant marché + build vs buy) ; objectif mesurable ; VOLUMES & COÛTS ACTUELS ; hébergement cible (cloud/on-premise) & volumétrie pour le RUN ; données ; utilisateurs ; contraintes (budget/délai/RGPD).
+- Couvre progressivement : problème métier creusé ; CHALLENGE (existant marché + build vs buy) ; objectif mesurable ; PARCOURS UTILISATEUR précis (plusieurs échanges si besoin) ; VOLUMES & COÛTS ACTUELS ; PAYS du client & PAYS de déploiement (contraintes légales) ; hébergement cible (cloud/on-premise) & volumétrie pour le RUN ; données ; utilisateurs ; contraintes (budget/délai/conformité).
 - Propose jusqu'à 3 suggestions de réponses COURTES et concrètes adaptées à SON cas (avec chiffres plausibles si utile).
-- Après avoir recueilli assez d'infos (en général 7 à 8 échanges, dont le challenge marché/build-vs-buy ET les volumes/coûts), TERMINE : mets "done": true et produis le use case complet.
-- Ne pose jamais plus de 9 questions.
+- Après avoir recueilli assez d'infos (en général 8 à 9 échanges, dont le challenge marché/build-vs-buy, le parcours utilisateur ET les volumes/coûts), TERMINE : mets "done": true et produis le use case complet.
+- Ne pose jamais plus de 11 questions.
 
 Réponds TOUJOURS en JSON strict, sans texte autour :
 {
@@ -449,7 +453,10 @@ Quand "done" vaut true, "useCase" doit valoir EXACTEMENT ce schéma (chiffres = 
   "kpis": ["3 KPIs de succès concrets"],
   "donnees": "données disponibles (format/source)",
   "utilisateurs": "utilisateurs cibles de la solution",
-  "contraintes": "contraintes (budget/délai/conformité)",
+  "parcoursUtilisateur": ["étape 1 du parcours (ex: l'utilisateur ouvre l'app et voit X)", "étape 2", "étape 3", "... 3 à 7 étapes décrivant le parcours principal de bout en bout"],
+  "paysClient": "pays du client (ex: Maroc, France)",
+  "paysDeploiement": "pays de déploiement cible de l'app (souvent le même)",
+  "contraintes": "contraintes (budget/délai/conformité), EN INCLUANT les contraintes légales locales du pays de déploiement (protection des données, hébergement, secteur réglementé…)",
   "approcheSuggeree": "piste technique recommandée (1 phrase)",
   "complexite": "Faible | Moyenne | Élevée",
   "budgetEstime": "fourchette en euros, ex: 12 000 € – 30 000 €",
@@ -618,6 +625,11 @@ function normaliserUseCase(j: any): UseCase {
     budgetEstime: s(j?.budgetEstime, 'À définir'),
     ventilationPrix: normaliserVentilation(j?.ventilationPrix),
     coutRun: normaliserCoutRun(j?.coutRun),
+    parcoursUtilisateur: Array.isArray(j?.parcoursUtilisateur)
+      ? j.parcoursUtilisateur.map(String).map((x: string) => x.trim()).filter(Boolean).slice(0, 8)
+      : undefined,
+    paysClient: s(j?.paysClient, '') || undefined,
+    paysDeploiement: s(j?.paysDeploiement, '') || undefined,
     roi: normaliserRoi(j?.roi, titre, approche),
     spec: normaliserSpec(j?.spec),
     statut: 'brouillon',
@@ -632,7 +644,8 @@ function normaliserUseCase(j: any): UseCase {
  */
 export async function tourCadrageIA(
   messages: Message[],
-  forceFinish: boolean
+  forceFinish: boolean,
+  contexteClient?: { paysClient?: string; secteur?: string }
 ): Promise<TourIA | null> {
   if (!iaDisponible()) return null;
   const premierUser = messages.findIndex((m) => m.role === 'user');
@@ -643,7 +656,12 @@ export async function tourCadrageIA(
     text: m.texte,
   }));
 
-  const base = (await promptEffectif(CLE_CADRAGE, SYSTEM_CADRAGE)) + CONFIDENTIALITE;
+  // Contexte client connu (profil) : évite de redemander le pays/secteur déjà saisis.
+  const infosClient = contexteClient && (contexteClient.paysClient || contexteClient.secteur)
+    ? `\n\nINFOS CLIENT DÉJÀ CONNUES (ne les redemande pas, réutilise-les) :${contexteClient.paysClient ? ` pays du client = ${contexteClient.paysClient} (utilise-le comme paysClient par défaut, et demande seulement le pays de DÉPLOIEMENT s'il diffère).` : ''}${contexteClient.secteur ? ` secteur = ${contexteClient.secteur}.` : ''}`
+    : '';
+
+  const base = (await promptEffectif(CLE_CADRAGE, SYSTEM_CADRAGE)) + CONFIDENTIALITE + infosClient;
   const sys = forceFinish
     ? base +
       '\n\nIMPORTANT : tu as recueilli assez d\'informations. Termine maintenant ("done": true) en produisant le use case.'
@@ -705,6 +723,8 @@ OBJECTIF : ${uc.objectif}
 UTILISATEURS CIBLES : ${uc.utilisateurs}
 APPROCHE : ${uc.approcheSuggeree}
 KPIS À METTRE EN AVANT : ${uc.kpis.join(', ')}
+${uc.parcoursUtilisateur?.length ? `PARCOURS UTILISATEUR À RESPECTER (étapes) :\n${uc.parcoursUtilisateur.map((e, i) => `  ${i + 1}. ${e}`).join('\n')}` : ''}
+${uc.paysDeploiement ? `PAYS DE DÉPLOIEMENT : ${uc.paysDeploiement} (respecte la langue, les formats locaux et l'esprit des contraintes légales locales).` : ''}
 ${uc.langues?.length ? `LANGUES DE L'INTERFACE : ${uc.langues.join(', ')}` : ''}
 ${spec ? `RÉSUMÉ DU PROTOTYPE : ${spec.resume}
 FONCTIONNALITÉS À DÉMONTRER : ${spec.fonctionnalites.join(' ; ')}

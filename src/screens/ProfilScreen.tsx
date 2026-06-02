@@ -20,6 +20,7 @@ export default function ProfilScreen({ onTermine }: { onTermine: () => void }) {
   const [secteur, setSecteur] = useState('');
   const [secteurLibre, setSecteurLibre] = useState('');
   const [entreprise, setEntreprise] = useState('');
+  const [pays, setPays] = useState('');
   const [erreur, setErreur] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
@@ -28,6 +29,10 @@ export default function ProfilScreen({ onTermine }: { onTermine: () => void }) {
   async function valider() {
     if (!secteurChoisi) {
       setErreur('Indiquez votre secteur d’activité.');
+      return;
+    }
+    if (!pays.trim()) {
+      setErreur('Indiquez votre pays.');
       return;
     }
     const ageNum = age.trim() ? parseInt(age.trim(), 10) : undefined;
@@ -41,6 +46,7 @@ export default function ProfilScreen({ onTermine }: { onTermine: () => void }) {
       age: ageNum,
       secteur: secteurChoisi,
       entreprise: entreprise.trim() || undefined,
+      pays: pays.trim(),
     });
     setLoading(false);
     onTermine();
@@ -85,6 +91,17 @@ export default function ProfilScreen({ onTermine }: { onTermine: () => void }) {
                   placeholderTextColor={colors.textMuted}
                 />
               )}
+            </View>
+
+            <View style={{ gap: spacing.sm }}>
+              <Text style={styles.label}>Votre pays *</Text>
+              <TextInput
+                style={styles.input}
+                value={pays}
+                onChangeText={(t) => { setPays(t); setErreur(null); }}
+                placeholder="Ex. Maroc, France…"
+                placeholderTextColor={colors.textMuted}
+              />
             </View>
 
             <View style={{ gap: spacing.sm }}>

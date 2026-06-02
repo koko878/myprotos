@@ -201,6 +201,12 @@ export function construirePromptComplet(uc: UseCase): string {
   L.push('- Utilisateurs cibles : ' + uc.utilisateurs);
   L.push('- Approche : ' + uc.approcheSuggeree);
   if (uc.kpis?.length) L.push('- KPIs à mettre en avant : ' + uc.kpis.join(', '));
+  if (uc.parcoursUtilisateur?.length) {
+    L.push('- Parcours utilisateur à respecter :');
+    uc.parcoursUtilisateur.forEach((e, i) => L.push(`  ${i + 1}. ${e}`));
+  }
+  if (uc.paysClient) L.push('- Pays du client : ' + uc.paysClient);
+  if (uc.paysDeploiement) L.push('- Pays de déploiement (contraintes légales/langue/formats locaux) : ' + uc.paysDeploiement);
   if (uc.langues?.length) L.push('- Langues de l’interface : ' + uc.langues.join(', '));
   if (uc.donnees) L.push('- Données disponibles : ' + uc.donnees);
   if (uc.contraintes) L.push('- Contraintes : ' + uc.contraintes);

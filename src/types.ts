@@ -21,6 +21,7 @@ export interface ProfilClient {
   age?: number;
   secteur: string; // secteur d'activité du client (son industrie)
   entreprise?: string;
+  pays?: string; // pays du client
   saisiLe?: number;
 }
 
@@ -163,6 +164,9 @@ export interface UseCase {
   piecesJointes?: PieceJointe[]; // logo, charte, docs fournis par le client
   cadrageTechnique?: CadrageTechnique; // résultat du cadrage technique infra
   langues?: string[]; // langues choisies pour l'app (ex: ['Français','Arabe'])
+  parcoursUtilisateur?: string[]; // étapes du parcours utilisateur cible dans l'app
+  paysClient?: string; // pays du client
+  paysDeploiement?: string; // pays de déploiement cible (contraintes légales locales)
   client?: ProfilClient; // snapshot du profil client (qui a soumis l'idée)
   soumisLe?: number; // date/heure de soumission par le client
   statut: StatutUseCase;

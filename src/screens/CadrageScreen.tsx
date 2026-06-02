@@ -1,8 +1,9 @@
-import React, { useRef } from 'react';
+import React, { useEffect, useRef } from 'react';
 import { tourCadrageIA } from '../cadrageAssistant';
 import ChatIA, { ResultatTour, uidMessage } from '../components/ChatIA';
 import { iaDisponible } from '../llm';
 import { useNav } from '../navigation';
+import { chargerProfil } from '../profil';
 import { creerEtId } from '../storage';
 import { Message, UseCase } from '../types';
 import CadrageScripte from './CadrageScripte';
@@ -30,13 +31,21 @@ const ouverture = (): Message[] => [
 export default function CadrageScreen() {
   const { aller } = useNav();
   const useCaseFinal = useRef<UseCase | null>(null);
+  const profil = useRef<{ paysClient?: string; secteur?: string }>({});
+
+  // Charge le profil client (pays/secteur) pour le passer en contexte à l'IA.
+  useEffect(() => {
+    chargerProfil().then((p) => {
+      if (p) profil.current = { paysClient: p.pays, secteur: p.secteur };
+    });
+  }, []);
 
   // Sans IA : on retombe sur le questionnaire scripté local.
   if (!iaDisponible()) return <CadrageScripte />;
 
   async function jouerTour(historique: Message[]): Promise<ResultatTour | null> {
     const nbUser = historique.filter((m) => m.role === 'user').length;
-    const tour = await tourCadrageIA(historique, nbUser >= 6);
+    const tour = await tourCadrageIA(historique, nbUser >= 9, profil.current);
     if (!tour) return null;
     if (tour.done && tour.useCase) useCaseFinal.current = tour.useCase;
     return { reply: tour.reply, suggestions: tour.suggestions, done: tour.done };
@@ -49,12 +58,12 @@ export default function CadrageScreen() {
     aller({ nom: 'recap', useCaseId: id });
   }
 
-  // Si l'IA a assez d'infos (≥6 réponses) mais a répondu sans poser de question
+  // Si l'IA a assez d'infos (≥9 réponses) mais a répondu sans poser de question
   // (dernier message = conclusion type "je résume votre cas"), on relance pour
   // obtenir le use case structuré sans attendre l'utilisateur.
   function relanceAuto(historique: Message[]): boolean {
     const nbUser = historique.filter((m) => m.role === 'user').length;
-    if (nbUser < 6) return false;
+    if (nbUser < 9) return false;
     const dernier = historique[historique.length - 1];
     if (!dernier || dernier.role !== 'assistant') return false;
     // Pas de question en attente -> on peut conclure automatiquement.
@@ -67,8 +76,9 @@ export default function CadrageScreen() {
       ouverture={ouverture()}
       jouerTour={jouerTour}
       onTermine={onTermine}
-      progression={(h) => h.filter((m) => m.role === 'user').length / 6}
+      progression={(h) => h.filter((m) => m.role === 'user').length / 9}
       relanceAuto={relanceAuto}
+      partageDocs
     />
   );
 }

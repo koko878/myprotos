@@ -89,6 +89,7 @@ export default function CadrageChallengeScreen({ useCaseId }: { useCaseId: strin
         const d = h[h.length - 1];
         return nbUser >= 4 && !!d && d.role === 'assistant' && !d.texte.includes('?');
       }}
+      partageDocs
     />
   );
 }

@@ -10,6 +10,7 @@ import {
   TextInput,
   View,
 } from 'react-native';
+import { lireFichierTexte } from '../fichiers';
 import { useNav } from '../navigation';
 import { colors, font, radius, spacing } from '../theme';
 import { Message } from '../types';
@@ -39,6 +40,8 @@ export interface ChatIAProps {
   // (sans attendre l'utilisateur) — utile quand l'IA annonce la conclusion mais
   // n'a pas encore produit le résultat structuré.
   relanceAuto?: (historique: Message[]) => boolean;
+  // Active le partage de documents (texte) avec l'IA pendant l'échange.
+  partageDocs?: boolean;
 }
 
 /**
@@ -46,8 +49,8 @@ export interface ChatIAProps {
  * Gère l'UI chat, l'état d'attente, le verrou anti-double-envoi et le repli
  * « Réessayer » en cas d'échec transitoire.
  */
-export default function ChatIA({ titre, ouverture, jouerTour, onTermine, progression, relanceAuto }: ChatIAProps) {
-  const { retour } = useNav();
+export default function ChatIA({ titre, ouverture, jouerTour, onTermine, progression, relanceAuto, partageDocs }: ChatIAProps) {
+  const { retour, aller } = useNav();
   const [messages, setMessages] = useState<Message[]>(ouverture);
   const [saisie, setSaisie] = useState('');
   const [termine, setTermine] = useState(false);
@@ -150,6 +153,27 @@ export default function ChatIA({ titre, ouverture, jouerTour, onTermine, progres
     lancer(base);
   }
 
+  // Partage d'un document texte (.txt/.md/.csv/.json…) : son contenu est ajouté
+  // comme message utilisateur (préfixé) pour que l'IA s'appuie dessus.
+  async function joindreDoc() {
+    if (termine || loading || verrou.current) return;
+    const f = await lireFichierTexte('.txt,.md,.csv,.json,.html,text/*');
+    if (!f) return;
+    // On borne la taille pour ne pas saturer le contexte du modèle.
+    const MAX = 20000;
+    const contenu = f.contenu.length > MAX
+      ? f.contenu.slice(0, MAX) + '\n…[document tronqué]'
+      : f.contenu;
+    const texte = `[Document partagé « ${f.nom} »]\n${contenu}`;
+    relances.current = 0;
+    const base: Message[] = [
+      ...messages,
+      { id: uidMessage(), role: 'user', texte },
+    ];
+    setMessages(base);
+    lancer(base);
+  }
+
   function reessayer() {
     if (!echec || loading || verrou.current) return;
     const { base } = echec;
@@ -165,8 +189,10 @@ export default function ChatIA({ titre, ouverture, jouerTour, onTermine, progres
         <Pressable onPress={retour} hitSlop={12}>
           <Text style={styles.retour}>‹ Retour</Text>
         </Pressable>
-        <Text style={styles.headerTitre}>{titre}</Text>
-        <Text style={styles.badge}>✨ IA</Text>
+        <Text style={styles.headerTitre} numberOfLines={1}>{titre}</Text>
+        <Pressable onPress={() => aller({ nom: 'home' })} hitSlop={12}>
+          <Text style={styles.accueil}>🏠 Accueil</Text>
+        </Pressable>
       </View>
       <View style={styles.progressBarBg}>
         <View style={[styles.progressBarFill, { width: `${Math.min(prog * 100, 100)}%` }]} />
@@ -190,6 +216,11 @@ export default function ChatIA({ titre, ouverture, jouerTour, onTermine, progres
           )}
         </ScrollView>
 
+        {!termine && partageDocs && (
+          <Pressable onPress={joindreDoc} disabled={loading} style={styles.joindreDoc}>
+            <Text style={styles.joindreDocTxt}>📎 Partager un document pour affiner mon besoin</Text>
+          </Pressable>
+        )}
         {!termine && (
           <View style={styles.saisieZone}>
             {dicteeDisponible() && (
@@ -274,8 +305,19 @@ const styles = StyleSheet.create({
     paddingVertical: spacing.md,
   },
   retour: { color: colors.accent, fontSize: font.body, fontWeight: '600', width: 70 },
-  headerTitre: { color: colors.text, fontSize: font.h3, fontWeight: '800' },
-  badge: { color: colors.textMuted, fontSize: font.small, width: 70, textAlign: 'right', fontWeight: '700' },
+  headerTitre: { color: colors.text, fontSize: font.h3, fontWeight: '800', flex: 1, textAlign: 'center' },
+  accueil: { color: colors.accent, fontSize: font.small, fontWeight: '700', width: 80, textAlign: 'right' },
+  joindreDoc: {
+    marginHorizontal: spacing.md,
+    marginBottom: spacing.xs,
+    paddingVertical: spacing.sm,
+    borderRadius: radius.md,
+    borderWidth: 1,
+    borderColor: colors.primary + '55',
+    backgroundColor: colors.primarySoft,
+    alignItems: 'center',
+  },
+  joindreDocTxt: { color: colors.accent, fontSize: font.small, fontWeight: '700' },
   progressBarBg: { height: 3, backgroundColor: colors.surfaceAlt },
   progressBarFill: { height: 3, backgroundColor: colors.primary },
   chat: { padding: spacing.lg, paddingBottom: spacing.xl },

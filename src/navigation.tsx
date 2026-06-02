@@ -2,7 +2,7 @@
 // le prototype. Routes typées + paramètres.
 
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
-import { BackHandler } from 'react-native';
+import { BackHandler, Platform } from 'react-native';
 
 export type Route =
   | { nom: 'home' }
@@ -32,7 +32,14 @@ export function NavigationProvider({ children }: { children: React.ReactNode }) 
   const profondeur = useRef(1); // profondeur courante de la pile (pour le back natif)
   profondeur.current = pile.length;
 
-  const aller = useCallback((r: Route) => setPile((p) => [...p, r]), []);
+  const aller = useCallback((r: Route) => {
+    setPile((p) => [...p, r]);
+    // Web : empile une entrée d'historique pour que le bouton « précédent » du
+    // navigateur recule DANS l'app au lieu d'en sortir.
+    if (Platform.OS === 'web' && typeof window !== 'undefined') {
+      try { window.history.pushState({ getexp: true }, ''); } catch { /* ignore */ }
+    }
+  }, []);
   const retour = useCallback(
     () => setPile((p) => (p.length > 1 ? p.slice(0, -1) : p)),
     []
@@ -49,6 +56,25 @@ export function NavigationProvider({ children }: { children: React.ReactNode }) 
       return false; // à l'accueil : comportement natif (quitter)
     });
     return () => sub.remove();
+  }, []);
+
+  // Web : intercepte le bouton « précédent » du navigateur. Au lieu de quitter
+  // l'app (revenir au site précédent), on recule dans la pile interne. On
+  // maintient une entrée d'historique « tampon » tant qu'on n'est pas à l'accueil.
+  useEffect(() => {
+    if (Platform.OS !== 'web' || typeof window === 'undefined') return;
+    const onPop = () => {
+      if (profondeur.current > 1) {
+        setPile((p) => (p.length > 1 ? p.slice(0, -1) : p));
+        // Ré-empile un tampon pour rester « capturé » jusqu'à l'accueil.
+        try { window.history.pushState({ getexp: true }, ''); } catch { /* ignore */ }
+      }
+      // À l'accueil : on laisse le navigateur faire (l'utilisateur peut sortir).
+    };
+    // Entrée tampon initiale.
+    try { window.history.pushState({ getexp: true }, ''); } catch { /* ignore */ }
+    window.addEventListener('popstate', onPop);
+    return () => window.removeEventListener('popstate', onPop);
   }, []);
 
   const valeur = useMemo<NavContext>(
