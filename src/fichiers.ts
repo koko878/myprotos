@@ -182,10 +182,17 @@ export function construirePromptComplet(uc: UseCase): string {
   const L: string[] = [];
   L.push('# Brief de prototype — ' + uc.titre);
   L.push('');
-  L.push('Tu es un designer-développeur front-end de très haut niveau. Construis un PROTOTYPE web');
-  L.push('de démonstration **bluffant** (un seul index.html auto-porté, CDN autorisés pour polices/');
-  L.push('icônes/libs UI, données d\'exemple en dur, interactions réelles). Évite l\'esthétique IA');
-  L.push('générique ; vise un rendu niveau studio primé, responsive et soigné.');
+  L.push('Tu es un designer-développeur front-end de très haut niveau ET un consultant produit senior.');
+  L.push('Construis un PROTOTYPE web de démonstration **bluffant** (un seul index.html auto-porté, CDN');
+  L.push('autorisés pour polices/icônes/libs UI, données d\'exemple en dur, interactions réelles). Évite');
+  L.push('l\'esthétique IA générique ; vise un rendu niveau studio primé, responsive et soigné.');
+  L.push('');
+  L.push('POSTURE D\'EXPERT : le client sait rarement exactement ce qu\'il veut, ou n\'en a qu\'une vision');
+  L.push('limitée. Ne te limite PAS à sa demande littérale : enrichis-la. Propose des fonctionnalités,');
+  L.push('écrans ou indicateurs à forte valeur auxquels il n\'a pas pensé mais qui servent clairement son');
+  L.push('objectif métier, anticipe les besoins implicites du secteur, et fais-lui découvrir des');
+  L.push('possibilités qu\'il n\'imaginait pas. Reste réaliste : chaque ajout doit avoir un sens métier');
+  L.push('évident (pas de gadget).');
   L.push('');
   L.push('## Contexte métier');
   L.push('- Domaine : ' + uc.domaine);
@@ -218,6 +225,12 @@ export function construirePromptComplet(uc: UseCase): string {
     L.push('Respecte la charte graphique / le logo fournis (couleurs, typographie, ton).');
   }
 
+  L.push('');
+  L.push('## Valeur ajoutée attendue (expertise)');
+  L.push('Au-delà du strict périmètre ci-dessus, intègre 2 à 4 éléments à forte valeur que le client');
+  L.push('n\'a pas demandés mais qui renforcent son objectif (ex. tableau de bord, suggestions');
+  L.push('intelligentes, automatisations, indicateurs clés, parcours simplifié…). Mets-les en évidence');
+  L.push('pour qu\'il perçoive immédiatement la valeur supplémentaire.');
   L.push('');
   L.push('## Livrable');
   L.push('Un fichier index.html complet, prêt à ouvrir. Aucune question : décide et produis.');
