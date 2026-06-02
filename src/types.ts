@@ -164,6 +164,7 @@ export interface UseCase {
   piecesJointes?: PieceJointe[]; // logo, charte, docs fournis par le client
   cadrageTechnique?: CadrageTechnique; // résultat du cadrage technique infra
   langues?: string[]; // langues choisies pour l'app (ex: ['Français','Arabe'])
+  processusADigitaliser?: string[]; // processus métier concrets à digitaliser
   parcoursUtilisateur?: string[]; // étapes du parcours utilisateur cible dans l'app
   paysClient?: string; // pays du client
   paysDeploiement?: string; // pays de déploiement cible (contraintes légales locales)

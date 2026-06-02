@@ -2,6 +2,7 @@
 // construction d'un ZIP (prompt + pièces) et téléchargement. Aucun backend.
 import { Platform } from 'react-native';
 import { PieceJointe, UseCase } from './types';
+import { construireZip, dataUrlVersBytes } from './zip';
 
 let seq = 0;
 const pid = () => `pj_${Date.now().toString(36)}_${seq++}`;
@@ -201,6 +202,10 @@ export function construirePromptComplet(uc: UseCase): string {
   L.push('- Utilisateurs cibles : ' + uc.utilisateurs);
   L.push('- Approche : ' + uc.approcheSuggeree);
   if (uc.kpis?.length) L.push('- KPIs à mettre en avant : ' + uc.kpis.join(', '));
+  if (uc.processusADigitaliser?.length) {
+    L.push('- Processus à digitaliser :');
+    uc.processusADigitaliser.forEach((p) => L.push(`  • ${p}`));
+  }
   if (uc.parcoursUtilisateur?.length) {
     L.push('- Parcours utilisateur à respecter :');
     uc.parcoursUtilisateur.forEach((e, i) => L.push(`  ${i + 1}. ${e}`));
@@ -265,29 +270,37 @@ function declencherTelechargement(url: string, nom: string, revoke: boolean) {
 }
 
 /**
- * Télécharge le dossier projet SANS dépendance (JSZip échoue sur web faute de
- * polyfill setImmediate). On télécharge :
+ * Télécharge le dossier projet en UN SEUL fichier ZIP contenant :
  *  - PROMPT.md (brief complet à passer à l'agent de code)
- *  - chaque pièce jointe en fichier réel.
- * Renvoie le nombre de fichiers téléchargés.
+ *  - pieces-jointes/<nom> pour chaque fichier fourni par le client.
+ * Renvoie le nombre de fichiers inclus (prompt + pièces jointes).
  */
 export function telechargerDossierProjet(uc: UseCase): number {
   if (Platform.OS !== 'web' || typeof document === 'undefined') return 0;
-  let n = 0;
   const slug = slugProjet(uc);
+  const enc = new TextEncoder();
 
-  // 1) Le prompt (Markdown)
-  const blob = new Blob([construirePromptComplet(uc)], { type: 'text/markdown' });
-  declencherTelechargement(URL.createObjectURL(blob), `PROMPT-${slug}.md`, true);
-  n++;
+  const fichiers: { nom: string; data: Uint8Array }[] = [
+    { nom: 'PROMPT.md', data: enc.encode(construirePromptComplet(uc)) },
+  ];
 
-  // 2) Les pièces jointes (data URL -> téléchargement direct, espacé pour éviter
-  //    que le navigateur ne bloque les téléchargements multiples).
+  // Pièces jointes du client -> dossier pieces-jointes/ dans le ZIP.
   const pj = uc.piecesJointes ?? [];
-  pj.forEach((p, i) => {
-    setTimeout(() => declencherTelechargement(p.dataUrl, p.nom, false), 400 * (i + 1));
-    n++;
-  });
+  const noms = new Set<string>();
+  for (const p of pj) {
+    // Évite les collisions de noms.
+    let nom = p.nom || 'fichier';
+    if (noms.has(nom)) nom = `${Date.now().toString(36)}-${nom}`;
+    noms.add(nom);
+    try {
+      fichiers.push({ nom: `pieces-jointes/${nom}`, data: dataUrlVersBytes(p.dataUrl) });
+    } catch {
+      /* pièce illisible : ignorée */
+    }
+  }
 
-  return n;
+  const zip = construireZip(fichiers);
+  const url = URL.createObjectURL(zip);
+  declencherTelechargement(url, `GetExp-${slug}.zip`, true);
+  return fichiers.length;
 }

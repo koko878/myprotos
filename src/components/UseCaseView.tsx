@@ -60,6 +60,18 @@ export default function UseCaseView({ uc }: { uc: UseCase }) {
         ))}
       </Carte>
 
+      {!!uc.processusADigitaliser?.length && (
+        <Carte style={{ gap: spacing.sm }}>
+          <Text style={styles.blocTitre}>⚙️ Processus à digitaliser</Text>
+          {uc.processusADigitaliser.map((p, i) => (
+            <View key={i} style={styles.kpiRow}>
+              <View style={styles.puce} />
+              <Text style={styles.kpiTxt}>{p}</Text>
+            </View>
+          ))}
+        </Carte>
+      )}
+
       {!!uc.parcoursUtilisateur?.length && (
         <Carte style={{ gap: spacing.sm }}>
           <Text style={styles.blocTitre}>🧭 Parcours utilisateur</Text>
