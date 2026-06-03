@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Modal, Pressable, StyleSheet, Text, View } from 'react-native';
 import { colors, font, radius, spacing } from '../theme';
-import { CoutRun, EstimationROI, MakeOrBuy, StatutUseCase, UseCase, VentilationPrix } from '../types';
+import { CoutRun, EstimationROI, MakeOrBuy, PertinenceDigitale, StatutUseCase, UseCase, VentilationPrix } from '../types';
 import { Carte, Etiquette, ScoreCadrage, couleurComplexite } from './ui';
 
 // Affichage des montants en MAD (dirhams marocains), devise par défaut.
@@ -48,6 +48,8 @@ export default function UseCaseView({ uc }: { uc: UseCase }) {
       <Carte>
         <ScoreCadrage score={uc.scoreCadrage} />
       </Carte>
+
+      {uc.pertinenceDigitale && <PertinenceBloc p={uc.pertinenceDigitale} />}
 
       <Bloc titre="🎯 Objectif business">{uc.objectif || '—'}</Bloc>
       <Bloc titre="🧩 Problème à résoudre">{uc.probleme || '—'}</Bloc>
@@ -181,6 +183,20 @@ function ModalPrix({ visible, onClose, v }: { visible: boolean; onClose: () => v
         </Pressable>
       </Pressable>
     </Modal>
+  );
+}
+
+// Verdict : une solution digitale est-elle vraiment la bonne réponse ?
+function PertinenceBloc({ p }: { p: PertinenceDigitale }) {
+  const lib =
+    p.verdict === 'digital_pertinent' ? { txt: '✅ Une solution digitale est pertinente', c: colors.success }
+    : p.verdict === 'pas_digital' ? { txt: '⚠️ Le problème n’est pas (d’abord) digital', c: colors.danger }
+    : { txt: '➗ Partiellement digital', c: colors.warn };
+  return (
+    <Carte style={{ borderColor: lib.c + '66', backgroundColor: lib.c + '12', gap: spacing.sm }}>
+      <Text style={[styles.blocTitre, { color: lib.c }]}>{lib.txt}</Text>
+      <Text style={styles.blocTexte}>{p.explication}</Text>
+    </Carte>
   );
 }
 

@@ -26,6 +26,7 @@ import {
   EstimationROI,
   MakeOrBuy,
   Message,
+  PertinenceDigitale,
   PostePrix,
   SolutionMarche,
   SpecPrototype,
@@ -417,6 +418,7 @@ Contexte : tu as DÉJÀ salué le client et lui as demandé son idée en une phr
 
 POSTURE DE CONSEIL (essentiel) :
 - CREUSE le problème métier réel ("first principles") : pourquoi ce problème existe, qui souffre, combien ça coûte aujourd'hui, qu'a-t-il déjà essayé. Ne te contente jamais de "je veux une app" — un client veut un RÉSULTAT, pas une app pour faire une app.
+- VÉRIFIE LA PERTINENCE D'UNE SOLUTION DIGITALE (réflexe n°1, avant tout chiffrage) : le vrai problème appelle-t-il VRAIMENT une solution digitale, ou est-il ailleurs (organisation, process, formation, recrutement, commercial, qualité…) ? Pose les questions qui le tirent au clair. Si le digital n'est pas (ou pas encore) la bonne réponse, DIS-LE honnêtement et oriente le client vers ce qui réglera réellement son problème — même si cela signifie ne pas vendre de projet. Si le digital n'est qu'une partie de la réponse, précise ce qui relève du digital et ce qui relève d'autre chose.
 - CHALLENGE l'idée avec tact, en au moins un échange dédié :
   • Existant marché (OBLIGATOIRE, fais un VRAI effort) : NOMME explicitement 2 à 4 solutions/produits réels et connus qui répondent déjà, en tout ou partie, au besoin — avec ce qu'ils font, leur ordre de prix, et leur limite vis-à-vis du cas du client. Ne réponds jamais "il existe des solutions" en restant vague : CITE des noms concrets. Si tu n'es vraiment pas sûr d'un nom, dis-le, mais cherche d'abord sérieusement.
   • Make vs Buy : aide le client à DÉCIDER entre développer du sur-mesure (Make) et acheter/s'abonner à une solution existante (Buy). Pèse coût total (build + run vs abonnement), délai, différenciation, dépendance fournisseur, intégration au SI. Donne une recommandation claire (make / buy / hybride) et assume-la.
@@ -467,6 +469,10 @@ Quand "done" vaut true, "useCase" doit valoir EXACTEMENT ce schéma (chiffres = 
   "paysClient": "pays du client (ex: Maroc, France)",
   "paysDeploiement": "pays de déploiement cible de l'app (souvent le même)",
   "contraintes": "contraintes (budget/délai/conformité), EN INCLUANT les contraintes légales locales du pays de déploiement (protection des données, hébergement, secteur réglementé…)",
+  "pertinenceDigitale": {
+    "verdict": "digital_pertinent | partiellement | pas_digital",
+    "explication": "pourquoi une solution digitale est (ou n'est pas) la bonne réponse ; si pas/partiellement digital, vers quoi orienter le client (organisation, process, formation…)"
+  },
   "solutionsMarche": [
     { "nom": "Nom réel d'un produit/acteur existant", "description": "ce qu'il fait en une phrase", "prixIndicatif": "ordre de prix (ex: ~15 €/utilisateur/mois)", "limite": "pourquoi il ne couvre pas parfaitement le besoin du client" }
   ],
@@ -631,6 +637,16 @@ function normaliserMakeOrBuy(j: any): MakeOrBuy | undefined {
   };
 }
 
+function normaliserPertinence(j: any): PertinenceDigitale | undefined {
+  if (!j || typeof j !== 'object') return undefined;
+  const explication = s(j.explication, '').trim();
+  if (!explication) return undefined;
+  const verdict = ['digital_pertinent', 'partiellement', 'pas_digital'].includes(j.verdict)
+    ? j.verdict
+    : 'digital_pertinent';
+  return { verdict, explication };
+}
+
 function normaliserSpec(j: any): SpecPrototype | undefined {
   if (!j || typeof j !== 'object') return undefined;
   const resume = s(j.resume, '');
@@ -674,6 +690,7 @@ function normaliserUseCase(j: any): UseCase {
     processusADigitaliser: Array.isArray(j?.processusADigitaliser)
       ? j.processusADigitaliser.map(String).map((x: string) => x.trim()).filter(Boolean).slice(0, 6)
       : undefined,
+    pertinenceDigitale: normaliserPertinence(j?.pertinenceDigitale),
     solutionsMarche: normaliserSolutionsMarche(j?.solutionsMarche),
     makeOrBuy: normaliserMakeOrBuy(j?.makeOrBuy),
     parcoursUtilisateur: Array.isArray(j?.parcoursUtilisateur)

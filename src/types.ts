@@ -77,6 +77,15 @@ export interface PieceJointe {
 }
 
 /**
+ * Verdict du consultant : une solution digitale est-elle réellement pertinente
+ * pour le problème du client, ou le problème est-il ailleurs ?
+ */
+export interface PertinenceDigitale {
+  verdict: 'digital_pertinent' | 'partiellement' | 'pas_digital';
+  explication: string; // pourquoi, et vers quoi orienter si le digital n'est pas la réponse
+}
+
+/**
  * Une solution du marché qui répond déjà (en tout ou partie) au besoin du client.
  * Sert à l'analyse Make vs Buy : on confronte l'idée à l'existant.
  */
@@ -208,6 +217,7 @@ export interface UseCase {
   bonCommande?: BonCommande; // bon de commande validé/signé par le client
   langues?: string[]; // langues choisies pour l'app (ex: ['Français','Arabe'])
   processusADigitaliser?: string[]; // processus métier concrets à digitaliser
+  pertinenceDigitale?: PertinenceDigitale; // le digital est-il la bonne réponse ?
   solutionsMarche?: SolutionMarche[]; // solutions existantes du marché (Make vs Buy)
   makeOrBuy?: MakeOrBuy; // recommandation développer vs acheter
   parcoursUtilisateur?: string[]; // étapes du parcours utilisateur cible dans l'app
