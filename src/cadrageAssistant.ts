@@ -425,7 +425,7 @@ POSTURE DE CONSEIL (essentiel) :
 
 OBJECTIF DU CADRAGE — à la fin tu dois disposer d'assez d'éléments pour :
 1) estimer un RETOUR SUR INVESTISSEMENT (ROI) crédible : ORDRES DE GRANDEUR CHIFFRÉS (volumes, temps/coût actuels, taille d'équipe). Si le client ne sait pas, propose des fourchettes plausibles à valider ;
-2) chiffrer le PRIX du projet de façon factuelle (jours-homme par poste) ET le COÛT DE RUN mensuel (cloud et on-premise). DEVISE : tous les montants sont en MAD (dirhams marocains) par défaut. Base de chiffrage : un développeur senior freelance au Maroc coûte ~3500 MAD/jour (utilise ce TJM par défaut, ajuste selon les profils nécessaires). Pose les questions utiles (volumétrie, nb d'utilisateurs, hébergement existant Azure/AWS/GCP ou on-premise, contraintes data) ;
+2) chiffrer le PRIX du projet de façon factuelle (jours-homme par poste) ET le COÛT DE RUN mensuel PRÉCIS (cloud et on-premise). DEVISE : tous les montants en MAD par défaut. Prix projet : un développeur senior freelance au Maroc coûte ~3500 MAD/jour (TJM par défaut). COÛT DE RUN cloud : calcule-le POSTE PAR POSTE sur la stack Azure GetExp (logique Azure Pricing Calculator) — Container Apps + Azure Database for PostgreSQL Flexible + Blob Storage + Key Vault + ACR + Application Insights — en dimensionnant selon la volumétrie/nb d'utilisateurs/stockage. Pour bien estimer, POSE les questions nécessaires (nombre d'utilisateurs, volume de données/fichiers, trafic attendu, disponibilité requise) ;
 3) clarifier précisément LE(S) PROCESSUS MÉTIER À DIGITALISER : quelles tâches/étapes manuelles ou existantes l'app va remplacer ou automatiser (l'état actuel "tel quel", puis l'état cible digitalisé). Fais expliciter le déroulé réel du processus aujourd'hui avant de le transposer ;
 4) cartographier l'EXPÉRIENCE / PARCOURS UTILISATEUR cible de façon PRÉCISE : accompagne le client, étape par étape, pour décrire ce que l'utilisateur fait dans l'app du début à la fin (écran d'entrée, actions clés, décisions, résultat/sortie). Reformule et fais valider chaque étape. C'est essentiel pour un prototype fidèle ;
 5) connaître le PAYS du client et le PAYS DE DÉPLOIEMENT cible de l'app, afin d'intégrer les CONTRAINTES LÉGALES LOCALES pertinentes (protection des données type RGPD en UE / loi 09-08 au Maroc, hébergement local imposé, langue officielle, e-commerce, secteur réglementé…) ;
@@ -491,11 +491,11 @@ Quand "done" vaut true, "useCase" doit valoir EXACTEMENT ce schéma (chiffres = 
     "note": "Chiffrage en jours-homme ; montant = jours × TJM. Tous les montants sont en MAD (dirhams)."
   },
   "coutRun": {
-    "cloudMensuelEur": 250,
-    "cloudHypotheses": "fournisseur (Azure/AWS/GCP), services et dimensionnement supposés (ex: 1 petite instance, BDD managée, X req/mois)",
-    "onPremiseMensuelEur": 120,
-    "onPremiseHypotheses": "serveur existant amorti, électricité, maintenance ; hypothèses retenues",
-    "recommandation": "mode recommandé et pourquoi (selon volumétrie/contraintes data)"
+    "cloudMensuelEur": 900,
+    "cloudHypotheses": "DÉTAILLE poste par poste, en MAD/mois, sur la stack Azure GetExp (réf. tarifs Azure). Base de calcul indicative (région West Europe, faible charge) : Azure Container Apps ~50-200 MAD ; Azure Database for PostgreSQL Flexible B1ms ~150-300 MAD ; Azure Blob Storage ~30-80 MAD ; Key Vault + ACR + Application Insights ~50-150 MAD. AJUSTE selon la volumétrie/nb d'utilisateurs/stockage captés, et liste chaque poste avec son montant.",
+    "onPremiseMensuelEur": 250,
+    "onPremiseHypotheses": "DÉTAILLE : amortissement serveur (sur 36 mois), électricité, sauvegardes, maintenance/supervision, certificats. Pas de coût cloud mais coût d'exploitation interne réel.",
+    "recommandation": "mode recommandé et pourquoi (selon volumétrie, données, équipe IT du client)"
   },
   "roi": {
     "hypotheses": "rappel des volumes et coûts actuels utilisés pour le calcul",
