@@ -80,19 +80,19 @@ export default function AdminScreen() {
         <View style={{ width: 70 }} />
       </View>
 
-      <ScrollView contentContainerStyle={styles.topContent}>
+      <View style={styles.topContent}>
         <Text style={styles.intro}>
           {aTraiter > 0 ? `${aTraiter} projet${aTraiter > 1 ? 's' : ''} en attente de prototype.` : 'Aucun nouveau projet à traiter.'}
         </Text>
         <View style={styles.liensRow}>
           <Pressable onPress={() => aller({ nom: 'banque' })} style={styles.lienBtn}>
-            <Text style={styles.lienTxt}>📚 Banque d’idées</Text>
+            <Text style={styles.lienTxt}>📚 Banque d’idées & analyse IA</Text>
           </Pressable>
           <Pressable onPress={() => aller({ nom: 'prompts' })} style={styles.lienBtn}>
             <Text style={styles.lienTxt}>⚙️ Prompts IA</Text>
           </Pressable>
         </View>
-      </ScrollView>
+      </View>
 
       {/* Kanban : défilement horizontal, une colonne par étape. */}
       <ScrollView horizontal showsHorizontalScrollIndicator contentContainerStyle={styles.board}>
@@ -168,12 +168,12 @@ const styles = StyleSheet.create({
   },
   retour: { color: colors.accent, fontSize: font.body, fontWeight: '600', width: 70 },
   headerTitre: { color: colors.text, fontSize: font.h3, fontWeight: '800' },
-  topContent: { paddingHorizontal: spacing.lg, gap: spacing.sm, flexGrow: 0 },
+  topContent: { paddingHorizontal: spacing.lg, paddingTop: spacing.xs, gap: spacing.sm },
   intro: { color: colors.textMuted, fontSize: font.small, lineHeight: 20 },
-  liensRow: { flexDirection: 'row', gap: spacing.sm, marginBottom: spacing.sm },
+  liensRow: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm, marginBottom: spacing.sm },
   lienBtn: {
     backgroundColor: colors.primarySoft, borderColor: colors.primary + '55', borderWidth: 1,
-    borderRadius: radius.pill, paddingHorizontal: spacing.md, paddingVertical: 8,
+    borderRadius: radius.pill, paddingHorizontal: spacing.md, paddingVertical: 10,
   },
   lienTxt: { color: colors.accent, fontSize: font.small, fontWeight: '800' },
   // Kanban
