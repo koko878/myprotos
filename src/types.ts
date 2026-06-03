@@ -215,6 +215,7 @@ export interface UseCase {
   paysDeploiement?: string; // pays de déploiement cible (contraintes légales locales)
   client?: ProfilClient; // snapshot du profil client (qui a soumis l'idée)
   soumisLe?: number; // date/heure de soumission par le client
+  avorte?: boolean; // projet abandonné : masqué de l'espace admin (reste en banque)
   statut: StatutUseCase;
   creeLe: number;
 }

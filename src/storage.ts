@@ -197,6 +197,11 @@ export async function enregistrerCadrageTechnique(
   }));
 }
 
+// Tague/détague un projet comme "avorté" (masqué de l'espace admin, conservé en base).
+export async function definirAvorte(useCaseId: string, avorte: boolean): Promise<UseCase[]> {
+  return modifierUseCase(useCaseId, (u) => ({ ...u, avorte }));
+}
+
 // Enregistre le bon de commande validé/signé par le client.
 export async function enregistrerBonCommande(
   useCaseId: string,

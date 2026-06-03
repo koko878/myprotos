@@ -1,53 +1,74 @@
 import React, { useEffect, useState } from 'react';
-import { Pressable, SafeAreaView, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Alert, Platform, Pressable, SafeAreaView, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { Carte, Etiquette } from '../components/ui';
-import { libelleStatut } from '../components/UseCaseView';
 import { dateHeure, identiteClient } from '../format';
 import { useNav } from '../navigation';
 import { marquerIdeesVues } from '../notifications';
-import { chargerUseCases } from '../storage';
-import { colors, font, spacing } from '../theme';
-import { UseCase } from '../types';
+import { chargerUseCases, definirAvorte } from '../storage';
+import { colors, font, radius, spacing } from '../theme';
+import { StatutUseCase, UseCase } from '../types';
 
-// Espace admin : pilotage des projets soumis (génération des prototypes).
-// On masque les brouillons (pas encore soumis par le client).
-const VISIBLES: UseCase['statut'][] = [
-  'soumis',
-  'prototype_pret_admin',
-  'prototype_genere',
-  'revision_demandee',
-  'prototype_valide',
-  'cadrage_technique',
-  'pret_a_packager',
-  'commande_validee',
-  'certifie',
+// Colonnes du Kanban admin. Chaque colonne regroupe un ou plusieurs statuts.
+interface Colonne {
+  titre: string;
+  statuts: StatutUseCase[];
+  couleur: string;
+  action?: string; // libellé d'action attendue (badge)
+}
+
+const COLONNES: Colonne[] = [
+  { titre: '📥 Soumis', statuts: ['soumis'], couleur: colors.accent, action: '⚙️ À générer' },
+  { titre: '📤 Proto envoyé', statuts: ['prototype_pret_admin', 'prototype_genere'], couleur: colors.warn },
+  { titre: '🔔 Révision demandée', statuts: ['revision_demandee'], couleur: colors.warn, action: 'À revoir' },
+  { titre: '✅ Proto validé', statuts: ['prototype_valide', 'cadrage_technique', 'pret_a_packager'], couleur: colors.success },
+  { titre: '🧾 Commande passée', statuts: ['commande_validee', 'certifie'], couleur: colors.success },
 ];
-
-// Statuts qui demandent une action de l'admin -> remontés en haut de liste.
-const PRIORITAIRES: UseCase['statut'][] = ['soumis', 'revision_demandee', 'prototype_pret_admin', 'commande_validee'];
 
 export default function AdminScreen() {
   const { aller, retour } = useNav();
   const [liste, setListe] = useState<UseCase[] | null>(null);
+  const [avortesVisibles, setAvortesVisibles] = useState(false);
+
+  async function recharger() {
+    const l = await chargerUseCases();
+    setListe(l);
+  }
 
   useEffect(() => {
-    chargerUseCases().then((l) => {
-      const visibles = l.filter((u) => VISIBLES.includes(u.statut));
-      // Les projets nécessitant une action passent en tête.
-      visibles.sort((a, b) => {
-        const pa = PRIORITAIRES.includes(a.statut) ? 0 : 1;
-        const pb = PRIORITAIRES.includes(b.statut) ? 0 : 1;
-        return pa - pb;
-      });
-      setListe(visibles);
-    });
-    // L'admin consulte la liste : on marque les idées soumises comme vues
-    // (réinitialise le compteur de notifications in-app).
+    recharger();
+    // L'admin consulte la liste : on marque les idées soumises comme vues.
     marquerIdeesVues();
   }, []);
 
-  const aTraiter = liste?.filter((u) => u.statut === 'soumis').length ?? 0;
-  const aRevoir = liste?.filter((u) => u.statut === 'revision_demandee').length ?? 0;
+  // Confirme puis tague/détague un projet comme avorté (multiplateforme).
+  function confirmer(titre: string, message: string, onOui: () => void) {
+    if (Platform.OS === 'web') {
+      // eslint-disable-next-line no-alert
+      if (typeof confirm === 'undefined' || confirm(`${titre}\n\n${message}`)) onOui();
+    } else {
+      Alert.alert(titre, message, [
+        { text: 'Annuler', style: 'cancel' },
+        { text: 'Confirmer', style: 'destructive', onPress: onOui },
+      ]);
+    }
+  }
+
+  async function avorter(uc: UseCase) {
+    confirmer(
+      'Marquer comme avorté ?',
+      `« ${uc.titre} » disparaîtra de l’espace admin. Il reste conservé en base et dans la banque d’idées.`,
+      async () => { await definirAvorte(uc.id, true); recharger(); }
+    );
+  }
+
+  async function reactiver(uc: UseCase) {
+    await definirAvorte(uc.id, false);
+    recharger();
+  }
+
+  const actifs = (liste ?? []).filter((u) => !u.avorte);
+  const avortes = (liste ?? []).filter((u) => u.avorte);
+  const aTraiter = actifs.filter((u) => u.statut === 'soumis').length;
 
   return (
     <SafeAreaView style={styles.safe}>
@@ -59,71 +80,82 @@ export default function AdminScreen() {
         <View style={{ width: 70 }} />
       </View>
 
-      <ScrollView contentContainerStyle={styles.content}>
+      <ScrollView contentContainerStyle={styles.topContent}>
         <Text style={styles.intro}>
-          Projets soumis par les clients. {aTraiter > 0 ? `${aTraiter} en attente de prototype.` : 'Aucun nouveau projet à traiter.'}
+          {aTraiter > 0 ? `${aTraiter} projet${aTraiter > 1 ? 's' : ''} en attente de prototype.` : 'Aucun nouveau projet à traiter.'}
         </Text>
+        <View style={styles.liensRow}>
+          <Pressable onPress={() => aller({ nom: 'banque' })} style={styles.lienBtn}>
+            <Text style={styles.lienTxt}>📚 Banque d’idées</Text>
+          </Pressable>
+          <Pressable onPress={() => aller({ nom: 'prompts' })} style={styles.lienBtn}>
+            <Text style={styles.lienTxt}>⚙️ Prompts IA</Text>
+          </Pressable>
+        </View>
+      </ScrollView>
 
-        {aRevoir > 0 && (
-          <View style={styles.alerteRevision}>
-            <Text style={styles.alerteRevisionTxt}>
-              🔔 {aRevoir} prototype{aRevoir > 1 ? 's' : ''} challengé{aRevoir > 1 ? 's' : ''} par le client —
-              à retravailler. Ouvrez le projet pour voir les remarques et récupérer le prompt.
-            </Text>
-          </View>
-        )}
-
-        <Pressable onPress={() => aller({ nom: 'banque' })} style={styles.banqueBtn}>
-          <Text style={styles.banqueTxt}>📚 Banque d’idées — classement & similarités</Text>
-        </Pressable>
-        <Pressable onPress={() => aller({ nom: 'prompts' })} style={styles.banqueBtn}>
-          <Text style={styles.banqueTxt}>⚙️ Prompts des agents IA</Text>
-        </Pressable>
-
-        {liste && liste.length === 0 && (
-          <View style={styles.vide}>
-            <Text style={styles.videTitre}>Aucun projet soumis</Text>
-            <Text style={styles.videTxt}>Les projets soumis par les clients apparaîtront ici.</Text>
-          </View>
-        )}
-
-        {liste?.map((uc) => {
-          const st = libelleStatut(uc.statut);
-          const aGenerer = uc.statut === 'soumis' || uc.statut === 'revision_demandee';
-          const aEnvoyer = uc.statut === 'prototype_pret_admin';
-          const aAgir = aGenerer || aEnvoyer;
+      {/* Kanban : défilement horizontal, une colonne par étape. */}
+      <ScrollView horizontal showsHorizontalScrollIndicator contentContainerStyle={styles.board}>
+        {COLONNES.map((col) => {
+          const items = actifs.filter((u) => col.statuts.includes(u.statut));
           return (
-            <Carte
-              key={uc.id}
-              style={{ marginBottom: spacing.md, gap: spacing.sm, borderColor: aAgir ? colors.warn + '66' : colors.border }}
-              onPress={() => aller({ nom: 'adminDetail', useCaseId: uc.id })}
-            >
-              <View style={styles.cardTop}>
-                <Etiquette texte={st.texte} couleur={st.couleur} />
-                {uc.statut === 'revision_demandee' ? (
-                  <Text style={styles.action}>🔔 Challengé — à revoir</Text>
-                ) : aGenerer ? (
-                  <Text style={styles.action}>⚙️ À générer</Text>
-                ) : (
-                  aEnvoyer && <Text style={styles.action}>📤 À envoyer</Text>
-                )}
+            <View key={col.titre} style={styles.colonne}>
+              <View style={styles.colHead}>
+                <Text style={styles.colTitre}>{col.titre}</Text>
+                <View style={[styles.compteur, { backgroundColor: col.couleur + '33' }]}>
+                  <Text style={[styles.compteurTxt, { color: col.couleur }]}>{items.length}</Text>
+                </View>
               </View>
-              <Text style={styles.cardTitre}>{uc.titre}</Text>
-              <View style={styles.tags}>
-                <Etiquette texte={uc.domaine} />
-                <Etiquette texte={uc.complexite} />
-              </View>
-              {(uc.soumisLe || uc.client) && (
-                <Text style={styles.meta}>
-                  {uc.soumisLe ? `🕓 ${dateHeure(uc.soumisLe)}` : ''}
-                  {uc.soumisLe && uc.client ? '  ·  ' : ''}
-                  {uc.client ? `👤 ${identiteClient(uc.client)}` : ''}
-                </Text>
-              )}
-            </Carte>
+              <ScrollView contentContainerStyle={styles.colBody}>
+                {items.length === 0 && <Text style={styles.colVide}>—</Text>}
+                {items.map((uc) => (
+                  <View key={uc.id} style={[styles.carte, { borderColor: col.couleur + '55' }]}>
+                    <Pressable onPress={() => aller({ nom: 'adminDetail', useCaseId: uc.id })}>
+                      <Text style={styles.cardTitre} numberOfLines={2}>{uc.titre}</Text>
+                      <View style={styles.tags}>
+                        <Etiquette texte={uc.domaine} />
+                      </View>
+                      {(uc.soumisLe || uc.client) && (
+                        <Text style={styles.meta} numberOfLines={2}>
+                          {uc.soumisLe ? `🕓 ${dateHeure(uc.soumisLe)}` : ''}
+                          {uc.client ? `\n👤 ${identiteClient(uc.client)}` : ''}
+                        </Text>
+                      )}
+                      {col.action && <Text style={[styles.action, { color: col.couleur }]}>{col.action}</Text>}
+                    </Pressable>
+                    <Pressable onPress={() => avorter(uc)} hitSlop={8} style={styles.avorterBtn}>
+                      <Text style={styles.avorterTxt}>✕ Avorter</Text>
+                    </Pressable>
+                  </View>
+                ))}
+              </ScrollView>
+            </View>
           );
         })}
       </ScrollView>
+
+      {/* Projets avortés : repliés par défaut, réactivables. */}
+      {avortes.length > 0 && (
+        <View style={styles.avortesZone}>
+          <Pressable onPress={() => setAvortesVisibles((v) => !v)} style={styles.avortesHead}>
+            <Text style={styles.avortesTitre}>
+              {avortesVisibles ? '▾' : '▸'} 🗑️ Projets avortés ({avortes.length})
+            </Text>
+          </Pressable>
+          {avortesVisibles && (
+            <ScrollView horizontal contentContainerStyle={styles.avortesRow}>
+              {avortes.map((uc) => (
+                <View key={uc.id} style={styles.avorteCarte}>
+                  <Text style={styles.avorteTitre} numberOfLines={2}>{uc.titre}</Text>
+                  <Pressable onPress={() => reactiver(uc)} hitSlop={8} style={styles.reactiverBtn}>
+                    <Text style={styles.reactiverTxt}>↩︎ Réactiver</Text>
+                  </Pressable>
+                </View>
+              ))}
+            </ScrollView>
+          )}
+        </View>
+      )}
     </SafeAreaView>
   );
 }
@@ -131,41 +163,51 @@ export default function AdminScreen() {
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: colors.bg },
   header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: spacing.lg,
-    paddingVertical: spacing.md,
+    flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
+    paddingHorizontal: spacing.lg, paddingVertical: spacing.md,
   },
   retour: { color: colors.accent, fontSize: font.body, fontWeight: '600', width: 70 },
   headerTitre: { color: colors.text, fontSize: font.h3, fontWeight: '800' },
-  content: { padding: spacing.lg, paddingBottom: spacing.xxl },
-  intro: { color: colors.textMuted, fontSize: font.small, lineHeight: 20, marginBottom: spacing.lg },
-  alerteRevision: {
-    backgroundColor: colors.warn + '1A',
-    borderColor: colors.warn + '66',
-    borderWidth: 1,
-    borderRadius: 12,
-    padding: spacing.md,
-    marginBottom: spacing.lg,
+  topContent: { paddingHorizontal: spacing.lg, gap: spacing.sm, flexGrow: 0 },
+  intro: { color: colors.textMuted, fontSize: font.small, lineHeight: 20 },
+  liensRow: { flexDirection: 'row', gap: spacing.sm, marginBottom: spacing.sm },
+  lienBtn: {
+    backgroundColor: colors.primarySoft, borderColor: colors.primary + '55', borderWidth: 1,
+    borderRadius: radius.pill, paddingHorizontal: spacing.md, paddingVertical: 8,
   },
-  alerteRevisionTxt: { color: colors.text, fontSize: font.small, lineHeight: 19, fontWeight: '600' },
-  banqueBtn: {
-    backgroundColor: colors.primarySoft,
-    borderColor: colors.primary + '55',
-    borderWidth: 1,
-    borderRadius: 12,
-    padding: spacing.md,
-    marginBottom: spacing.lg,
-    alignItems: 'center',
+  lienTxt: { color: colors.accent, fontSize: font.small, fontWeight: '800' },
+  // Kanban
+  board: { paddingHorizontal: spacing.lg, paddingVertical: spacing.sm, gap: spacing.md },
+  colonne: {
+    width: 270, backgroundColor: colors.surface, borderRadius: radius.lg,
+    borderWidth: 1, borderColor: colors.border, padding: spacing.sm, maxHeight: '100%',
   },
-  banqueTxt: { color: colors.accent, fontSize: font.small, fontWeight: '800' },
-  cardTop: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
-  action: { color: colors.warn, fontSize: font.small, fontWeight: '800' },
-  cardTitre: { color: colors.text, fontSize: font.h3, fontWeight: '700', lineHeight: 22 },
-  tags: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm, marginTop: spacing.xs },
-  meta: { color: colors.textMuted, fontSize: font.tiny, marginTop: spacing.xs },
-  vide: { alignItems: 'center', gap: spacing.md, paddingVertical: spacing.xxl },
-  videTitre: { color: colors.text, fontSize: font.h3, fontWeight: '700' },
-  videTxt: { color: colors.textMuted, fontSize: font.body, textAlign: 'center', lineHeight: 21 },
+  colHead: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: spacing.xs, paddingVertical: spacing.sm },
+  colTitre: { color: colors.text, fontSize: font.small, fontWeight: '800', flex: 1 },
+  compteur: { borderRadius: radius.pill, paddingHorizontal: 8, paddingVertical: 2, minWidth: 24, alignItems: 'center' },
+  compteurTxt: { fontSize: font.tiny, fontWeight: '800' },
+  colBody: { gap: spacing.sm, paddingBottom: spacing.md },
+  colVide: { color: colors.textMuted, fontSize: font.small, textAlign: 'center', paddingVertical: spacing.lg },
+  carte: {
+    backgroundColor: colors.surfaceAlt, borderRadius: radius.md, borderWidth: 1,
+    padding: spacing.md, gap: spacing.xs,
+  },
+  cardTitre: { color: colors.text, fontSize: font.body, fontWeight: '700', lineHeight: 21 },
+  tags: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.xs, marginTop: spacing.xs },
+  meta: { color: colors.textMuted, fontSize: font.tiny, marginTop: spacing.xs, lineHeight: 15 },
+  action: { fontSize: font.tiny, fontWeight: '800', marginTop: spacing.xs },
+  avorterBtn: { marginTop: spacing.sm, alignSelf: 'flex-start' },
+  avorterTxt: { color: colors.danger, fontSize: font.tiny, fontWeight: '700' },
+  // Avortés
+  avortesZone: { borderTopWidth: 1, borderTopColor: colors.border, backgroundColor: colors.surface, padding: spacing.md },
+  avortesHead: { paddingVertical: spacing.xs },
+  avortesTitre: { color: colors.textMuted, fontSize: font.small, fontWeight: '700' },
+  avortesRow: { gap: spacing.sm, paddingTop: spacing.sm },
+  avorteCarte: {
+    width: 200, backgroundColor: colors.surfaceAlt, borderRadius: radius.md,
+    borderWidth: 1, borderColor: colors.border, padding: spacing.md, gap: spacing.sm, opacity: 0.8,
+  },
+  avorteTitre: { color: colors.textMuted, fontSize: font.small, fontWeight: '600', lineHeight: 18 },
+  reactiverBtn: { alignSelf: 'flex-start' },
+  reactiverTxt: { color: colors.accent, fontSize: font.tiny, fontWeight: '800' },
 });
