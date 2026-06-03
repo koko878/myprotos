@@ -100,44 +100,88 @@ async function poste(path: string, body: object, ms = 12000): Promise<{ ok: bool
 const abonnes = new Set<() => void>();
 function notifier() { abonnes.forEach((cb) => { try { cb(); } catch { /* ignore */ } }); }
 
-// --- Connexion OU inscription en une action ----------------------------------
-export async function connexionOuInscription(email: string, motDePasse: string): Promise<string | null> {
+// --- Connexion (compte EXISTANT uniquement) ----------------------------------
+export async function connexion(email: string, motDePasse: string): Promise<string | null> {
   if (!supabaseDisponible()) return 'Authentification non configurée.';
   const e = email.trim();
   try {
-    // 1) Connexion
-    let res = await poste('/auth/v1/token?grant_type=password', { email: e, password: motDePasse });
+    const res = await poste('/auth/v1/token?grant_type=password', { email: e, password: motDePasse });
     if (res.ok && res.data?.access_token) {
       ecrireSession(res.data);
       notifier();
       return null;
     }
     const msg = String(res.data?.error_description || res.data?.msg || res.data?.error || '').toLowerCase();
-
-    // 2) Si identifiants invalides -> le compte n'existe peut-être pas : inscription
-    if (msg.includes('invalid') || res.status === 400) {
-      const signup = await poste('/auth/v1/signup', { email: e, password: motDePasse });
-      if (signup.ok && signup.data?.access_token) {
-        ecrireSession(signup.data);
-        notifier();
-        return null;
-      }
-      // signup sans token = confirmation email activée, OU compte déjà existant
-      const m2 = String(signup.data?.error_description || signup.data?.msg || signup.data?.error || '').toLowerCase();
-      if (m2.includes('already') || m2.includes('registered')) {
-        return 'Mot de passe incorrect pour cet email.';
-      }
-      if (signup.ok && !signup.data?.access_token) {
-        return 'Compte créé : désactivez « Confirm email » dans Supabase (Authentication → Email) pour vous connecter sans email.';
-      }
-      return traduireErreur(m2 || 'Échec de la connexion.');
+    if (msg.includes('email not confirmed')) {
+      return 'Email non confirmé. Vérifiez votre boîte mail.';
     }
-
+    if (msg.includes('invalid') || res.status === 400) {
+      return 'Email ou mot de passe incorrect. Pas encore de compte ? Inscrivez-vous.';
+    }
     return traduireErreur(msg || 'Échec de la connexion.');
   } catch (err: any) {
     if (err?.name === 'AbortError') return 'Connexion trop longue. Vérifiez votre réseau et réessayez.';
     return 'Erreur de connexion. Réessayez.';
   }
+}
+
+// --- Inscription (création d'un NOUVEAU compte) -------------------------------
+// Renvoie { erreur } si échec, ou { besoinConfirmation } si l'email doit être
+// confirmé (compte créé mais pas de session tant que non confirmé).
+export async function inscription(
+  email: string,
+  motDePasse: string
+): Promise<{ erreur?: string; besoinConfirmation?: boolean }> {
+  if (!supabaseDisponible()) return { erreur: 'Authentification non configurée.' };
+  const e = email.trim();
+  try {
+    const signup = await poste('/auth/v1/signup', { email: e, password: motDePasse });
+    // Compte créé ET session ouverte (confirmation email désactivée).
+    if (signup.ok && signup.data?.access_token) {
+      ecrireSession(signup.data);
+      notifier();
+      return {};
+    }
+    const m = String(signup.data?.error_description || signup.data?.msg || signup.data?.error || '').toLowerCase();
+    if (m.includes('already') || m.includes('registered')) {
+      return { erreur: 'Un compte existe déjà avec cet email. Connectez-vous.' };
+    }
+    // Compte créé sans session = confirmation par email requise.
+    if (signup.ok) {
+      return { besoinConfirmation: true };
+    }
+    return { erreur: traduireErreur(m || 'Échec de l’inscription.') };
+  } catch (err: any) {
+    if (err?.name === 'AbortError') return { erreur: 'Connexion trop longue. Réessayez.' };
+    return { erreur: 'Erreur lors de l’inscription. Réessayez.' };
+  }
+}
+
+// --- Réinitialisation du mot de passe (envoi d'un email de reset) -------------
+export async function reinitialiserMotDePasse(email: string): Promise<string | null> {
+  if (!supabaseDisponible()) return 'Authentification non configurée.';
+  const e = email.trim();
+  if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(e)) return 'Entrez une adresse email valide.';
+  try {
+    // GoTrue /recover : envoie le mail de réinitialisation. Réponse 200 même si
+    // l'email n'existe pas (anti-énumération) — on affiche donc un message neutre.
+    await poste('/auth/v1/recover', { email: e });
+    return null;
+  } catch {
+    return 'Impossible d’envoyer l’email pour le moment. Réessayez.';
+  }
+}
+
+// --- Compat : connexion OU inscription en une action (ancien comportement) ----
+export async function connexionOuInscription(email: string, motDePasse: string): Promise<string | null> {
+  const errConn = await connexion(email, motDePasse);
+  if (!errConn) return null;
+  // Si la connexion échoue pour identifiants invalides, on tente l'inscription.
+  const res = await inscription(email, motDePasse);
+  if (res.besoinConfirmation) {
+    return 'Compte créé : vérifiez votre email pour confirmer votre inscription.';
+  }
+  return res.erreur ?? null;
 }
 
 function traduireErreur(msg: string): string {
