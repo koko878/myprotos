@@ -346,6 +346,13 @@ export function construirePromptAppFinale(uc: UseCase): string {
   }
 
   L.push('');
+  L.push('## Gestion du code (à respecter)');
+  L.push('- Destiné à un repo Git PRIVÉ dédié (organisation GitHub « GetExp »).');
+  L.push('- Fournis un .gitignore correct (node_modules, .env, build…). NE COMMITTE JAMAIS de secret :');
+  L.push('  seulement .env.example. Première version = v1.0.0 (SemVer).');
+  L.push('- Inclus un workflow CI GitHub Actions (.github/workflows) : build + tests sur PR ;');
+  L.push('  build + push image Docker (tag = version) sur tag v*.');
+  L.push('');
   L.push('## Definition of Done');
   L.push('- `docker compose up` démarre l\'app complète sans intervention manuelle.');
   L.push('- .env.example documente 100% de la config. Migrations + seed de démo présents.');

@@ -136,7 +136,51 @@ attester ces points avant mise en production.
 
 ---
 
-## 6. Définition de « Terminé » pour une app livrée
+## 6. Gestion du code & des versions (apps clients)
+
+### Organisation des dépôts
+- **1 repo Git PRIVÉ par application client**, regroupés dans une **organisation GitHub
+  « GetExp »** (séparée du compte perso). Jamais public (code propriétaire client).
+- Convention de nommage : `getexp/app-<slug-client>-<slug-projet>`
+  (ex. `getexp/app-institut-beaute-rdv`).
+- Description du repo = nom du client + référence du bon de commande (ex. `GETX-AB12CD`).
+- Le **README** rappelle : client, cible de déploiement (on-premise/Azure), date de livraison.
+
+### Workflow Git (simple et robuste)
+- Branche `main` = code stable, toujours déployable. **Protégée** (pas de push direct).
+- Une branche par évolution : `feat/...`, `fix/...` → **Pull Request** → revue → merge dans `main`.
+- Commits clairs et atomiques (convention : `feat:`, `fix:`, `chore:`, `docs:`).
+- Génération initiale (Claude Code à partir du package ZIP) = **premier commit** sur une
+  branche `init`, puis PR vers `main` après vérification.
+
+### Versionnement (SemVer) & releases
+- Versions **SemVer** : `vMAJEUR.MINEUR.CORRECTIF` (ex. `v1.0.0` = première livraison client).
+  - MAJEUR = changement cassant, MINEUR = nouvelle fonctionnalité, CORRECTIF = bugfix.
+- Chaque livraison client = un **tag Git** + une **GitHub Release** (notes de version =
+  ce qui change pour le client).
+- L'**image Docker** est taguée avec la même version (`app:1.0.0`) et poussée sur l'ACR
+  (chez GetExp) — l'image déployée correspond donc exactement à un commit/tag traçable.
+
+### Historisation & traçabilité
+- Tout est dans Git : historique complet, qui a changé quoi et quand.
+- Les **migrations DB versionnées** (cf. §2) suivent le code → l'état de la base est
+  reproductible à n'importe quelle version.
+- Les **secrets ne sont jamais commités** (`.env` hors git, cf. §5) — uniquement
+  `.env.example`. Les vrais secrets vivent dans Key Vault (Azure) ou chez le client.
+
+### CI/CD par repo
+- GitHub Actions : à chaque PR → build + tests ; sur tag `v*` → build image Docker +
+  push ACR (+ déploiement Azure si client hébergé GetExp).
+- Une CI rouge bloque le merge.
+
+### Livraison du code au client (on-premise)
+- Le client reçoit le **package de déploiement** (ZIP docker-compose), pas forcément
+  l'accès au repo. Si le contrat prévoit la cession du code source → on lui donne accès
+  au repo en lecture, ou un export tagué de la version livrée.
+
+---
+
+## 7. Définition de « Terminé » pour une app livrée
 
 - [ ] `docker compose up` démarre l'app complète sans intervention manuelle.
 - [ ] `.env.example` documente 100% de la configuration.
