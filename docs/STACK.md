@@ -121,18 +121,53 @@ base ou un schéma dédié) pour cloisonner les données.
 
 ---
 
-## 5. Sécurité (base, avant certification)
+## 5. Sécurité « by design » (intégrée dès la conception)
 
-- HTTPS/TLS obligatoire (Caddy/Traefik on-prem, certificats managés Azure).
-- Secrets jamais dans le code ni le repo (env + Key Vault). `.env` hors git.
-- Mots de passe hashés (argon2/bcrypt), auth par token court + refresh.
-- Validation des entrées côté API, requêtes paramétrées (anti-injection SQL).
-- Principe du moindre privilège (DB, stockage, réseau).
-- Sauvegardes BDD automatiques + journalisation.
-- En-têtes de sécurité (CSP, HSTS) sur le reverse proxy.
+> Principe : la sécurité n'est PAS une étape finale, elle est intégrée à l'architecture,
+> à la stack, au code et au process. **Référentiel par défaut : OWASP ASVS Niveau 2.**
+> Toute app GetExp vise ce niveau ; on monte au L3 seulement pour données très sensibles
+> (santé, finance critique).
 
-La **certification sécurité** GetExp (étape suivante du parcours) viendra auditer et
-attester ces points avant mise en production.
+### 5.1 Couche ARCHITECTURE
+- **Threat modeling léger** au cadrage technique : lister les données sensibles, qui accède
+  à quoi, les menaces principales (méthode STRIDE simplifiée), et la parade pour chacune.
+- **Défense en profondeur** : plusieurs barrières (réseau → application → données). Jamais
+  un rempart unique.
+- **Isolation / cloisonnement** : 1 client = données isolées (base ou schéma dédié). Le
+  réseau interne n'expose que le strict nécessaire ; pas de service de données exposé à Internet.
+- **Zero-trust** : tout appel (même interne) est authentifié ET autorisé. Aucune confiance implicite.
+- **Surface minimale** : on n'installe/n'ouvre/n'expose que ce qui est utilisé.
+
+### 5.2 Couche STACK (secure defaults)
+- Briques éprouvées uniquement (PostgreSQL, NestJS/FastAPI, Caddy/Traefik). Pas de techno exotique.
+- L'état SÛR est l'état PAR DÉFAUT : HTTPS/TLS forcé, cookies `httpOnly`+`Secure`+`SameSite`,
+  CORS restrictif (liste blanche), en-têtes de sécurité (CSP, HSTS, X-Content-Type-Options) actifs d'origine.
+- Dépendances épinglées (lockfile), images Docker de base minimales et à jour.
+
+### 5.3 Couche CODE (OWASP)
+Grille = **OWASP Top 10 + ASVS L2** :
+- **Validation stricte des entrées** côté serveur (schémas typés), sortie échappée (anti-XSS).
+- **Requêtes paramétrées / ORM** systématiques (anti-injection SQL).
+- **AuthN** : mots de passe hashés (argon2/bcrypt), tokens courts + refresh, rotation, verrouillage anti-brute-force.
+- **AuthZ vérifiée à CHAQUE endpoint** (contrôle d'accès objet par objet — anti-IDOR). Refus par défaut.
+- **Gestion d'erreurs « fail securely »** : en cas de doute, on refuse ; les messages d'erreur ne fuient aucune info technique.
+- **Secrets hors code** (`.env`/Key Vault), jamais de secret en dur ni dans les logs.
+- **Logs de sécurité** (connexions, accès refusés, actions sensibles) sans données personnelles en clair.
+- **Rate-limiting** sur les endpoints sensibles (login, API publiques).
+
+### 5.4 Couche PROCESS (automatisé dans la CI)
+- À chaque commit/PR, la CI exécute :
+  - **scan de dépendances vulnérables** (`npm audit` / `pip-audit`),
+  - **scan de secrets** (gitleaks) — bloque tout secret commité,
+  - **analyse statique SAST** (CodeQL / Semgrep),
+  - lint + tests.
+- **Une alerte de sécurité bloque le merge.**
+- **Sauvegardes BDD automatiques** + chiffrement au repos (Azure) + journalisation.
+
+### 5.5 Porte de certification (avant toute mise en prod)
+Aucune app ne part en production sans la **certification sécurité GetExp** : audit de la
+checklist ASVS L2, revue du threat model, vérification des scans CI au vert. C'est l'étape
+finale du parcours client — elle ATTESTE que les points ci-dessus sont réellement respectés.
 
 ---
 
