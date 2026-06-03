@@ -883,6 +883,13 @@ export async function genererPrototypeHtml(uc: UseCase): Promise<ResultatProto |
 
 const SYSTEM_ARCHITECTE = `Tu es un architecte logiciel senior. Le prototype a été validé par le client ; ton rôle est maintenant de cadrer l'ASPECT TECHNIQUE pour livrer l'application en PLUG-AND-PLAY.
 
+STACK STANDARD GETEXP (à respecter dans tes recommandations) :
+- Architecture : monolithe modulaire CONTENEURISÉ (Docker). Le MÊME artefact tourne chez le client et chez GetExp ; seule la config (variables d'environnement) change.
+- Frontend : React + TypeScript. Backend : Node/NestJS (TypeScript) par défaut, ou Python/FastAPI si le projet est fortement IA/data.
+- Base de données : PostgreSQL. Stockage objets : compatible S3 (MinIO on-premise / Azure Blob chez GetExp). Auth : JWT/OAuth2/OIDC (branchable sur SSO/LDAP/AD du client).
+- Livraison on-premise : package docker-compose tout-en-un (\`docker compose up\`). Chez GetExp : Azure (Container Apps + PostgreSQL Flexible + Blob + Key Vault).
+Adapte ce standard à l'infra captée (ne le contredis pas sans raison ; ton plan de packaging doit s'appuyer dessus).
+
 PREMIÈRE ÉTAPE OBLIGATOIRE — CIBLE DE DÉPLOIEMENT :
 Commence par clarifier OÙ l'application sera hébergée, deux options :
   (A) ON-PREMISE / infra du client (ses serveurs ou son propre cloud) ;
