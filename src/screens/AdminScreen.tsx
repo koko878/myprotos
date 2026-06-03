@@ -19,11 +19,12 @@ const VISIBLES: UseCase['statut'][] = [
   'prototype_valide',
   'cadrage_technique',
   'pret_a_packager',
+  'commande_validee',
   'certifie',
 ];
 
 // Statuts qui demandent une action de l'admin -> remontés en haut de liste.
-const PRIORITAIRES: UseCase['statut'][] = ['soumis', 'revision_demandee', 'prototype_pret_admin'];
+const PRIORITAIRES: UseCase['statut'][] = ['soumis', 'revision_demandee', 'prototype_pret_admin', 'commande_validee'];
 
 export default function AdminScreen() {
   const { aller, retour } = useNav();

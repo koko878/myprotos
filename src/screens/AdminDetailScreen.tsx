@@ -4,7 +4,7 @@ import { backendDisponible, genererPrototypeHtml } from '../cadrageAssistant';
 import HtmlPreview from '../components/HtmlPreview';
 import FileButton from '../components/FileButton';
 import { Bouton, Carte } from '../components/ui';
-import { telechargerDossierProjet } from '../fichiers';
+import { telechargerDossierProjet, telechargerPackageAppFinale } from '../fichiers';
 import { dateHeure } from '../format';
 import { iaDisponible } from '../llm';
 import { useNav } from '../navigation';
@@ -32,6 +32,10 @@ export default function AdminDetailScreen({ useCaseId }: { useCaseId: string }) 
 
   async function telecharger() {
     if (uc) telechargerDossierProjet(uc);
+  }
+
+  async function telechargerAppFinale() {
+    if (uc) telechargerPackageAppFinale(uc);
   }
 
   // Dépose le HTML (collé ou importé) comme nouvelle version du prototype.
@@ -112,6 +116,20 @@ export default function AdminDetailScreen({ useCaseId }: { useCaseId: string }) 
       </View>
 
       <ScrollView contentContainerStyle={styles.content}>
+        {/* Commande validée -> production de l'application finale */}
+        {uc.statut === 'commande_validee' && (
+          <Carte style={{ gap: spacing.md, borderColor: colors.success + '66' }}>
+            <Text style={styles.h}>🏗️ Application finale — à produire</Text>
+            <Text style={styles.sub}>
+              Commande validée{uc.bonCommande?.reference ? ` (réf. ${uc.bonCommande.reference})` : ''}.
+              Cible : {uc.cibleDeploiement === 'getexp' ? 'hébergée par GetExp (Azure)' : 'on-premise (infra client)'}.
+              Téléchargez le package (brief full-stack conforme au standard + pièces jointes) et
+              générez l’application avec Claude Code.
+            </Text>
+            <Bouton titre="⬇️ Télécharger le package App finale" onPress={telechargerAppFinale} />
+          </Carte>
+        )}
+
         {/* Identité du client + soumission */}
         {(uc.client || uc.soumisLe) && (
           <Carte style={{ gap: spacing.sm, borderColor: colors.accent + '44' }}>

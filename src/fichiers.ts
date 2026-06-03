@@ -252,6 +252,110 @@ export function construirePromptComplet(uc: UseCase): string {
   return L.join('\n');
 }
 
+// Construit le prompt de génération de l'APPLICATION FINALE (full-stack), à passer
+// à Claude Code. Contrairement au prototype (1 index.html), ici on demande une vraie
+// app conforme au standard GetExp (docs/STACK.md), adaptée à la cible de déploiement.
+export function construirePromptAppFinale(uc: UseCase): string {
+  const onPrem = uc.cibleDeploiement !== 'getexp'; // défaut : on-premise
+  const ct = uc.cadrageTechnique;
+  const L: string[] = [];
+
+  L.push('# Brief APPLICATION FINALE — ' + uc.titre);
+  L.push('');
+  L.push('Tu es un ingénieur logiciel senior. Construis l\'APPLICATION DE PRODUCTION (pas un');
+  L.push('prototype) en respectant STRICTEMENT le standard technique GetExp ci-dessous.');
+  L.push('');
+  L.push('## Standard technique GETEXP (impératif)');
+  L.push('- Architecture : monolithe modulaire CONTENEURISÉ (Docker). Le MÊME artefact doit');
+  L.push('  tourner on-premise ET sur Azure ; SEULE la config (.env) change, jamais le code.');
+  L.push('- Frontend : React + TypeScript (Vite).');
+  L.push('- Backend : Node/NestJS (TypeScript) par DÉFAUT ; Python/FastAPI UNIQUEMENT si le');
+  L.push('  projet est fortement IA/ML/data/NLP (justifie le choix en tête du README).');
+  L.push('- Base de données : PostgreSQL (migrations versionnées + seed de démo).');
+  L.push('- Stockage fichiers : API compatible S3 (MinIO en local/on-prem, Azure Blob chez GetExp).');
+  L.push('- Auth : JWT/OAuth2/OIDC, mots de passe hashés (argon2/bcrypt), tokens court + refresh.');
+  L.push('- Sécurité : HTTPS, secrets via .env (jamais en dur), validation des entrées,');
+  L.push('  requêtes paramétrées, en-têtes de sécurité, moindre privilège.');
+  L.push('- Observabilité : endpoint /health, logs JSON structurés.');
+  L.push('- Livraison : docker-compose tout-en-un (`docker compose up` démarre TOUT).');
+  L.push('');
+  L.push('## Arborescence attendue');
+  L.push('docker-compose.yml, .env.example (100% de la config documentée), README.md (déploiement');
+  L.push('client en <10 lignes), Makefile (up/down/seed/logs), frontend/ (Dockerfile+src),');
+  L.push('backend/ (Dockerfile+src+migrations), db/init/, deploy/on-premise/, deploy/azure/.');
+  L.push('');
+  L.push('## Contexte métier');
+  L.push('- Domaine : ' + uc.domaine);
+  L.push('- Problème : ' + uc.probleme);
+  L.push('- Objectif : ' + uc.objectif);
+  L.push('- Utilisateurs cibles : ' + uc.utilisateurs);
+  L.push('- Approche : ' + uc.approcheSuggeree);
+  if (uc.processusADigitaliser?.length) {
+    L.push('- Processus à digitaliser :');
+    uc.processusADigitaliser.forEach((p) => L.push(`  • ${p}`));
+  }
+  if (uc.parcoursUtilisateur?.length) {
+    L.push('- Parcours utilisateur (à implémenter fidèlement) :');
+    uc.parcoursUtilisateur.forEach((e, i) => L.push(`  ${i + 1}. ${e}`));
+  }
+  if (uc.kpis?.length) L.push('- KPIs à exposer : ' + uc.kpis.join(', '));
+  if (uc.langues?.length) L.push('- Langues de l’interface : ' + uc.langues.join(', '));
+  if (uc.paysDeploiement) L.push('- Pays de déploiement (contraintes légales/langue/formats locaux) : ' + uc.paysDeploiement);
+  if (uc.donnees) L.push('- Données disponibles : ' + uc.donnees);
+  if (uc.contraintes) L.push('- Contraintes : ' + uc.contraintes);
+
+  // Cible de déploiement + infra captée par l'IA architecte.
+  L.push('');
+  L.push('## Cible de déploiement : ' + (onPrem ? 'ON-PREMISE (infra du client)' : 'CHEZ GETEXP (Azure)'));
+  if (onPrem) {
+    L.push('Livre un package docker-compose AUTONOME qui démarre du premier coup chez le client,');
+    L.push('en s\'adaptant à l\'infrastructure captée ci-dessous (BDD existante vs embarquée, SSO/LDAP');
+    L.push('si présent, réseau/proxy/ports, stockage). Aucune dépendance cloud externe non validée.');
+  } else {
+    L.push('Cible Azure : Azure Container Apps (exécution), Azure Database for PostgreSQL (Flexible),');
+    L.push('Azure Blob Storage (fichiers), Azure Key Vault (secrets), ACR (images). Fournis dans');
+    L.push('deploy/azure/ les instructions/IaC de déploiement. Le code reste identique à l\'on-premise.');
+  }
+  if (ct) {
+    L.push('');
+    L.push('## Infrastructure captée par l\'architecte');
+    L.push('- Hébergement : ' + ct.hebergement);
+    L.push('- OS cible : ' + ct.os);
+    L.push('- Conteneurisation : ' + ct.conteneurisation);
+    L.push('- Base de données : ' + ct.baseDeDonnees);
+    L.push('- Authentification : ' + ct.authentification);
+    L.push('- Réseau : ' + ct.reseau);
+    L.push('- Sécurité/conformité : ' + ct.contraintesSecu);
+    L.push('- Format de livraison recommandé : ' + ct.formatLivraison);
+    if (ct.prerequis?.length) L.push('- Prérequis client : ' + ct.prerequis.join(' ; '));
+  }
+
+  const remarques = (uc.remarques ?? []).map((r) => r.texte);
+  if (remarques.length) {
+    L.push('');
+    L.push('## Remarques du client à intégrer EN PRIORITÉ');
+    remarques.forEach((r, i) => L.push(`${i + 1}. ${r}`));
+  }
+
+  const pj = uc.piecesJointes ?? [];
+  if (pj.length) {
+    L.push('');
+    L.push('## Pièces jointes fournies (dossier pieces-jointes/ du ZIP)');
+    pj.forEach((p) => L.push(`- ${p.nom} (${p.type})`));
+    L.push('Respecte la charte graphique / le logo fournis.');
+  }
+
+  L.push('');
+  L.push('## Definition of Done');
+  L.push('- `docker compose up` démarre l\'app complète sans intervention manuelle.');
+  L.push('- .env.example documente 100% de la config. Migrations + seed de démo présents.');
+  L.push('- /health OK, logs structurés, parcours principal couvert par des tests, CI verte.');
+  L.push('- README : déploiement en <10 lignes. Le même artefact tourne on-premise ET sur Azure.');
+  L.push('');
+  L.push('Aucune question : décide selon le standard et produis le code complet de l\'application.');
+  return L.join('\n');
+}
+
 function slugProjet(uc: UseCase): string {
   return (
     uc.titre.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '').slice(0, 40) || 'projet'
@@ -276,12 +380,23 @@ function declencherTelechargement(url: string, nom: string, revoke: boolean) {
  * Renvoie le nombre de fichiers inclus (prompt + pièces jointes).
  */
 export function telechargerDossierProjet(uc: UseCase): number {
+  return telechargerPackage(uc, 'prototype');
+}
+
+// Package de l'APPLICATION FINALE (prompt full-stack conforme au standard) + pièces jointes.
+export function telechargerPackageAppFinale(uc: UseCase): number {
+  return telechargerPackage(uc, 'app');
+}
+
+function telechargerPackage(uc: UseCase, mode: 'prototype' | 'app'): number {
   if (Platform.OS !== 'web' || typeof document === 'undefined') return 0;
   const slug = slugProjet(uc);
   const enc = new TextEncoder();
+  const prompt = mode === 'app' ? construirePromptAppFinale(uc) : construirePromptComplet(uc);
+  const prefixe = mode === 'app' ? 'GetExp-APP' : 'GetExp';
 
   const fichiers: { nom: string; data: Uint8Array }[] = [
-    { nom: 'PROMPT.md', data: enc.encode(construirePromptComplet(uc)) },
+    { nom: 'PROMPT.md', data: enc.encode(prompt) },
   ];
 
   // Pièces jointes du client -> dossier pieces-jointes/ dans le ZIP.
@@ -301,6 +416,6 @@ export function telechargerDossierProjet(uc: UseCase): number {
 
   const zip = construireZip(fichiers);
   const url = URL.createObjectURL(zip);
-  declencherTelechargement(url, `GetExp-${slug}.zip`, true);
+  declencherTelechargement(url, `${prefixe}-${slug}.zip`, true);
   return fichiers.length;
 }
