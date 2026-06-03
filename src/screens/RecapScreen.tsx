@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { Pressable, SafeAreaView, ScrollView, StyleSheet, Text, View } from 'react-native';
 import UseCaseView from '../components/UseCaseView';
-import { Bouton, Carte } from '../components/ui';
+import { Bouton, Carte, EnTete } from '../components/ui';
 import { choisirFichiers, tailleLisible } from '../fichiers';
 import { iaDisponible } from '../llm';
 import { useNav } from '../navigation';
@@ -94,13 +94,7 @@ export default function RecapScreen({ useCaseId }: { useCaseId: string }) {
 
   return (
     <SafeAreaView style={styles.safe}>
-      <View style={styles.header}>
-        <Pressable onPress={retour} hitSlop={12}>
-          <Text style={styles.retour}>‹ Retour</Text>
-        </Pressable>
-        <Text style={styles.headerTitre}>Récapitulatif</Text>
-        <View style={{ width: 70 }} />
-      </View>
+      <EnTete titre="Récapitulatif" onRetour={retour} />
 
       <ScrollView contentContainerStyle={styles.content}>
         <View style={styles.banniere}>
@@ -183,15 +177,6 @@ export default function RecapScreen({ useCaseId }: { useCaseId: string }) {
 
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: colors.bg },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: spacing.lg,
-    paddingVertical: spacing.md,
-  },
-  retour: { color: colors.accent, fontSize: font.body, fontWeight: '600', width: 70 },
-  headerTitre: { color: colors.text, fontSize: font.h3, fontWeight: '800' },
   content: { padding: spacing.lg, paddingBottom: spacing.xxl },
   banniere: {
     backgroundColor: colors.success + '18',

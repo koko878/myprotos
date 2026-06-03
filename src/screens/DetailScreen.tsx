@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
-import { Pressable, SafeAreaView, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { SafeAreaView, ScrollView, StyleSheet, Text, View } from 'react-native';
 import UseCaseView from '../components/UseCaseView';
-import { Bouton, Carte } from '../components/ui';
+import { Bouton, Carte, EnTete } from '../components/ui';
 import { useNav } from '../navigation';
 import { trouverUseCase } from '../storage';
 import { colors, font, radius, spacing } from '../theme';
@@ -25,13 +25,7 @@ export default function DetailScreen({ useCaseId }: { useCaseId: string }) {
 
   return (
     <SafeAreaView style={styles.safe}>
-      <View style={styles.header}>
-        <Pressable onPress={retour} hitSlop={12}>
-          <Text style={styles.retour}>‹ Retour</Text>
-        </Pressable>
-        <Text style={styles.headerTitre}>Mon projet</Text>
-        <View style={{ width: 70 }} />
-      </View>
+      <EnTete titre="Mon projet" onRetour={retour} />
 
       <ScrollView contentContainerStyle={styles.content}>
         <EtapeSuivante uc={uc} aller={aller} />
@@ -179,15 +173,6 @@ function Ligne({ label, valeur }: { label: string; valeur: string }) {
 
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: colors.bg },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: spacing.lg,
-    paddingVertical: spacing.md,
-  },
-  retour: { color: colors.accent, fontSize: font.body, fontWeight: '600', width: 70 },
-  headerTitre: { color: colors.text, fontSize: font.h3, fontWeight: '800' },
   content: { padding: spacing.lg, paddingBottom: spacing.xxl },
   etape: { gap: spacing.md, marginBottom: spacing.lg },
   etapeTitre: { color: colors.text, fontSize: font.h3, fontWeight: '800' },

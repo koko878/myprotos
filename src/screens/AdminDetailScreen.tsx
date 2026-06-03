@@ -3,7 +3,7 @@ import { ActivityIndicator, Platform, Pressable, SafeAreaView, ScrollView, Style
 import { backendDisponible, genererPrototypeHtml } from '../cadrageAssistant';
 import HtmlPreview from '../components/HtmlPreview';
 import FileButton from '../components/FileButton';
-import { Bouton, Carte } from '../components/ui';
+import { Bouton, Carte, EnTete } from '../components/ui';
 import { telechargerDossierProjet, telechargerPackageAppFinale } from '../fichiers';
 import { dateHeure } from '../format';
 import { iaDisponible } from '../llm';
@@ -107,13 +107,7 @@ export default function AdminDetailScreen({ useCaseId }: { useCaseId: string }) 
 
   return (
     <SafeAreaView style={styles.safe}>
-      <View style={styles.header}>
-        <Pressable onPress={retour} hitSlop={12}>
-          <Text style={styles.retour}>‹ Admin</Text>
-        </Pressable>
-        <Text style={styles.headerTitre} numberOfLines={1}>{uc.titre}</Text>
-        <View style={{ width: 70 }} />
-      </View>
+      <EnTete titre={uc.titre} onRetour={retour} />
 
       <ScrollView contentContainerStyle={styles.content}>
         {/* Commande validée -> production de l'application finale */}
@@ -294,15 +288,6 @@ function Ligne({ label, v }: { label: string; v: string }) {
 
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: colors.bg },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: spacing.lg,
-    paddingVertical: spacing.md,
-  },
-  retour: { color: colors.accent, fontSize: font.body, fontWeight: '600', width: 70 },
-  headerTitre: { color: colors.text, fontSize: font.h3, fontWeight: '800', flex: 1, textAlign: 'center' },
   content: { padding: spacing.lg, paddingBottom: spacing.xxl, gap: spacing.lg },
   h: { color: colors.text, fontSize: font.h3, fontWeight: '800' },
   sub: { color: colors.textMuted, fontSize: font.small, lineHeight: 20 },

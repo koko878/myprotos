@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Pressable, SafeAreaView, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
-import { Bouton, Carte } from '../components/ui';
+import { Bouton, Carte, EnTete } from '../components/ui';
 import { useNav } from '../navigation';
 import { AgentPrompt, listeAgents } from '../promptsAgents';
 import { chargerReglages, definirReglage, reglageBrut } from '../reglages';
@@ -29,13 +29,7 @@ export default function PromptsScreen() {
 
   return (
     <SafeAreaView style={styles.safe}>
-      <View style={styles.header}>
-        <Pressable onPress={retour} hitSlop={12}>
-          <Text style={styles.retour}>‹ Admin</Text>
-        </Pressable>
-        <Text style={styles.headerTitre}>Prompts des agents</Text>
-        <View style={{ width: 70 }} />
-      </View>
+      <EnTete titre="Prompts des agents" onRetour={retour} />
 
       <ScrollView contentContainerStyle={styles.content}>
         <Text style={styles.intro}>
@@ -147,15 +141,6 @@ function AgentCarte({
 
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: colors.bg },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: spacing.lg,
-    paddingVertical: spacing.md,
-  },
-  retour: { color: colors.accent, fontSize: font.body, fontWeight: '600', width: 70 },
-  headerTitre: { color: colors.text, fontSize: font.h3, fontWeight: '800', flex: 1, textAlign: 'center' },
   content: { padding: spacing.lg, paddingBottom: spacing.xxl, gap: spacing.md },
   intro: { color: colors.textMuted, fontSize: font.small, lineHeight: 20 },
   cardTop: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },

@@ -70,6 +70,44 @@ export function Carte({
   return contenu;
 }
 
+// En-tête d'écran unifié (façon Spotify/Notion) : bouton retour circulaire +
+// titre bold aligné à gauche + zone d'action optionnelle à droite.
+export function EnTete({
+  titre,
+  onRetour,
+  droite,
+}: {
+  titre?: string;
+  onRetour?: () => void;
+  droite?: React.ReactNode;
+}) {
+  return (
+    <View style={styles.entete}>
+      {onRetour && (
+        <Pressable onPress={onRetour} hitSlop={12} style={({ pressed }) => [styles.backBtn, pressed && { opacity: 0.7 }]}>
+          <Text style={styles.backChevron}>‹</Text>
+        </Pressable>
+      )}
+      {!!titre && (
+        <Text style={styles.enteteTitre} numberOfLines={1}>
+          {titre}
+        </Text>
+      )}
+      <View style={{ flex: 1 }} />
+      {droite}
+    </View>
+  );
+}
+
+// Bouton « accueil » discret pour la zone droite de l'en-tête.
+export function BoutonAccueil({ onPress }: { onPress: () => void }) {
+  return (
+    <Pressable onPress={onPress} hitSlop={12} style={({ pressed }) => [styles.backBtn, pressed && { opacity: 0.7 }]}>
+      <Text style={styles.accueilIcone}>⌂</Text>
+    </Pressable>
+  );
+}
+
 export function Etiquette({ texte, couleur }: { texte: string; couleur?: string }) {
   return (
     <View style={[styles.etiquette, couleur ? { backgroundColor: couleur + '22', borderColor: couleur + '55' } : null]}>
@@ -122,6 +160,26 @@ const styles = StyleSheet.create({
     borderColor: colors.border,
     padding: spacing.lg,
   },
+  entete: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.md,
+    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.md,
+  },
+  backBtn: {
+    width: 38,
+    height: 38,
+    borderRadius: radius.pill,
+    backgroundColor: colors.surfaceAlt,
+    borderWidth: 1,
+    borderColor: colors.border,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  backChevron: { color: colors.text, fontSize: 24, fontWeight: '700', marginTop: -3, lineHeight: 26 },
+  accueilIcone: { color: colors.text, fontSize: 18, fontWeight: '700' },
+  enteteTitre: { color: colors.text, fontSize: font.h2, fontWeight: '800', letterSpacing: -0.3 },
   etiquette: {
     backgroundColor: colors.surfaceAlt,
     borderColor: colors.border,

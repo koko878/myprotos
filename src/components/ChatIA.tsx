@@ -11,6 +11,7 @@ import {
   View,
 } from 'react-native';
 import { lireFichierTexte } from '../fichiers';
+import { BoutonAccueil, EnTete } from './ui';
 import { useNav } from '../navigation';
 import { colors, font, radius, spacing } from '../theme';
 import { Message } from '../types';
@@ -187,15 +188,7 @@ export default function ChatIA({ titre, ouverture, jouerTour, onTermine, progres
 
   return (
     <SafeAreaView style={styles.safe}>
-      <View style={styles.header}>
-        <Pressable onPress={retour} hitSlop={12}>
-          <Text style={styles.retour}>‹ Retour</Text>
-        </Pressable>
-        <Text style={styles.headerTitre} numberOfLines={1}>{titre}</Text>
-        <Pressable onPress={() => aller({ nom: 'home' })} hitSlop={12}>
-          <Text style={styles.accueil}>🏠 Accueil</Text>
-        </Pressable>
-      </View>
+      <EnTete titre={titre} onRetour={retour} droite={<BoutonAccueil onPress={() => aller({ nom: 'home' })} />} />
       <View style={styles.progressBarBg}>
         <View style={[styles.progressBarFill, { width: `${Math.min(prog * 100, 100)}%` }]} />
       </View>
@@ -299,16 +292,6 @@ function Bulle({
 
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: colors.bg },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: spacing.lg,
-    paddingVertical: spacing.md,
-  },
-  retour: { color: colors.accent, fontSize: font.body, fontWeight: '600', width: 70 },
-  headerTitre: { color: colors.text, fontSize: font.h3, fontWeight: '800', flex: 1, textAlign: 'center' },
-  accueil: { color: colors.accent, fontSize: font.small, fontWeight: '700', width: 80, textAlign: 'right' },
   joindreDoc: {
     marginHorizontal: spacing.md,
     marginBottom: spacing.xs,

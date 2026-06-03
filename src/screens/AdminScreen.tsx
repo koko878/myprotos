@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Alert, Platform, Pressable, SafeAreaView, ScrollView, StyleSheet, Text, View } from 'react-native';
-import { Carte, Etiquette } from '../components/ui';
+import { Carte, Etiquette, EnTete } from '../components/ui';
 import { dateHeure, identiteClient } from '../format';
 import { useNav } from '../navigation';
 import { marquerIdeesVues } from '../notifications';
@@ -72,13 +72,7 @@ export default function AdminScreen() {
 
   return (
     <SafeAreaView style={styles.safe}>
-      <View style={styles.header}>
-        <Pressable onPress={retour} hitSlop={12}>
-          <Text style={styles.retour}>‹ Accueil</Text>
-        </Pressable>
-        <Text style={styles.headerTitre}>Espace admin</Text>
-        <View style={{ width: 70 }} />
-      </View>
+      <EnTete titre="Espace admin" onRetour={retour} />
 
       <View style={styles.topContent}>
         <Text style={styles.intro}>
@@ -162,12 +156,6 @@ export default function AdminScreen() {
 
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: colors.bg },
-  header: {
-    flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
-    paddingHorizontal: spacing.lg, paddingVertical: spacing.md,
-  },
-  retour: { color: colors.accent, fontSize: font.body, fontWeight: '600', width: 70 },
-  headerTitre: { color: colors.text, fontSize: font.h3, fontWeight: '800' },
   topContent: { paddingHorizontal: spacing.lg, paddingTop: spacing.xs, gap: spacing.sm },
   intro: { color: colors.textMuted, fontSize: font.small, lineHeight: 20 },
   liensRow: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm, marginBottom: spacing.sm },

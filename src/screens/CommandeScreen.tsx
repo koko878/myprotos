@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { KeyboardAvoidingView, Platform, Pressable, SafeAreaView, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
-import { Bouton, Carte } from '../components/ui';
+import { Bouton, Carte, EnTete, BoutonAccueil } from '../components/ui';
 import { useNav } from '../navigation';
 import { enregistrerBonCommande, trouverUseCase } from '../storage';
 import { colors, font, radius, spacing } from '../theme';
@@ -45,7 +45,7 @@ export default function CommandeScreen({ useCaseId }: { useCaseId: string }) {
     const b = uc.bonCommande;
     return (
       <SafeAreaView style={styles.safe}>
-        <Entete retour={retour} titre="Bon de commande" />
+        <EnTete titre="Bon de commande" onRetour={retour} droite={<BoutonAccueil onPress={() => aller({ nom: 'home' })} />} />
         <ScrollView contentContainerStyle={styles.content}>
           <Carte style={{ gap: spacing.sm, borderColor: colors.success + '66' }}>
             <Text style={styles.confTitre}>✅ Commande validée</Text>
@@ -93,7 +93,7 @@ export default function CommandeScreen({ useCaseId }: { useCaseId: string }) {
 
   return (
     <SafeAreaView style={styles.safe}>
-      <Entete retour={retour} titre="Bon de commande" />
+      <EnTete titre="Bon de commande" onRetour={retour} droite={<BoutonAccueil onPress={() => aller({ nom: 'home' })} />} />
       <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
         <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
           <Text style={styles.intro}>
@@ -164,21 +164,6 @@ export default function CommandeScreen({ useCaseId }: { useCaseId: string }) {
   );
 }
 
-function Entete({ retour, titre }: { retour: () => void; titre: string }) {
-  const { aller } = useNav();
-  return (
-    <View style={styles.header}>
-      <Pressable onPress={retour} hitSlop={12}>
-        <Text style={styles.retour}>‹ Retour</Text>
-      </Pressable>
-      <Text style={styles.headerTitre} numberOfLines={1}>{titre}</Text>
-      <Pressable onPress={() => aller({ nom: 'home' })} hitSlop={12}>
-        <Text style={styles.accueil}>🏠</Text>
-      </Pressable>
-    </View>
-  );
-}
-
 function CibleCard({ actif, onPress, titre, desc, run }: {
   actif: boolean; onPress: () => void; titre: string; desc: string; run?: number;
 }) {
@@ -205,13 +190,6 @@ function Ligne({ label, v }: { label: string; v: string }) {
 
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: colors.bg },
-  header: {
-    flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
-    paddingHorizontal: spacing.lg, paddingVertical: spacing.md,
-  },
-  retour: { color: colors.accent, fontSize: font.body, fontWeight: '600', width: 70 },
-  headerTitre: { color: colors.text, fontSize: font.h3, fontWeight: '800', flex: 1, textAlign: 'center' },
-  accueil: { fontSize: font.body, width: 70, textAlign: 'right' },
   content: { padding: spacing.lg, paddingBottom: spacing.xxl, gap: spacing.md },
   intro: { color: colors.textMuted, fontSize: font.small, lineHeight: 20 },
   section: { color: colors.text, fontSize: font.h3, fontWeight: '800' },

@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { ActivityIndicator, Pressable, SafeAreaView, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { AnalyseBanque, analyserBanque } from '../banqueIA';
-import { Bouton, Carte, Etiquette } from '../components/ui';
+import { Bouton, Carte, EnTete, Etiquette } from '../components/ui';
 import { iaDisponible } from '../llm';
 import { useNav } from '../navigation';
 import { chargerUseCases } from '../storage';
@@ -61,13 +61,7 @@ export default function BanqueScreen() {
     const similaires = trouverSimilaires(detail, tous, 0.18);
     return (
       <SafeAreaView style={styles.safe}>
-        <View style={styles.header}>
-          <Pressable onPress={() => setDetail(null)} hitSlop={12}>
-            <Text style={styles.retour}>‹ Banque</Text>
-          </Pressable>
-          <Text style={styles.headerTitre} numberOfLines={1}>Idée</Text>
-          <View style={{ width: 70 }} />
-        </View>
+        <EnTete titre="Idée" onRetour={() => setDetail(null)} />
         <ScrollView contentContainerStyle={styles.content}>
           <Carte style={{ gap: spacing.sm }}>
             <Etiquette texte={detail.domaine} couleur={colors.accent} />
@@ -103,13 +97,7 @@ export default function BanqueScreen() {
 
   return (
     <SafeAreaView style={styles.safe}>
-      <View style={styles.header}>
-        <Pressable onPress={retour} hitSlop={12}>
-          <Text style={styles.retour}>‹ Admin</Text>
-        </Pressable>
-        <Text style={styles.headerTitre}>Banque d’idées</Text>
-        <View style={{ width: 70 }} />
-      </View>
+      <EnTete titre="Banque d’idées" onRetour={retour} />
 
       <ScrollView contentContainerStyle={styles.content}>
         <Text style={styles.intro}>
@@ -273,15 +261,6 @@ export default function BanqueScreen() {
 
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: colors.bg },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: spacing.lg,
-    paddingVertical: spacing.md,
-  },
-  retour: { color: colors.accent, fontSize: font.body, fontWeight: '600', width: 70 },
-  headerTitre: { color: colors.text, fontSize: font.h3, fontWeight: '800', flex: 1, textAlign: 'center' },
   content: { padding: spacing.lg, paddingBottom: spacing.xxl, gap: spacing.md },
   intro: { color: colors.textMuted, fontSize: font.small },
   h: { color: colors.text, fontSize: font.body, fontWeight: '800' },

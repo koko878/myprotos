@@ -17,6 +17,7 @@ import {
   synthetiserUseCaseIA,
 } from '../cadrageAssistant';
 import { uidMessage } from '../components/ChatIA';
+import { EnTete } from '../components/ui';
 import { useNav } from '../navigation';
 import { creerEtId } from '../storage';
 import { colors, font, radius, spacing } from '../theme';
@@ -88,13 +89,11 @@ export default function CadrageScripte() {
 
   return (
     <SafeAreaView style={styles.safe}>
-      <View style={styles.header}>
-        <Pressable onPress={retour} hitSlop={12}>
-          <Text style={styles.retour}>‹ Retour</Text>
-        </Pressable>
-        <Text style={styles.headerTitre}>Cadrage métier</Text>
-        <Text style={styles.badge}>{Math.min(indexEtape + 1, ETAPES.length)}/{ETAPES.length}</Text>
-      </View>
+      <EnTete
+        titre="Cadrage métier"
+        onRetour={retour}
+        droite={<Text style={styles.badge}>{Math.min(indexEtape + 1, ETAPES.length)}/{ETAPES.length}</Text>}
+      />
       <View style={styles.progressBarBg}>
         <View style={[styles.progressBarFill, { width: `${(Math.min(indexEtape, ETAPES.length) / ETAPES.length) * 100}%` }]} />
       </View>
@@ -161,15 +160,6 @@ function Bulle({
 
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: colors.bg },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: spacing.lg,
-    paddingVertical: spacing.md,
-  },
-  retour: { color: colors.accent, fontSize: font.body, fontWeight: '600', width: 70 },
-  headerTitre: { color: colors.text, fontSize: font.h3, fontWeight: '800' },
   badge: { color: colors.textMuted, fontSize: font.small, width: 70, textAlign: 'right', fontWeight: '700' },
   progressBarBg: { height: 3, backgroundColor: colors.surfaceAlt },
   progressBarFill: { height: 3, backgroundColor: colors.primary },

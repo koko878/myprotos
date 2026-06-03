@@ -10,7 +10,7 @@ import {
   View,
 } from 'react-native';
 import HtmlPreview from '../components/HtmlPreview';
-import { Bouton, Carte } from '../components/ui';
+import { Bouton, Carte, EnTete } from '../components/ui';
 import { iaDisponible } from '../llm';
 import { useNav } from '../navigation';
 import { ouvrirHtmlNouvelOnglet } from '../ouvrir';
@@ -73,15 +73,7 @@ export default function PrototypeScreen({ useCaseId }: { useCaseId: string }) {
 
   return (
     <SafeAreaView style={styles.safe}>
-      <View style={styles.header}>
-        <Pressable onPress={retour} hitSlop={12}>
-          <Text style={styles.retour}>‹ Retour</Text>
-        </Pressable>
-        <Text style={styles.headerTitre} numberOfLines={1}>
-          Prototype{uc.prototypeVersion ? ` v${uc.prototypeVersion}` : ''}
-        </Text>
-        <View style={{ width: 90 }} />
-      </View>
+      <EnTete titre={`Prototype${uc.prototypeVersion ? ` v${uc.prototypeVersion}` : ''}`} onRetour={retour} />
 
       <View style={styles.banniere}>
         <Text style={styles.banniereTxt}>
@@ -151,15 +143,6 @@ export default function PrototypeScreen({ useCaseId }: { useCaseId: string }) {
 
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: colors.bg },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: spacing.lg,
-    paddingVertical: spacing.md,
-  },
-  retour: { color: colors.accent, fontSize: font.small, fontWeight: '600', width: 90 },
-  headerTitre: { color: colors.text, fontSize: font.h3, fontWeight: '800', flex: 1, textAlign: 'center' },
   banniere: {
     backgroundColor: colors.primarySoft,
     borderColor: colors.primary + '55',
