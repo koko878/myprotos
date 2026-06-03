@@ -4,6 +4,7 @@ import { deverrouillerAdmin, estAdminDeverrouille, verifierPin, verrouillerAdmin
 import { deconnexion } from '../auth';
 import { useAuth } from '../authContext';
 import Logo from '../components/Logo';
+import Parcours from '../components/Parcours';
 import { Bouton, Carte } from '../components/ui';
 import { useNav } from '../navigation';
 import { compterNouvelles, dernierVuLe } from '../notifications';
@@ -110,12 +111,7 @@ export default function HomeScreen() {
           />
         </Carte>
 
-        <View style={styles.etapes}>
-          <Etape n="1" titre="Cadrage métier" texte="L’IA structure votre besoin et son ROI." />
-          <Etape n="2" titre="Prototype" texte="Un prototype interactif à valider (ou challenger)." />
-          <Etape n="3" titre="Cadrage technique" texte="L’IA architecte prépare la livraison plug-and-play." />
-          <Etape n="4" titre="Certification" texte="Sécurité vérifiée avant déploiement." />
-        </View>
+        <Parcours />
 
         {/* Accès admin : par rôle (mode auth) ou par code (mode démo). */}
         {adminOuvert && (
@@ -172,20 +168,6 @@ export default function HomeScreen() {
   );
 }
 
-function Etape({ n, titre, texte }: { n: string; titre: string; texte: string }) {
-  return (
-    <View style={styles.etapeRow}>
-      <View style={styles.etapeNum}>
-        <Text style={styles.etapeNumTxt}>{n}</Text>
-      </View>
-      <View style={{ flex: 1 }}>
-        <Text style={styles.etapeTitre}>{titre}</Text>
-        <Text style={styles.etapeTexte}>{texte}</Text>
-      </View>
-    </View>
-  );
-}
-
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: colors.bg },
   content: { padding: spacing.xl, paddingTop: spacing.xxl },
@@ -212,19 +194,6 @@ const styles = StyleSheet.create({
   sous: { color: colors.textMuted, fontSize: font.body, lineHeight: 23, marginTop: spacing.lg, maxWidth: 560 },
   cardTitre: { color: colors.text, fontSize: font.h3, fontWeight: '800' },
   cardTexte: { color: colors.textMuted, fontSize: font.small, lineHeight: 20 },
-  etapes: { marginTop: spacing.xxl, gap: spacing.lg },
-  etapeRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.md },
-  etapeNum: {
-    width: 34,
-    height: 34,
-    borderRadius: radius.pill,
-    backgroundColor: colors.primarySoft,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  etapeNumTxt: { color: colors.accent, fontWeight: '800' },
-  etapeTitre: { color: colors.text, fontSize: font.body, fontWeight: '700' },
-  etapeTexte: { color: colors.textMuted, fontSize: font.small },
   adminZone: { marginTop: spacing.xxl, gap: spacing.xs },
   notif: { color: colors.warn, fontSize: font.small, fontWeight: '700', textAlign: 'center', marginTop: spacing.xs },
   adminLien: { alignItems: 'center', paddingVertical: spacing.sm },
