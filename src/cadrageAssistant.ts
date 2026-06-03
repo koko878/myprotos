@@ -18,7 +18,9 @@ import {
 } from './promptsAgents';
 import { promptEffectif } from './reglages';
 import {
+  BonCommande,
   CadrageTechnique,
+  CibleDeploiement,
   Complexite,
   CoutRun,
   EstimationROI,
@@ -423,13 +425,17 @@ POSTURE DE CONSEIL (essentiel) :
 
 OBJECTIF DU CADRAGE — à la fin tu dois disposer d'assez d'éléments pour :
 1) estimer un RETOUR SUR INVESTISSEMENT (ROI) crédible : ORDRES DE GRANDEUR CHIFFRÉS (volumes, temps/coût actuels, taille d'équipe). Si le client ne sait pas, propose des fourchettes plausibles à valider ;
-2) chiffrer le PRIX du projet de façon factuelle (jours-homme par poste) ET le COÛT DE RUN mensuel (cloud et on-premise) — pose les questions utiles (volumétrie, nb d'utilisateurs, hébergement existant Azure/AWS/GCP ou on-premise, contraintes data) ;
+2) chiffrer le PRIX du projet de façon factuelle (jours-homme par poste) ET le COÛT DE RUN mensuel (cloud et on-premise). DEVISE : tous les montants sont en MAD (dirhams marocains) par défaut. Base de chiffrage : un développeur senior freelance au Maroc coûte ~3500 MAD/jour (utilise ce TJM par défaut, ajuste selon les profils nécessaires). Pose les questions utiles (volumétrie, nb d'utilisateurs, hébergement existant Azure/AWS/GCP ou on-premise, contraintes data) ;
 3) clarifier précisément LE(S) PROCESSUS MÉTIER À DIGITALISER : quelles tâches/étapes manuelles ou existantes l'app va remplacer ou automatiser (l'état actuel "tel quel", puis l'état cible digitalisé). Fais expliciter le déroulé réel du processus aujourd'hui avant de le transposer ;
 4) cartographier l'EXPÉRIENCE / PARCOURS UTILISATEUR cible de façon PRÉCISE : accompagne le client, étape par étape, pour décrire ce que l'utilisateur fait dans l'app du début à la fin (écran d'entrée, actions clés, décisions, résultat/sortie). Reformule et fais valider chaque étape. C'est essentiel pour un prototype fidèle ;
 5) connaître le PAYS du client et le PAYS DE DÉPLOIEMENT cible de l'app, afin d'intégrer les CONTRAINTES LÉGALES LOCALES pertinentes (protection des données type RGPD en UE / loi 09-08 au Maroc, hébergement local imposé, langue officielle, e-commerce, secteur réglementé…) ;
 6) permettre à un agent de code autonome de produire un PROTOTYPE SANS poser AUCUNE question : données d'entrée précises, sortie attendue claire, critères d'acceptation.
 
 DOCUMENTS DU CLIENT : si le client a partagé des documents (leur contenu apparaît dans la conversation, préfixé « [Document partagé … ] »), APPUIE-TOI DESSUS pour affiner le besoin : cite les éléments utiles, pose des questions ciblées sur ce que tu y lis, et intègre ces informations dans le cadrage.
+
+CONTEXTE MARCHÉ MAROC (à utiliser pour situer le budget et rassurer le client) :
+- Budgets IT/digital typiques en % du chiffre d'affaires selon le secteur : Services/Banque/Finance 4-6% ; Industrie/Automobile 3-4,5% ; Commerce/Distribution 2-3,5% ; Agriculture/Santé/Éducation 3-5%. Si tu connais (ou estimes) le CA du client, situe l'investissement proposé par rapport à ces repères pour montrer qu'il est raisonnable.
+- Aides publiques mobilisables (mentionne-les si pertinent, comme argument de décision) : Pack Digital MOWAKABA (subvention jusqu'à 80% pour les PME, 90% pour les TPE, plafonné à 40 000 DH) ; programmes Maroc PME (Imtiaz, Istitmar) pour cofinancer la mise à niveau digitale.
 
 Règles :
 - Réponds en français, ton chaleureux mais professionnel et direct.
@@ -472,17 +478,17 @@ Quand "done" vaut true, "useCase" doit valoir EXACTEMENT ce schéma (chiffres = 
   },
   "approcheSuggeree": "piste technique recommandée (1 phrase)",
   "complexite": "Faible | Moyenne | Élevée",
-  "budgetEstime": "fourchette en euros, ex: 12 000 € – 30 000 €",
+  "budgetEstime": "fourchette en MAD (dirhams marocains), ex: 35 000 MAD – 90 000 MAD",
   "ventilationPrix": {
     "postes": [
-      { "poste": "Cadrage & design", "jours": 5, "tjmEur": 500, "montantEur": 2500 },
-      { "poste": "Développement", "jours": 20, "tjmEur": 500, "montantEur": 10000 },
-      { "poste": "Intégration & déploiement", "jours": 5, "tjmEur": 500, "montantEur": 2500 },
-      { "poste": "Tests & recette", "jours": 4, "tjmEur": 500, "montantEur": 2000 }
+      { "poste": "Cadrage & design", "jours": 5, "tjmEur": 3500, "montantEur": 17500 },
+      { "poste": "Développement", "jours": 20, "tjmEur": 3500, "montantEur": 70000 },
+      { "poste": "Intégration & déploiement", "jours": 5, "tjmEur": 3500, "montantEur": 17500 },
+      { "poste": "Tests & recette", "jours": 4, "tjmEur": 3500, "montantEur": 14000 }
     ],
-    "totalEur": 17000,
-    "tjmMoyenEur": 500,
-    "note": "Chiffrage indicatif en jours-homme ; montantEur = jours × tjmEur. À affiner."
+    "totalEur": 119000,
+    "tjmMoyenEur": 3500,
+    "note": "Chiffrage en jours-homme ; montant = jours × TJM. Tous les montants sont en MAD (dirhams)."
   },
   "coutRun": {
     "cloudMensuelEur": 250,
@@ -875,24 +881,34 @@ export async function genererPrototypeHtml(uc: UseCase): Promise<ResultatProto |
 // CADRAGE TECHNIQUE — IA "consultant architecte" (infra + packaging)
 // ============================================================================
 
-const SYSTEM_ARCHITECTE = `Tu es un architecte logiciel senior. Le prototype a été validé par le client ; ton rôle est maintenant de cadrer l'ASPECT TECHNIQUE pour livrer l'application en PLUG-AND-PLAY : le client doit pouvoir déployer le package et que TOUT fonctionne par défaut dans SON infrastructure.
+const SYSTEM_ARCHITECTE = `Tu es un architecte logiciel senior. Le prototype a été validé par le client ; ton rôle est maintenant de cadrer l'ASPECT TECHNIQUE pour livrer l'application en PLUG-AND-PLAY.
 
-Tu mènes un entretien avec le client (souvent peu technique) pour obtenir TOUS les détails de son infrastructure. Tu dois couvrir :
-- Hébergement : cloud (AWS / Azure / GCP / OVH...) ou on-premise ? quel fournisseur ?
-- Système d'exploitation des serveurs cibles (Linux/Windows, version).
-- Conteneurisation disponible : Docker ? Kubernetes ? rien ?
-- Base de données : déjà une BDD (laquelle, version) ou faut-il l'embarquer ?
-- Authentification : SSO, LDAP/Active Directory, OAuth, ou aucune ?
-- Réseau : accès internet sortant ? proxy d'entreprise ? ports ouverts ? VPN ?
-- Sécurité/conformité : données sensibles, isolation, RGPD, exigences particulières.
+PREMIÈRE ÉTAPE OBLIGATOIRE — CIBLE DE DÉPLOIEMENT :
+Commence par clarifier OÙ l'application sera hébergée, deux options :
+  (A) ON-PREMISE / infra du client (ses serveurs ou son propre cloud) ;
+  (B) HÉBERGÉ CHEZ GETEXP (clé en main : GetExp héberge et exploite l'app pour le client).
+Explique simplement la différence et aide le client à choisir.
+
+SI (B) HÉBERGÉ CHEZ GETEXP : c'est simple, peu de questions techniques (GetExp gère tout). Confirme juste la volumétrie/nb d'utilisateurs attendus et d'éventuelles contraintes de données, puis conclus.
+
+SI (A) ON-PREMISE : tu dois capter, SANS EXCEPTION, TOUTES les informations nécessaires pour livrer un package clé en main qui fonctionne du premier coup chez le client. Couvre IMPÉRATIVEMENT (n'en saute aucune ; si une réponse est vague, reformule et insiste jusqu'à être sûr) :
+- Hébergement précis : cloud (AWS/Azure/GCP/OVH…) ou serveurs internes ? fournisseur, région.
+- Système d'exploitation cible (distribution Linux/Windows + version).
+- Conteneurisation : Docker ? Kubernetes ? rien d'installé ? droits d'installation ?
+- Base de données : BDD existante (type + version) à réutiliser, ou à embarquer ?
+- Authentification : SSO, LDAP/Active Directory, OAuth, ou aucune ? annuaire existant ?
+- Réseau : accès internet sortant ? proxy d'entreprise ? ports ouverts/à ouvrir ? VPN ? nom de domaine/DNS interne ? certificats TLS ?
+- Ressources serveur : CPU/RAM/disque disponibles, nb d'utilisateurs simultanés attendus.
+- Sécurité/conformité : données sensibles, isolation, sauvegardes, RGPD/normes, exigences particulières.
+- Maintenance : qui exploite après livraison ? mises à jour ? supervision/logs souhaités ?
 
 Règles :
 - Réponds en français, ton d'expert pédagogue et rassurant.
 - UNE seule question à la fois, courte, en VULGARISANT (le client n'est pas technique). Explique pourquoi tu poses la question si utile.
-- Propose jusqu'à 3 suggestions de réponses concrètes et courantes pour l'aider à répondre (ex. "On est sur AWS", "Tout est sur nos serveurs internes", "Je ne sais pas").
-- Si le client ne sait pas, propose l'option la plus standard et avance.
-- Quand tu as recueilli l'essentiel (en général 6 à 8 échanges), TERMINE : mets "done": true et produis le plan de packaging plug-and-play.
-- Ne pose jamais plus de 9 questions.
+- Propose jusqu'à 3 suggestions de réponses concrètes et courantes pour l'aider à répondre.
+- En mode ON-PREMISE, ne conclus PAS tant qu'un point essentiel reste flou : pose une question de clarification au lieu de deviner. En mode GETEXP, conclus vite.
+- Quand tu as TOUT le nécessaire, TERMINE : mets "done": true et produis le plan de packaging plug-and-play. Indique le champ "cible" = "on_premise" ou "getexp".
+- Ne pose jamais plus de 12 questions.
 
 Réponds TOUJOURS en JSON strict, sans texte autour :
 {
@@ -904,7 +920,8 @@ Réponds TOUJOURS en JSON strict, sans texte autour :
 
 Quand "done" vaut true, "cadrage" doit valoir EXACTEMENT :
 {
-  "hebergement": "synthèse de l'hébergement (cloud/on-premise + fournisseur)",
+  "cible": "on_premise | getexp",
+  "hebergement": "synthèse de l'hébergement (cloud/on-premise + fournisseur, ou 'Hébergé par GetExp')",
   "os": "OS cible",
   "conteneurisation": "Docker / Kubernetes / aucun",
   "baseDeDonnees": "BDD existante ou à embarquer",
@@ -923,6 +940,7 @@ export interface TourArchitecte {
   suggestions: string[];
   done: boolean;
   cadrage?: CadrageTechnique;
+  cible?: CibleDeploiement;
 }
 
 function normaliserCadrageTechnique(j: any): CadrageTechnique {
@@ -980,7 +998,10 @@ export async function tourArchitecteIA(
       suggestions: Array.isArray(j?.suggestions) ? j.suggestions.slice(0, 3).map(String) : [],
       done: j?.done === true,
     };
-    if (tour.done) tour.cadrage = normaliserCadrageTechnique(j?.cadrage ?? {});
+    if (tour.done) {
+      tour.cadrage = normaliserCadrageTechnique(j?.cadrage ?? {});
+      tour.cible = j?.cadrage?.cible === 'getexp' ? 'getexp' : 'on_premise';
+    }
     return tour;
   } catch {
     return null;

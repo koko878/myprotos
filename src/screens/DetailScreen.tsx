@@ -111,12 +111,25 @@ function EtapeSuivante({ uc, aller }: { uc: UseCase; aller: (r: any) => void }) 
   if (uc.statut === 'pret_a_packager') {
     return (
       <Carte style={[styles.etape, { borderColor: colors.success + '66' }]}>
-        <Text style={styles.etapeTitre}>📦 Prêt à packager</Text>
+        <Text style={styles.etapeTitre}>📦 Prêt à commander</Text>
         <Text style={styles.etapeTxt}>
-          Le plan de livraison plug-and-play est défini (voir ci-dessous). Prochaine étape :
-          la certification sécurité.
+          Le plan de livraison plug-and-play est défini (voir ci-dessous). Validez votre
+          commande pour lancer la réalisation.
         </Text>
+        <Bouton titre="🧾 Passer au bon de commande" onPress={() => aller({ nom: 'commande', useCaseId: uc.id })} />
         <Bouton titre="Revoir le prototype" variante="secondaire" onPress={() => aller({ nom: 'prototype', useCaseId: uc.id })} />
+      </Carte>
+    );
+  }
+  if (uc.statut === 'commande_validee') {
+    return (
+      <Carte style={[styles.etape, { borderColor: colors.success + '66' }]}>
+        <Text style={styles.etapeTitre}>✅ Commande validée</Text>
+        <Text style={styles.etapeTxt}>
+          Merci ! Votre commande est enregistrée. Notre équipe vous contacte pour les modalités
+          de paiement et le lancement de la réalisation.
+        </Text>
+        <Bouton titre="Voir le bon de commande" variante="secondaire" onPress={() => aller({ nom: 'commande', useCaseId: uc.id })} />
       </Carte>
     );
   }

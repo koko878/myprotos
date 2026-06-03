@@ -7,7 +7,7 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as remote from './projets';
 import { supabaseDisponible } from './supabase';
-import { CadrageTechnique, PieceJointe, ProfilClient, RemarqueClient, StatutUseCase, UseCase } from './types';
+import { BonCommande, CadrageTechnique, CibleDeploiement, PieceJointe, ProfilClient, RemarqueClient, StatutUseCase, UseCase } from './types';
 
 const CLE = 'usecases_v1';
 const distant = () => supabaseDisponible();
@@ -182,15 +182,31 @@ export async function ajouterRemarque(
   return ajouterRemarques(useCaseId, [texte]);
 }
 
-// Enregistre le résultat du cadrage technique (infra + plan de packaging).
+// Enregistre le résultat du cadrage technique (infra + plan de packaging),
+// avec la cible de déploiement choisie (on-premise / GetExp).
 export async function enregistrerCadrageTechnique(
   useCaseId: string,
-  cadrage: CadrageTechnique
+  cadrage: CadrageTechnique,
+  cible?: CibleDeploiement
 ): Promise<UseCase[]> {
   return modifierUseCase(useCaseId, (u) => ({
     ...u,
     cadrageTechnique: cadrage,
+    cibleDeploiement: cible ?? u.cibleDeploiement,
     statut: 'pret_a_packager',
+  }));
+}
+
+// Enregistre le bon de commande validé/signé par le client.
+export async function enregistrerBonCommande(
+  useCaseId: string,
+  bon: BonCommande
+): Promise<UseCase[]> {
+  return modifierUseCase(useCaseId, (u) => ({
+    ...u,
+    bonCommande: bon,
+    cibleDeploiement: bon.cible,
+    statut: 'commande_validee',
   }));
 }
 

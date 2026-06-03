@@ -14,6 +14,7 @@ export type Route =
   | { nom: 'prototype'; useCaseId: string } // aperçu du prototype HTML (client)
   | { nom: 'challenge'; useCaseId: string } // IA aide le client à formuler ses retours
   | { nom: 'technique'; useCaseId: string } // cadrage technique (IA architecte)
+  | { nom: 'commande'; useCaseId: string } // bon de commande (validation + signature)
   | { nom: 'admin' } // espace admin : génération des prototypes
   | { nom: 'adminDetail'; useCaseId: string }
   | { nom: 'banque' } // banque d'idées : classement + similarités (admin)

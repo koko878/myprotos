@@ -34,7 +34,26 @@ export type StatutUseCase =
   | 'prototype_valide' // prototype validé par le client
   | 'cadrage_technique' // cadrage technique infra en cours
   | 'pret_a_packager' // infra cadrée + plan de packaging produit
+  | 'commande_validee' // bon de commande validé/signé par le client
   | 'certifie'; // certifié sécurité (à venir)
+
+/** Cible de déploiement choisie par le client après validation du prototype. */
+export type CibleDeploiement = 'on_premise' | 'getexp';
+
+/**
+ * Bon de commande : récapitulatif validé et signé par le client (engagement).
+ * Le paiement est géré hors-app (virement/facture).
+ */
+export interface BonCommande {
+  reference: string;       // référence unique (ex. GETX-AB12CD)
+  cible: CibleDeploiement; // on-premise ou hébergé chez GetExp
+  prixProjetEur?: number;  // total projet (depuis ventilationPrix)
+  coutRunMensuelEur?: number; // coût RUN retenu (selon la cible)
+  signataire: string;      // nom de la personne qui valide
+  emailSignataire?: string;
+  conditionsAcceptees: boolean;
+  valideLe: number;        // timestamp de validation
+}
 
 /** Remarque / besoin ajouté par le client pour challenger le prototype. */
 export interface RemarqueClient {
@@ -185,6 +204,8 @@ export interface UseCase {
   remarques?: RemarqueClient[]; // remarques/besoins du client pour challenger le prototype
   piecesJointes?: PieceJointe[]; // logo, charte, docs fournis par le client
   cadrageTechnique?: CadrageTechnique; // résultat du cadrage technique infra
+  cibleDeploiement?: CibleDeploiement; // on-premise ou hébergé chez GetExp
+  bonCommande?: BonCommande; // bon de commande validé/signé par le client
   langues?: string[]; // langues choisies pour l'app (ex: ['Français','Arabe'])
   processusADigitaliser?: string[]; // processus métier concrets à digitaliser
   solutionsMarche?: SolutionMarche[]; // solutions existantes du marché (Make vs Buy)

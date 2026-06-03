@@ -7,12 +7,13 @@ import { iaDisponible } from '../llm';
 import { useNav } from '../navigation';
 import { enregistrerCadrageTechnique, trouverUseCase, mettreAJourStatut } from '../storage';
 import { colors, font, spacing } from '../theme';
-import { CadrageTechnique, Message, UseCase } from '../types';
+import { CadrageTechnique, CibleDeploiement, Message, UseCase } from '../types';
 
 export default function TechniqueScreen({ useCaseId }: { useCaseId: string }) {
   const { aller, retour } = useNav();
   const [uc, setUc] = useState<UseCase | null>(null);
   const dernierCadrage = useRef<CadrageTechnique | null>(null);
+  const derniereCible = useRef<CibleDeploiement | undefined>(undefined);
 
   useEffect(() => {
     trouverUseCase(useCaseId).then((u) => {
@@ -65,18 +66,23 @@ export default function TechniqueScreen({ useCaseId }: { useCaseId: string }) {
 
   async function jouerTour(historique: Message[]): Promise<ResultatTour | null> {
     const nbUser = historique.filter((m) => m.role === 'user').length;
-    const tour = await tourArchitecteIA(historique, nbUser >= 7);
+    // On laisse l'architecte aller plus loin (collecte exhaustive si on-premise).
+    const tour = await tourArchitecteIA(historique, nbUser >= 12);
     if (!tour) return null;
-    if (tour.done && tour.cadrage) dernierCadrage.current = tour.cadrage;
+    if (tour.done && tour.cadrage) {
+      dernierCadrage.current = tour.cadrage;
+      derniereCible.current = tour.cible;
+    }
     return { reply: tour.reply, suggestions: tour.suggestions, done: tour.done };
   }
 
   async function onTermine() {
     const cadrage = dernierCadrage.current;
     if (cadrage) {
-      await enregistrerCadrageTechnique(useCaseId, cadrage);
+      await enregistrerCadrageTechnique(useCaseId, cadrage, derniereCible.current);
     }
-    aller({ nom: 'detail', useCaseId });
+    // Une fois le cadrage technique finalisé -> bon de commande.
+    aller({ nom: 'commande', useCaseId });
   }
 
   return (

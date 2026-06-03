@@ -20,6 +20,7 @@ import LoginScreen from './src/screens/LoginScreen';
 import PrototypeScreen from './src/screens/PrototypeScreen';
 import RecapScreen from './src/screens/RecapScreen';
 import TechniqueScreen from './src/screens/TechniqueScreen';
+import CommandeScreen from './src/screens/CommandeScreen';
 
 function Routeur() {
   const { route } = useNav();
@@ -43,6 +44,8 @@ function Routeur() {
       return <ChallengeScreen useCaseId={route.useCaseId} />;
     case 'technique':
       return <TechniqueScreen useCaseId={route.useCaseId} />;
+    case 'commande':
+      return <CommandeScreen useCaseId={route.useCaseId} />;
     // Routes admin protégées : accessibles seulement si rôle admin.
     case 'admin':
       return estAdmin ? <AdminScreen /> : <HomeScreen />;

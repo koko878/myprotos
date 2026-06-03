@@ -4,7 +4,8 @@ import { colors, font, radius, spacing } from '../theme';
 import { CoutRun, EstimationROI, MakeOrBuy, StatutUseCase, UseCase, VentilationPrix } from '../types';
 import { Carte, Etiquette, ScoreCadrage, couleurComplexite } from './ui';
 
-const eur = (n: number) => n.toLocaleString('fr-FR') + ' €';
+// Affichage des montants en MAD (dirhams marocains), devise par défaut.
+const eur = (n: number) => n.toLocaleString('fr-FR') + ' MAD';
 
 export const LIBELLE_STATUT: Record<StatutUseCase, { texte: string; couleur: string }> = {
   brouillon: { texte: 'Cadré · à soumettre', couleur: colors.textMuted },
@@ -15,6 +16,7 @@ export const LIBELLE_STATUT: Record<StatutUseCase, { texte: string; couleur: str
   prototype_valide: { texte: 'Prototype validé', couleur: colors.success },
   cadrage_technique: { texte: 'Cadrage technique', couleur: colors.warn },
   pret_a_packager: { texte: 'Prêt à packager', couleur: colors.success },
+  commande_validee: { texte: 'Commande validée', couleur: colors.success },
   certifie: { texte: 'Certifié', couleur: colors.success },
 };
 
