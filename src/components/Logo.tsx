@@ -12,9 +12,7 @@ export default function Logo({ size = 'md', symboleSeul = false }: { size?: 'sm'
   return (
     <View style={[styles.wrap, styles.row]}>
       {etoile}
-      <Text style={[styles.mot, { fontSize: f * 0.62 }]}>
-        Get<Text style={{ color: colors.accent }}>Exp</Text>
-      </Text>
+      <Text style={[styles.mot, { fontSize: f * 0.6 }]}>GetExp</Text>
     </View>
   );
 }

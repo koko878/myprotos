@@ -3,7 +3,6 @@
 import React from 'react';
 import {
   ActivityIndicator,
-  Platform,
   Pressable,
   StyleSheet,
   Text,
@@ -11,10 +10,8 @@ import {
   StyleProp,
   ViewStyle,
 } from 'react-native';
-import { colors, font, gradients, radius, spacing } from '../theme';
+import { colors, font, radius, spacing } from '../theme';
 import { Complexite } from '../types';
-
-const web = Platform.OS === 'web';
 
 export function Bouton({
   titre,
@@ -30,10 +27,6 @@ export function Bouton({
   loading?: boolean;
 }) {
   const estPrim = variante === 'primaire';
-  // Web : dégradé de marque + légère lueur sur le bouton primaire.
-  const styleWebPrim = web && estPrim
-    ? ({ backgroundImage: gradients.bouton, boxShadow: '0 8px 24px rgba(224,53,59,0.35)' } as any)
-    : null;
   return (
     <Pressable
       onPress={onPress}
@@ -41,9 +34,9 @@ export function Bouton({
       style={({ pressed }) => [
         styles.bouton,
         estPrim ? styles.boutonPrim : styles.boutonSec,
-        styleWebPrim,
         (disabled || loading) && { opacity: 0.5 },
-        pressed && { transform: [{ scale: 0.985 }], opacity: 0.95 },
+        // Effet Spotify : léger zoom au survol/press, pas de néon.
+        pressed && { transform: [{ scale: 0.97 }], opacity: 0.92 },
       ]}
     >
       {loading ? (

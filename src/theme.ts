@@ -1,44 +1,44 @@
-// Tokens de design GetExp — direction « sombre premium » (façon Linear/Vercel).
-// Identité marocaine : rouge du drapeau + vert, étoile/ascension comme signature,
-// accents lumineux et dégradés rouge→vert sur fond sombre profond.
+// Tokens de design GetExp — direction épurée façon Notion (clarté, espace,
+// sobriété) croisée avec Spotify (fond sombre profond, accent vibrant, type bold,
+// cartes arrondies). Identité marocaine : rouge + vert du drapeau, étoile + carte.
 
 export const colors = {
-  bg: '#0A0A0F', // sombre profond
-  bgElevated: '#101017',
-  surface: '#15151D',
-  surfaceAlt: '#1C1C26',
-  surfaceGlass: 'rgba(28, 28, 38, 0.6)', // verre dépoli (web)
-  border: '#2A2A36',
-  borderLumineux: '#3A3A4A',
-  primary: '#E0353B', // rouge marocain, plus vif/lumineux
+  bg: '#0F0F12', // sombre Spotify, plat
+  bgElevated: '#16161A',
+  surface: '#17171B',
+  surfaceAlt: '#202026',
+  surfaceGlass: '#17171B',
+  border: '#26262D',
+  borderLumineux: '#33333D',
+  primary: '#E0353B', // rouge marocain
   primaryClair: '#FF5A60',
-  primarySoft: '#1F1216', // fond de bloc rougeâtre sombre
-  accent: '#22B069', // vert marocain lumineux
-  accentClair: '#3DDB87',
+  primarySoft: '#241317',
+  accent: '#1FD968', // vert vibrant (énergie Spotify + vert marocain)
+  accentClair: '#3DEB82',
   marocVert: '#0E7A45',
-  text: '#F6F6F9',
-  textMuted: '#9A9AAB',
-  textFaint: '#6A6A78',
-  success: '#34D399',
+  text: '#F4F4F6',
+  textMuted: '#A0A0AC',
+  textFaint: '#6A6A76',
+  success: '#1FD968',
   warn: '#FBBF24',
   danger: '#F87171',
   bubbleUser: '#E0353B',
-  bubbleAssistant: '#1C1C26',
+  bubbleAssistant: '#202026',
 };
 
-// Dégradés signature (utilisés via CSS sur web).
+// Dégradés signature — réservés au logo et à de rares accents (sobriété Notion).
 export const gradients = {
-  marque: 'linear-gradient(135deg, #E0353B 0%, #C1272D 45%, #22B069 100%)',
-  marqueDoux: 'linear-gradient(135deg, rgba(224,53,59,0.18) 0%, rgba(34,176,105,0.18) 100%)',
-  halo: 'radial-gradient(circle at 30% 20%, rgba(224,53,59,0.22), transparent 55%), radial-gradient(circle at 80% 60%, rgba(34,176,105,0.18), transparent 55%)',
-  bouton: 'linear-gradient(120deg, #E0353B 0%, #E0353B 55%, #1F9E5A 140%)',
+  marque: 'linear-gradient(135deg, #E0353B 0%, #CC2A30 50%, #1FD968 100%)',
+  marqueDoux: 'linear-gradient(135deg, rgba(224,53,59,0.12) 0%, rgba(31,217,104,0.12) 100%)',
+  halo: 'radial-gradient(60% 50% at 25% 12%, rgba(224,53,59,0.12), transparent 70%), radial-gradient(55% 45% at 88% 20%, rgba(31,217,104,0.10), transparent 70%)',
+  bouton: 'linear-gradient(120deg, #E0353B 0%, #E0353B 60%, #C7282E 100%)',
 };
 
 export const radius = {
   sm: 10,
-  md: 16,
-  lg: 24,
-  xl: 30,
+  md: 14,
+  lg: 20,
+  xl: 28,
   pill: 999,
 };
 
@@ -46,13 +46,13 @@ export const spacing = {
   xs: 4,
   sm: 8,
   md: 12,
-  lg: 16,
-  xl: 24,
-  xxl: 32,
+  lg: 18,
+  xl: 26,
+  xxl: 40,
 };
 
 export const font = {
-  display: 34, // titres héros
+  display: 36, // titres héros (bold Spotify)
   h1: 27,
   h2: 21,
   h3: 16,
@@ -61,20 +61,21 @@ export const font = {
   tiny: 11,
 };
 
-// Ombres premium (web : box-shadow ; natif : ombres RN approchées).
+// Ombres discrètes (Notion : ombres légères, pas de néon).
 export const ombres = {
   douce: {
     shadowColor: '#000',
-    shadowOpacity: 0.35,
-    shadowRadius: 24,
-    shadowOffset: { width: 0, height: 12 },
-    elevation: 8,
+    shadowOpacity: 0.25,
+    shadowRadius: 18,
+    shadowOffset: { width: 0, height: 8 },
+    elevation: 6,
   },
   lueurRouge: {
-    shadowColor: '#E0353B',
-    shadowOpacity: 0.45,
-    shadowRadius: 24,
-    shadowOffset: { width: 0, height: 8 },
-    elevation: 10,
+    shadowColor: '#000',
+    shadowOpacity: 0.3,
+    shadowRadius: 16,
+    shadowOffset: { width: 0, height: 6 },
+    elevation: 8,
   },
 };
+

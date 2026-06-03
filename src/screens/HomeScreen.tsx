@@ -73,10 +73,6 @@ export default function HomeScreen() {
 
   const web = Platform.OS === 'web';
   const halo = web ? ({ backgroundImage: gradients.halo } as any) : null;
-  const titreDegrade = web
-    ? ({ backgroundImage: `linear-gradient(120deg, ${colors.text} 30%, ${colors.primaryClair} 70%, ${colors.accentClair} 100%)`, WebkitBackgroundClip: 'text', backgroundClip: 'text', WebkitTextFillColor: 'transparent', color: 'transparent' } as any)
-    : null;
-  const verre = web ? ({ backgroundColor: colors.surfaceGlass, backdropFilter: 'blur(14px)', WebkitBackdropFilter: 'blur(14px)' } as any) : null;
 
   return (
     <SafeAreaView style={styles.safe}>
@@ -88,16 +84,20 @@ export default function HomeScreen() {
         </Pressable>
 
         <View style={styles.badgeMission}>
-          <Text style={styles.badgeMissionTxt}>🇲🇦 La tech accessible — du Maroc au monde</Text>
+          <View style={styles.dotLive} />
+          <Text style={styles.badgeMissionTxt}>La tech accessible — du Maroc au monde</Text>
         </View>
 
-        <Text style={[styles.h1, titreDegrade]}>De l’idée à l’application, clé en main.</Text>
+        <Text style={styles.h1}>
+          De l’idée à l’application,{'\n'}
+          <Text style={{ color: colors.accent }}>clé en main.</Text>
+        </Text>
         <Text style={styles.sous}>
           Démocratiser l’accès à la tech : décrivez votre besoin, notre IA le cadre, génère un
           prototype interactif, puis prépare une application déployée, certifiée et garantie.
         </Text>
 
-        <Carte style={[{ marginTop: spacing.xl, gap: spacing.md }, verre]}>
+        <Carte style={{ marginTop: spacing.xl, gap: spacing.md }}>
           <Text style={styles.cardTitre}>Vous êtes client</Text>
           <Text style={styles.cardTexte}>
             Pas besoin d’être technique. Décrivez votre idée, l’IA vous accompagne.
@@ -189,23 +189,27 @@ function Etape({ n, titre, texte }: { n: string; titre: string; texte: string })
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: colors.bg },
   content: { padding: spacing.xl, paddingTop: spacing.xxl },
-  heroHalo: { position: 'absolute', top: 0, left: 0, right: 0, height: 420 },
+  heroHalo: { position: 'absolute', top: 0, left: 0, right: 0, height: 460 },
   logoRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm, marginBottom: spacing.xl },
   logoDot: { width: 14, height: 14, borderRadius: 7, backgroundColor: colors.primary },
   marque: { color: colors.text, fontSize: font.h2, fontWeight: '800', letterSpacing: 0.5 },
   badgeMission: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
     alignSelf: 'flex-start',
     backgroundColor: colors.surfaceAlt,
     borderWidth: 1,
-    borderColor: colors.borderLumineux,
+    borderColor: colors.border,
     borderRadius: radius.pill,
     paddingHorizontal: spacing.md,
-    paddingVertical: 6,
-    marginBottom: spacing.md,
+    paddingVertical: 7,
+    marginBottom: spacing.lg,
   },
-  badgeMissionTxt: { color: colors.textMuted, fontSize: font.tiny, fontWeight: '700' },
-  h1: { color: colors.text, fontSize: font.display, fontWeight: '900', lineHeight: 40, letterSpacing: -0.5 },
-  sous: { color: colors.textMuted, fontSize: font.body, lineHeight: 22, marginTop: spacing.md },
+  dotLive: { width: 7, height: 7, borderRadius: 4, backgroundColor: colors.accent },
+  badgeMissionTxt: { color: colors.textMuted, fontSize: font.tiny, fontWeight: '700', letterSpacing: 0.2 },
+  h1: { color: colors.text, fontSize: font.display, fontWeight: '900', lineHeight: 42, letterSpacing: -0.8 },
+  sous: { color: colors.textMuted, fontSize: font.body, lineHeight: 23, marginTop: spacing.lg, maxWidth: 560 },
   cardTitre: { color: colors.text, fontSize: font.h3, fontWeight: '800' },
   cardTexte: { color: colors.textMuted, fontSize: font.small, lineHeight: 20 },
   etapes: { marginTop: spacing.xxl, gap: spacing.lg },

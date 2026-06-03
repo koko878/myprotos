@@ -1,17 +1,34 @@
 import React from 'react';
 import { colors } from '../theme';
 
-// Logo GetExp — « démocratiser l'accès à la tech, faire émerger le prochain
-// Steve Jobs à 25 ans, depuis le Maroc, terreau tech mondial ».
-// Symbole : l'étoile à 5 branches marocaine dont la branche supérieure s'élance
-// vers le haut (flèche/ascension) — l'accès qui élève. Dégradé rouge → vert.
+// Logo GetExp — direction épurée (façon Notion/Spotify) : une seule forme forte,
+// couleur maîtrisée, espace négatif. Symbole : l'étoile marocaine à 5 branches
+// (pointe haute étirée = ascension / « faire émerger le prochain Steve Jobs »)
+// avec la CARTE DU MAROC évidée en son cœur (espace négatif). Dégradé rouge→vert
+// du drapeau. Le wordmark reste monochrome pour la sobriété.
+
+// Étoile : centre (50,52), rayon ext. 34, pointe haute allongée ×1.2 (ascension).
+const STAR =
+  'M50.00 11.20 L61.59 36.05 L82.34 41.49 L68.75 58.09 L69.98 79.51 ' +
+  'L50.00 71.72 L30.02 79.51 L31.25 58.09 L17.66 41.49 L38.41 36.05 Z';
+
+// Carte du Maroc (Sahara inclus), tracée depuis des coordonnées géographiques
+// réelles projetées, puis mise à l'échelle pour tenir dans le cœur de l'étoile.
+// Évidée via fill-rule "evenodd" → la carte apparaît en creux dans l'étoile.
+const MAROC =
+  'M54.99 40.45 L55.92 40.81 L58.11 41.42 L59.67 41.33 L61.06 41.69 ' +
+  'L61.54 42.39 L62.31 46.98 L59.67 49.79 L58.25 54.20 L50.68 54.79 ' +
+  'L45.47 58.62 L42.37 63.55 L37.69 66.55 L39.40 61.79 L41.59 57.55 ' +
+  'L43.60 55.79 L44.08 54.38 L46.56 53.50 L49.22 49.98 L48.91 48.04 ' +
+  'L49.85 46.62 L52.34 44.33 L53.59 43.63 L54.67 41.86 Z';
+
 export default function Logo({ size = 'md', symboleSeul = false }: { size?: 'sm' | 'md' | 'lg'; symboleSeul?: boolean }) {
-  const h = size === 'lg' ? 64 : size === 'sm' ? 30 : 44;
+  const h = size === 'lg' ? 60 : size === 'sm' ? 28 : 42;
   const idG = 'gx-grad-' + size + (symboleSeul ? '-s' : '');
 
   const symbole = React.createElement(
     'svg',
-    { width: h, height: h, viewBox: '0 0 100 100', role: 'img', 'aria-label': 'GetExp', style: { display: 'block' } },
+    { width: h, height: h, viewBox: '0 0 100 90', role: 'img', 'aria-label': 'GetExp Maroc', style: { display: 'block', overflow: 'visible' } },
     React.createElement(
       'defs',
       null,
@@ -19,28 +36,23 @@ export default function Logo({ size = 'md', symboleSeul = false }: { size?: 'sm'
         'linearGradient',
         { id: idG, x1: '0', y1: '1', x2: '1', y2: '0' },
         React.createElement('stop', { offset: '0', stopColor: colors.primary }),
-        React.createElement('stop', { offset: '0.55', stopColor: '#C1272D' }),
+        React.createElement('stop', { offset: '0.5', stopColor: '#CC2A30' }),
         React.createElement('stop', { offset: '1', stopColor: colors.accent })
       )
     ),
-    // Halo doux derrière le symbole
-    React.createElement('circle', { cx: 50, cy: 52, r: 46, fill: `url(#${idG})`, opacity: 0.1 }),
-    // Étoile dont la pointe haute est étirée en flèche d'ascension
+    // Étoile pleine + carte du Maroc évidée (espace négatif).
     React.createElement('path', {
-      d: etoileAscension(50, 54, 34),
+      d: STAR + ' ' + MAROC,
       fill: `url(#${idG})`,
-      stroke: 'none',
-    }),
-    // Petit éclat blanc (énergie/jeunesse)
-    React.createElement('circle', { cx: 50, cy: 40, r: 3.2, fill: '#FFFFFF', opacity: 0.9 })
+      fillRule: 'evenodd',
+    })
   );
 
   if (symboleSeul) return symbole;
 
-  // Wordmark : symbole + « GetExp » en sans-serif géométrique.
   return React.createElement(
     'div',
-    { style: { display: 'flex', alignItems: 'center', gap: h * 0.28 } },
+    { style: { display: 'flex', alignItems: 'center', gap: h * 0.3 } },
     symbole,
     React.createElement(
       'span',
@@ -48,42 +60,13 @@ export default function Logo({ size = 'md', symboleSeul = false }: { size?: 'sm'
         style: {
           fontFamily: '"Inter", "Segoe UI", system-ui, -apple-system, sans-serif',
           fontWeight: 800,
-          fontSize: h * 0.62,
-          letterSpacing: '-0.02em',
+          fontSize: h * 0.6,
+          letterSpacing: '-0.03em',
           color: colors.text,
           lineHeight: 1,
         },
       },
-      'Get',
-      React.createElement(
-        'span',
-        {
-          style: {
-            background: `linear-gradient(120deg, ${colors.primary}, ${colors.accent})`,
-            WebkitBackgroundClip: 'text',
-            backgroundClip: 'text',
-            WebkitTextFillColor: 'transparent',
-            color: 'transparent',
-          },
-        },
-        'Exp'
-      )
+      'GetExp'
     )
   );
-}
-
-// Génère le tracé d'une étoile 5 branches dont la pointe HAUTE est allongée
-// (flèche vers le haut = ascension/accès). cx,cy = centre, r = rayon externe.
-function etoileAscension(cx: number, cy: number, r: number): string {
-  const rInt = r * 0.42; // rayon interne (creux)
-  const pts: Array<[number, number]> = [];
-  for (let i = 0; i < 5; i++) {
-    const aExt = -Math.PI / 2 + (i * 2 * Math.PI) / 5; // sommets externes
-    // La pointe du haut (i=0) est étirée 1.5x pour l'effet « flèche/ascension ».
-    const allonge = i === 0 ? 1.5 : 1;
-    pts.push([cx + r * allonge * Math.cos(aExt), cy + r * allonge * Math.sin(aExt)]);
-    const aInt = aExt + Math.PI / 5; // creux entre deux pointes
-    pts.push([cx + rInt * Math.cos(aInt), cy + rInt * Math.sin(aInt)]);
-  }
-  return 'M' + pts.map(([x, y]) => `${x.toFixed(1)} ${y.toFixed(1)}`).join(' L') + ' Z';
 }
