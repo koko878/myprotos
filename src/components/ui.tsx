@@ -3,6 +3,7 @@
 import React from 'react';
 import {
   ActivityIndicator,
+  Platform,
   Pressable,
   StyleSheet,
   Text,
@@ -10,8 +11,10 @@ import {
   StyleProp,
   ViewStyle,
 } from 'react-native';
-import { colors, font, radius, spacing } from '../theme';
+import { colors, font, gradients, radius, spacing } from '../theme';
 import { Complexite } from '../types';
+
+const web = Platform.OS === 'web';
 
 export function Bouton({
   titre,
@@ -27,6 +30,10 @@ export function Bouton({
   loading?: boolean;
 }) {
   const estPrim = variante === 'primaire';
+  // Web : dégradé de marque + légère lueur sur le bouton primaire.
+  const styleWebPrim = web && estPrim
+    ? ({ backgroundImage: gradients.bouton, boxShadow: '0 8px 24px rgba(224,53,59,0.35)' } as any)
+    : null;
   return (
     <Pressable
       onPress={onPress}
@@ -34,14 +41,15 @@ export function Bouton({
       style={({ pressed }) => [
         styles.bouton,
         estPrim ? styles.boutonPrim : styles.boutonSec,
+        styleWebPrim,
         (disabled || loading) && { opacity: 0.5 },
-        pressed && { transform: [{ scale: 0.98 }] },
+        pressed && { transform: [{ scale: 0.985 }], opacity: 0.95 },
       ]}
     >
       {loading ? (
         <ActivityIndicator color={estPrim ? '#fff' : colors.primary} />
       ) : (
-        <Text style={[styles.boutonTexte, !estPrim && { color: colors.primary }]}>
+        <Text style={[styles.boutonTexte, !estPrim && { color: colors.text }]}>
           {titre}
         </Text>
       )}
@@ -61,7 +69,7 @@ export function Carte({
   const contenu = <View style={[styles.carte, style]}>{children}</View>;
   if (onPress) {
     return (
-      <Pressable onPress={onPress} style={({ pressed }) => pressed && { opacity: 0.85 }}>
+      <Pressable onPress={onPress} style={({ pressed }) => pressed && { opacity: 0.9, transform: [{ scale: 0.997 }] }}>
         {contenu}
       </Pressable>
     );
@@ -102,14 +110,18 @@ export function ScoreCadrage({ score }: { score: number }) {
 const styles = StyleSheet.create({
   bouton: {
     borderRadius: radius.pill,
-    paddingVertical: 14,
+    paddingVertical: 15,
     paddingHorizontal: spacing.xl,
     alignItems: 'center',
     justifyContent: 'center',
   },
   boutonPrim: { backgroundColor: colors.primary },
-  boutonSec: { backgroundColor: 'transparent', borderWidth: 1.5, borderColor: colors.primary },
-  boutonTexte: { color: '#fff', fontSize: font.body, fontWeight: '700' },
+  boutonSec: {
+    backgroundColor: colors.surfaceAlt,
+    borderWidth: 1,
+    borderColor: colors.borderLumineux,
+  },
+  boutonTexte: { color: '#fff', fontSize: font.body, fontWeight: '700', letterSpacing: 0.2 },
   carte: {
     backgroundColor: colors.surface,
     borderRadius: radius.lg,

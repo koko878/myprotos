@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { Modal, Pressable, SafeAreaView, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import { Modal, Platform, Pressable, SafeAreaView, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { deverrouillerAdmin, estAdminDeverrouille, verifierPin, verrouillerAdmin } from '../admin';
 import { deconnexion } from '../auth';
 import { useAuth } from '../authContext';
@@ -8,7 +8,7 @@ import { Bouton, Carte } from '../components/ui';
 import { useNav } from '../navigation';
 import { compterNouvelles, dernierVuLe } from '../notifications';
 import { chargerUseCases } from '../storage';
-import { colors, font, radius, spacing } from '../theme';
+import { colors, font, gradients, radius, spacing } from '../theme';
 
 export default function HomeScreen() {
   const { aller } = useNav();
@@ -71,20 +71,33 @@ export default function HomeScreen() {
     setAdminLocal(false);
   }
 
+  const web = Platform.OS === 'web';
+  const halo = web ? ({ backgroundImage: gradients.halo } as any) : null;
+  const titreDegrade = web
+    ? ({ backgroundImage: `linear-gradient(120deg, ${colors.text} 30%, ${colors.primaryClair} 70%, ${colors.accentClair} 100%)`, WebkitBackgroundClip: 'text', backgroundClip: 'text', WebkitTextFillColor: 'transparent', color: 'transparent' } as any)
+    : null;
+  const verre = web ? ({ backgroundColor: colors.surfaceGlass, backdropFilter: 'blur(14px)', WebkitBackdropFilter: 'blur(14px)' } as any) : null;
+
   return (
     <SafeAreaView style={styles.safe}>
       <ScrollView contentContainerStyle={styles.content}>
+        <View style={[styles.heroHalo, halo]} pointerEvents="none" />
+
         <Pressable onPress={tapLogo} style={styles.logoRow}>
           <Logo size="lg" />
         </Pressable>
 
-        <Text style={styles.h1}>De l’idée à l’application, clé en main.</Text>
+        <View style={styles.badgeMission}>
+          <Text style={styles.badgeMissionTxt}>🇲🇦 La tech accessible — du Maroc au monde</Text>
+        </View>
+
+        <Text style={[styles.h1, titreDegrade]}>De l’idée à l’application, clé en main.</Text>
         <Text style={styles.sous}>
-          Décrivez votre besoin. Notre IA le cadre, génère un prototype interactif,
-          puis prépare une application packagée plug-and-play pour votre infrastructure.
+          Démocratiser l’accès à la tech : décrivez votre besoin, notre IA le cadre, génère un
+          prototype interactif, puis prépare une application déployée, certifiée et garantie.
         </Text>
 
-        <Carte style={{ marginTop: spacing.xl, gap: spacing.md }}>
+        <Carte style={[{ marginTop: spacing.xl, gap: spacing.md }, verre]}>
           <Text style={styles.cardTitre}>Vous êtes client</Text>
           <Text style={styles.cardTexte}>
             Pas besoin d’être technique. Décrivez votre idée, l’IA vous accompagne.
@@ -176,10 +189,22 @@ function Etape({ n, titre, texte }: { n: string; titre: string; texte: string })
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: colors.bg },
   content: { padding: spacing.xl, paddingTop: spacing.xxl },
-  logoRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm, marginBottom: spacing.xxl },
+  heroHalo: { position: 'absolute', top: 0, left: 0, right: 0, height: 420 },
+  logoRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm, marginBottom: spacing.xl },
   logoDot: { width: 14, height: 14, borderRadius: 7, backgroundColor: colors.primary },
   marque: { color: colors.text, fontSize: font.h2, fontWeight: '800', letterSpacing: 0.5 },
-  h1: { color: colors.text, fontSize: font.h1, fontWeight: '800', lineHeight: 34 },
+  badgeMission: {
+    alignSelf: 'flex-start',
+    backgroundColor: colors.surfaceAlt,
+    borderWidth: 1,
+    borderColor: colors.borderLumineux,
+    borderRadius: radius.pill,
+    paddingHorizontal: spacing.md,
+    paddingVertical: 6,
+    marginBottom: spacing.md,
+  },
+  badgeMissionTxt: { color: colors.textMuted, fontSize: font.tiny, fontWeight: '700' },
+  h1: { color: colors.text, fontSize: font.display, fontWeight: '900', lineHeight: 40, letterSpacing: -0.5 },
   sous: { color: colors.textMuted, fontSize: font.body, lineHeight: 22, marginTop: spacing.md },
   cardTitre: { color: colors.text, fontSize: font.h3, fontWeight: '800' },
   cardTexte: { color: colors.textMuted, fontSize: font.small, lineHeight: 20 },
