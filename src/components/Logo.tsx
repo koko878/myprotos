@@ -19,8 +19,8 @@ export default function Logo({
 
   const anneaux = (
     <View style={{ flexDirection: 'row' }}>
-      <View style={[styles.ring, { width: d, height: d, borderRadius: d / 2, borderWidth: sw, marginRight: -d * 0.35 }]} />
-      <View style={[styles.ring, { width: d, height: d, borderRadius: d / 2, borderWidth: sw }]} />
+      <View style={[styles.ring, { width: d, height: d, borderRadius: d / 2, borderWidth: sw, borderColor: colors.primary, marginRight: -d * 0.35, zIndex: 1 }]} />
+      <View style={[styles.ring, { width: d, height: d, borderRadius: d / 2, borderWidth: sw, borderColor: colors.accent }]} />
     </View>
   );
 

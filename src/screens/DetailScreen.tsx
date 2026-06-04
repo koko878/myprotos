@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { SafeAreaView, ScrollView, StyleSheet, Text, View } from 'react-native';
+import FriseStatut from '../components/FriseStatut';
 import UseCaseView from '../components/UseCaseView';
 import { Bouton, Carte, EnTete } from '../components/ui';
 import { useNav } from '../navigation';
@@ -28,6 +29,8 @@ export default function DetailScreen({ useCaseId }: { useCaseId: string }) {
       <EnTete titre="Mon projet" onRetour={retour} />
 
       <ScrollView contentContainerStyle={styles.content}>
+        <FriseStatut statut={uc.statut} />
+
         <EtapeSuivante uc={uc} aller={aller} />
 
         <UseCaseView uc={uc} />

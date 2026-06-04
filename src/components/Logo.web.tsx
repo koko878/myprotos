@@ -29,13 +29,13 @@ export default function Logo({
       'aria-label': 'GetExp',
       style: { display: 'block' },
     },
-    // Anneau droit (derrière)
+    // Anneau droit = vert (derrière)
     React.createElement('circle', {
-      cx: 74, cy: 32, r: 23, fill: 'none', stroke: colors.text, strokeWidth: 6.5,
+      cx: 74, cy: 32, r: 23, fill: 'none', stroke: colors.accent, strokeWidth: 6.5,
     }),
-    // Anneau gauche (devant)
+    // Anneau gauche = rouge (devant) — rouge+vert du drapeau marocain
     React.createElement('circle', {
-      cx: 46, cy: 32, r: 23, fill: 'none', stroke: colors.text, strokeWidth: 6.5,
+      cx: 46, cy: 32, r: 23, fill: 'none', stroke: colors.primary, strokeWidth: 6.5,
     })
   );
 
