@@ -18,7 +18,7 @@ export default function Logo({
   const iEtoile = (
     <View>
       <Text style={[styles.etoile, { fontSize: mot * 0.42 }]}>★</Text>
-      <Text style={[styles.mot, { fontSize: mot, color: colors.accent }]}>i</Text>
+      <Text style={[styles.mot, { fontSize: mot, color: colors.accent }]}>ı</Text>
     </View>
   );
 

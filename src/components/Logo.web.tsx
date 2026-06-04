@@ -70,7 +70,7 @@ export default function Logo({
     React.createElement(
       'span',
       { style: { position: 'relative', display: 'inline-block', color: colors.accent } },
-      'i',
+      'ı', // « ı » sans point : l'étoile rouge EST le point (pas de point vert résiduel)
       // Étoile rouge posée sur le point du « i ».
       React.createElement(
         'span',
