@@ -44,7 +44,11 @@ let html = fs.readFileSync(indexPath, 'utf8');
 const meta =
   '<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">' +
   '<meta http-equiv="Pragma" content="no-cache">' +
-  '<meta http-equiv="Expires" content="0">';
+  '<meta http-equiv="Expires" content="0">' +
+  // Fond global sombre : évite le blanc dans la zone d'overscroll (bas de page)
+  // et synchronise la barre du navigateur mobile avec le thème.
+  '<meta name="theme-color" content="#0F0F12">' +
+  '<style>html,body,#root{background-color:#0F0F12;}body{overscroll-behavior:none;}</style>';
 const reg =
   "<script>if('serviceWorker' in navigator){window.addEventListener('load',function(){" +
   `navigator.serviceWorker.register('${base}/sw.js',{scope:'${base}/'}).catch(function(){});});}</script>`;
