@@ -18,6 +18,16 @@ export default function Logo({
   const ring = size === 'lg' ? 58 : size === 'sm' ? 26 : 40; // hauteur du symbole
   const mot = size === 'lg' ? 42 : size === 'sm' ? 19 : 30; // taille du wordmark
 
+  // Charge la police « marqueur » du slogan (proche du rendu Looka), une fois.
+  React.useEffect(() => {
+    if (typeof document === 'undefined' || document.getElementById('gx-font-marker')) return;
+    const l = document.createElement('link');
+    l.id = 'gx-font-marker';
+    l.rel = 'stylesheet';
+    l.href = 'https://fonts.googleapis.com/css2?family=Permanent+Marker&display=swap';
+    document.head.appendChild(l);
+  }, []);
+
   // Deux anneaux entrelacés (l'anneau gauche passe devant à droite).
   const symbole = React.createElement(
     'svg',
@@ -62,12 +72,11 @@ export default function Logo({
       'span',
       {
         style: {
-          fontFamily: '"SFMono-Regular", "JetBrains Mono", "Fira Mono", ui-monospace, monospace',
-          fontSize: mot * 0.3,
-          letterSpacing: '0.14em',
-          color: colors.textMuted,
-          marginTop: mot * 0.28,
-          textTransform: 'uppercase',
+          fontFamily: '"Permanent Marker", "Comic Sans MS", cursive',
+          fontSize: mot * 0.34,
+          letterSpacing: '0.03em',
+          color: colors.text,
+          marginTop: mot * 0.22,
         },
       },
       'SELECT (tech) FROM MOROCCO'
