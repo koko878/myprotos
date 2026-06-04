@@ -10,28 +10,28 @@ export const colors = {
   surfaceGlass: '#17171B',
   border: '#26262D',
   borderLumineux: '#33333D',
-  primary: '#E0353B', // rouge marocain
-  primaryClair: '#FF5A60',
-  primarySoft: '#241317',
-  accent: '#1FD968', // vert vibrant (énergie Spotify + vert marocain)
-  accentClair: '#3DEB82',
-  marocVert: '#0E7A45',
+  primary: '#EA2B50', // rouge framboise (logo Looka)
+  primaryClair: '#FF5A78',
+  primarySoft: '#26131A',
+  accent: '#3DBE4A', // vert (logo Looka)
+  accentClair: '#5BD968',
+  marocVert: '#2E9E3A',
   text: '#F4F4F6',
   textMuted: '#A0A0AC',
   textFaint: '#6A6A76',
-  success: '#1FD968',
+  success: '#3DBE4A',
   warn: '#FBBF24',
   danger: '#F87171',
-  bubbleUser: '#E0353B',
+  bubbleUser: '#EA2B50',
   bubbleAssistant: '#202026',
 };
 
 // Dégradés signature — réservés au logo et à de rares accents (sobriété Notion).
 export const gradients = {
-  marque: 'linear-gradient(135deg, #E0353B 0%, #CC2A30 50%, #1FD968 100%)',
-  marqueDoux: 'linear-gradient(135deg, rgba(224,53,59,0.12) 0%, rgba(31,217,104,0.12) 100%)',
-  halo: 'radial-gradient(60% 50% at 25% 12%, rgba(224,53,59,0.12), transparent 70%), radial-gradient(55% 45% at 88% 20%, rgba(31,217,104,0.10), transparent 70%)',
-  bouton: 'linear-gradient(120deg, #E0353B 0%, #E0353B 60%, #C7282E 100%)',
+  marque: 'linear-gradient(135deg, #EA2B50 0%, #D62649 50%, #3DBE4A 100%)',
+  marqueDoux: 'linear-gradient(135deg, rgba(234,43,80,0.12) 0%, rgba(61,190,74,0.12) 100%)',
+  halo: 'radial-gradient(60% 50% at 25% 12%, rgba(234,43,80,0.12), transparent 70%), radial-gradient(55% 45% at 88% 20%, rgba(61,190,74,0.10), transparent 70%)',
+  bouton: 'linear-gradient(120deg, #EA2B50 0%, #EA2B50 60%, #D62649 100%)',
 };
 
 export const radius = {

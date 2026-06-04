@@ -81,13 +81,8 @@ export default function HomeScreen() {
         <View style={[styles.heroHalo, halo]} pointerEvents="none" />
 
         <Pressable onPress={tapLogo} style={styles.logoRow}>
-          <Logo size="lg" />
+          <Logo size="lg" tagline />
         </Pressable>
-
-        <View style={styles.badgeMission}>
-          <View style={styles.dotLive} />
-          <Text style={styles.badgeMissionTxt}>La tech accessible — du Maroc au monde</Text>
-        </View>
 
         <Text style={styles.h1}>
           De l’idée à l’application,{'\n'}
@@ -175,22 +170,7 @@ const styles = StyleSheet.create({
   logoRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm, marginBottom: spacing.xl },
   logoDot: { width: 14, height: 14, borderRadius: 7, backgroundColor: colors.primary },
   marque: { color: colors.text, fontSize: font.h2, fontWeight: '800', letterSpacing: 0.5 },
-  badgeMission: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.sm,
-    alignSelf: 'flex-start',
-    backgroundColor: colors.surfaceAlt,
-    borderWidth: 1,
-    borderColor: colors.border,
-    borderRadius: radius.pill,
-    paddingHorizontal: spacing.md,
-    paddingVertical: 7,
-    marginBottom: spacing.lg,
-  },
-  dotLive: { width: 7, height: 7, borderRadius: 4, backgroundColor: colors.accent },
-  badgeMissionTxt: { color: colors.textMuted, fontSize: font.tiny, fontWeight: '700', letterSpacing: 0.2 },
-  h1: { color: colors.text, fontSize: font.display, fontWeight: '900', lineHeight: 42, letterSpacing: -0.8 },
+  h1: { color: colors.text, fontSize: font.display, fontWeight: '900', lineHeight: 42, letterSpacing: -0.8, marginTop: spacing.xl },
   sous: { color: colors.textMuted, fontSize: font.body, lineHeight: 23, marginTop: spacing.lg, maxWidth: 560 },
   cardTitre: { color: colors.text, fontSize: font.h3, fontWeight: '800' },
   cardTexte: { color: colors.textMuted, fontSize: font.small, lineHeight: 20 },
