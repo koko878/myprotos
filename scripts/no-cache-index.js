@@ -12,6 +12,12 @@ if (!fs.existsSync(indexPath)) {
   process.exit(1);
 }
 
+// Domaine custom servi à la racine. Le préfixe est dérivé de app.json
+// (baseUrl) : "" à la racine (iasser.com), "/myprotos" en sous-chemin.
+const DOMAINE = 'iasser.com';
+const baseUrl = (require('../app.json').expo.experiments || {}).baseUrl || '/';
+const base = baseUrl === '/' ? '' : baseUrl.replace(/\/$/, '');
+
 // --- 1) Service worker : navigations + bundles JS toujours pris du réseau ---
 const sw = `// Service worker iasser — anti-cache (réseau d'abord).
 self.addEventListener('install', () => self.skipWaiting());
@@ -41,13 +47,20 @@ const meta =
   '<meta http-equiv="Expires" content="0">';
 const reg =
   "<script>if('serviceWorker' in navigator){window.addEventListener('load',function(){" +
-  "navigator.serviceWorker.register('/myprotos/sw.js',{scope:'/myprotos/'}).catch(function(){});});}</script>";
+  `navigator.serviceWorker.register('${base}/sw.js',{scope:'${base}/'}).catch(function(){});});}</script>`;
 
 if (!html.includes('no-store, must-revalidate')) {
   html = html.replace('<head>', '<head>' + meta);
 }
-if (!html.includes("serviceWorker.register('/myprotos/sw.js'")) {
+if (!html.includes(`serviceWorker.register('${base}/sw.js'`)) {
   html = html.replace('</head>', reg + '</head>');
 }
 fs.writeFileSync(indexPath, html);
-console.log('index.html : anti-cache + service worker injectés ; sw.js écrit.');
+
+// --- 3) Fallback SPA : 404.html = copie d'index.html (liens profonds) -------
+fs.writeFileSync(path.join(dist, '404.html'), html);
+
+// --- 4) Domaine custom GitHub Pages : fichier CNAME -------------------------
+fs.writeFileSync(path.join(dist, 'CNAME'), DOMAINE + '\n');
+
+console.log(`index.html : anti-cache + SW (base="${base || '/'}") ; sw.js, 404.html, CNAME(${DOMAINE}) écrits.`);
