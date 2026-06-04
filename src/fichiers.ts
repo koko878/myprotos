@@ -254,7 +254,7 @@ export function construirePromptComplet(uc: UseCase): string {
 
 // Construit le prompt de génération de l'APPLICATION FINALE (full-stack), à passer
 // à Claude Code. Contrairement au prototype (1 index.html), ici on demande une vraie
-// app conforme au standard GetExp (docs/STACK.md), adaptée à la cible de déploiement.
+// app conforme au standard iasser (docs/STACK.md), adaptée à la cible de déploiement.
 export function construirePromptAppFinale(uc: UseCase): string {
   const onPrem = uc.cibleDeploiement !== 'getexp'; // défaut : on-premise
   const ct = uc.cadrageTechnique;
@@ -263,16 +263,16 @@ export function construirePromptAppFinale(uc: UseCase): string {
   L.push('# Brief APPLICATION FINALE — ' + uc.titre);
   L.push('');
   L.push('Tu es un ingénieur logiciel senior. Construis l\'APPLICATION DE PRODUCTION (pas un');
-  L.push('prototype) en respectant STRICTEMENT le standard technique GetExp ci-dessous.');
+  L.push('prototype) en respectant STRICTEMENT le standard technique iasser ci-dessous.');
   L.push('');
-  L.push('## Standard technique GETEXP (impératif)');
+  L.push('## Standard technique IASSER (impératif)');
   L.push('- Architecture : monolithe modulaire CONTENEURISÉ (Docker). Le MÊME artefact doit');
   L.push('  tourner on-premise ET sur Azure ; SEULE la config (.env) change, jamais le code.');
   L.push('- Frontend : React + TypeScript (Vite).');
   L.push('- Backend : Node/NestJS (TypeScript) par DÉFAUT ; Python/FastAPI UNIQUEMENT si le');
   L.push('  projet est fortement IA/ML/data/NLP (justifie le choix en tête du README).');
   L.push('- Base de données : PostgreSQL (migrations versionnées + seed de démo).');
-  L.push('- Stockage fichiers : API compatible S3 (MinIO en local/on-prem, Azure Blob chez GetExp).');
+  L.push('- Stockage fichiers : API compatible S3 (MinIO en local/on-prem, Azure Blob chez iasser).');
   L.push('- Auth : JWT/OAuth2/OIDC, mots de passe hashés (argon2/bcrypt), tokens court + refresh.');
   L.push('- Sécurité : HTTPS, secrets via .env (jamais en dur), validation des entrées,');
   L.push('  requêtes paramétrées, en-têtes de sécurité, moindre privilège.');
@@ -292,7 +292,7 @@ export function construirePromptAppFinale(uc: UseCase): string {
   L.push('- Moindre privilège (DB, stockage, réseau) ; ne pas exposer la base à Internet.');
   L.push('- CI sécurité (.github/workflows) : audit dépendances (npm audit/pip-audit), scan de secrets');
   L.push('  (gitleaks), SAST (CodeQL ou Semgrep) — en plus des tests. Une alerte bloque le merge.');
-  L.push('- Fournis un fichier SECURITY.md résumant les mesures (pour la certification GetExp).');
+  L.push('- Fournis un fichier SECURITY.md résumant les mesures (pour la certification iasser).');
   L.push('');
   L.push('## Arborescence attendue');
   L.push('docker-compose.yml, .env.example (100% de la config documentée), README.md (déploiement');
@@ -321,7 +321,7 @@ export function construirePromptAppFinale(uc: UseCase): string {
 
   // Cible de déploiement + infra captée par l'IA architecte.
   L.push('');
-  L.push('## Cible de déploiement : ' + (onPrem ? 'ON-PREMISE (infra du client)' : 'CHEZ GETEXP (Azure)'));
+  L.push('## Cible de déploiement : ' + (onPrem ? 'ON-PREMISE (infra du client)' : 'CHEZ IASSER (Azure)'));
   if (onPrem) {
     L.push('Livre un package docker-compose AUTONOME qui démarre du premier coup chez le client,');
     L.push('en s\'adaptant à l\'infrastructure captée ci-dessous (BDD existante vs embarquée, SSO/LDAP');
@@ -362,7 +362,7 @@ export function construirePromptAppFinale(uc: UseCase): string {
 
   L.push('');
   L.push('## Gestion du code (à respecter)');
-  L.push('- Destiné à un repo Git PRIVÉ dédié (organisation GitHub « GetExp »).');
+  L.push('- Destiné à un repo Git PRIVÉ dédié (organisation GitHub « iasser »).');
   L.push('- Fournis un .gitignore correct (node_modules, .env, build…). NE COMMITTE JAMAIS de secret :');
   L.push('  seulement .env.example. Première version = v1.0.0 (SemVer).');
   L.push('- Inclus un workflow CI GitHub Actions (.github/workflows) : build + tests sur PR ;');
@@ -415,7 +415,7 @@ function telechargerPackage(uc: UseCase, mode: 'prototype' | 'app'): number {
   const slug = slugProjet(uc);
   const enc = new TextEncoder();
   const prompt = mode === 'app' ? construirePromptAppFinale(uc) : construirePromptComplet(uc);
-  const prefixe = mode === 'app' ? 'GetExp-APP' : 'GetExp';
+  const prefixe = mode === 'app' ? 'iasser-APP' : 'iasser';
 
   const fichiers: { nom: string; data: Uint8Array }[] = [
     { nom: 'PROMPT.md', data: enc.encode(prompt) },

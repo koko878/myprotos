@@ -46,7 +46,7 @@ export type CibleDeploiement = 'on_premise' | 'getexp';
  */
 export interface BonCommande {
   reference: string;       // référence unique (ex. GETX-AB12CD)
-  cible: CibleDeploiement; // on-premise ou hébergé chez GetExp
+  cible: CibleDeploiement; // on-premise ou hébergé chez iasser
   prixProjetEur?: number;  // total projet (depuis ventilationPrix)
   coutRunMensuelEur?: number; // coût RUN retenu (selon la cible)
   signataire: string;      // nom de la personne qui valide
@@ -213,7 +213,7 @@ export interface UseCase {
   remarques?: RemarqueClient[]; // remarques/besoins du client pour challenger le prototype
   piecesJointes?: PieceJointe[]; // logo, charte, docs fournis par le client
   cadrageTechnique?: CadrageTechnique; // résultat du cadrage technique infra
-  cibleDeploiement?: CibleDeploiement; // on-premise ou hébergé chez GetExp
+  cibleDeploiement?: CibleDeploiement; // on-premise ou hébergé chez iasser
   bonCommande?: BonCommande; // bon de commande validé/signé par le client
   langues?: string[]; // langues choisies pour l'app (ex: ['Français','Arabe'])
   processusADigitaliser?: string[]; // processus métier concrets à digitaliser

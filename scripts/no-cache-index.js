@@ -13,7 +13,7 @@ if (!fs.existsSync(indexPath)) {
 }
 
 // --- 1) Service worker : navigations + bundles JS toujours pris du réseau ---
-const sw = `// Service worker GetExp — anti-cache (réseau d'abord).
+const sw = `// Service worker iasser — anti-cache (réseau d'abord).
 self.addEventListener('install', () => self.skipWaiting());
 self.addEventListener('activate', (e) => e.waitUntil(self.clients.claim()));
 self.addEventListener('fetch', (event) => {

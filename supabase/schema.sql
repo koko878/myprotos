@@ -1,4 +1,4 @@
--- Schéma GetExp pour Supabase.
+-- Schéma iasser pour Supabase.
 -- À exécuter dans Supabase → SQL Editor → New query → coller → Run.
 --
 -- Modèle : chaque utilisateur a un profil avec un rôle (client | admin).

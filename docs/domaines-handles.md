@@ -1,6 +1,6 @@
-# GetExp — Domaines & Handles (checklist)
+# iasser — Domaines & Handles (checklist)
 
-> Objectif : verrouiller le nom **GetExp** partout, de façon cohérente, avant la sortie publique.
+> Objectif : verrouiller le nom **iasser** partout, de façon cohérente, avant la sortie publique.
 > Réseau coupé côté assistant → vérifier la dispo soi-même avec les outils ci-dessous.
 
 ## Outils de vérification (gratuits)
@@ -9,35 +9,35 @@
 - Handles tous réseaux : https://namechk.com · https://namecheckr.com
 
 ## Identifiant choisi
-- [ ] Handle principal retenu : `getexp`  (fallback : `getexp.ma` / `getexpapp` / `joingetexp`)
+- [ ] Handle principal retenu : `iasser`  (fallback : `iasser.ma` / `iasserapp` / `joiniasser`)
 
 ## Domaines
 | Statut | Domaine | Priorité | Action |
 |--------|---------|----------|--------|
-| [ ]    | getexp.ma   | 🔴 Indispensable | Ancrage Maroc |
-| [ ]    | getexp.com  | 🔴 Indispensable | Standard mondial |
-| [ ]    | getexp.io   | 🟠 Conseillé | Alternative tech (ou principal) |
-| [ ]    | getexp.app  | 🟠 Conseillé | App / SaaS |
-| [ ]    | getexp.co   | 🟢 Défensif | Rediriger vers principal |
-| [ ]    | getexp.dev  | 🟢 Défensif | Rediriger |
-| [ ]    | getexp.tech | 🟢 Défensif | Rediriger |
+| [ ]    | iasser.ma   | 🔴 Indispensable | Ancrage Maroc |
+| [ ]    | iasser.com  | 🔴 Indispensable | Standard mondial |
+| [ ]    | iasser.io   | 🟠 Conseillé | Alternative tech (ou principal) |
+| [ ]    | iasser.app  | 🟠 Conseillé | App / SaaS |
+| [ ]    | iasser.co   | 🟢 Défensif | Rediriger vers principal |
+| [ ]    | iasser.dev  | 🟢 Défensif | Rediriger |
+| [ ]    | iasser.tech | 🟢 Défensif | Rediriger |
 
 Rappels :
 - [ ] Activer auto-renouvellement sur tous
 - [ ] Activer WHOIS privacy
 - [ ] Choisir LE domaine principal + redirections 301 des autres
-- [ ] Configurer une adresse e-mail pro (contact@getexp.ma)
+- [ ] Configurer une adresse e-mail pro (contact@iasser.ma)
 
 ## Handles réseaux sociaux
 | Statut | Plateforme | URL/handle | 
 |--------|-----------|-----------|
-| [ ]    | Instagram     | @getexp |
-| [ ]    | LinkedIn (page entreprise) | /company/getexp |
-| [ ]    | X / Twitter   | @getexp |
-| [ ]    | TikTok        | @getexp |
-| [ ]    | YouTube       | @getexp |
-| [ ]    | Facebook      | /getexp |
-| [ ]    | GitHub (org)  | github.com/getexp |
+| [ ]    | Instagram     | @iasser |
+| [ ]    | LinkedIn (page entreprise) | /company/iasser |
+| [ ]    | X / Twitter   | @iasser |
+| [ ]    | TikTok        | @iasser |
+| [ ]    | YouTube       | @iasser |
+| [ ]    | Facebook      | /iasser |
+| [ ]    | GitHub (org)  | github.com/iasser |
 | [ ]    | Product Hunt  | (pour le lancement) |
 
 ## Notes

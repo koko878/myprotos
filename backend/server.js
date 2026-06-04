@@ -1,4 +1,4 @@
-// Serveur GetExp — expose la génération de prototype par l'agent Claude.
+// Serveur iasser — expose la génération de prototype par l'agent Claude.
 //
 // La clé ANTHROPIC_API_KEY reste SECRÈTE côté serveur (jamais dans l'app).
 //
@@ -79,5 +79,5 @@ app.post('/generate', async (req, res) => {
 
 const PORT = process.env.PORT || 8787;
 app.listen(PORT, () => {
-  console.log(`GetExp backend à l'écoute sur :${PORT}`);
+  console.log(`iasser backend à l'écoute sur :${PORT}`);
 });

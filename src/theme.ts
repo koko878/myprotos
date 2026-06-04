@@ -1,4 +1,4 @@
-// Tokens de design GetExp — direction épurée façon Notion (clarté, espace,
+// Tokens de design iasser — direction épurée façon Notion (clarté, espace,
 // sobriété) croisée avec Spotify (fond sombre profond, accent vibrant, type bold,
 // cartes arrondies). Identité marocaine : rouge + vert du drapeau, étoile + carte.
 

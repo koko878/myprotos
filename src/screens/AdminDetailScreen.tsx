@@ -116,7 +116,7 @@ export default function AdminDetailScreen({ useCaseId }: { useCaseId: string }) 
             <Text style={styles.h}>🏗️ Application finale — à produire</Text>
             <Text style={styles.sub}>
               Commande validée{uc.bonCommande?.reference ? ` (réf. ${uc.bonCommande.reference})` : ''}.
-              Cible : {uc.cibleDeploiement === 'getexp' ? 'hébergée par GetExp (Azure)' : 'on-premise (infra client)'}.
+              Cible : {uc.cibleDeploiement === 'getexp' ? 'hébergée par iasser (Azure)' : 'on-premise (infra client)'}.
               Téléchargez le package (brief full-stack conforme au standard + pièces jointes) et
               générez l’application avec Claude Code.
             </Text>

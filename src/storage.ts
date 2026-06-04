@@ -183,7 +183,7 @@ export async function ajouterRemarque(
 }
 
 // Enregistre le résultat du cadrage technique (infra + plan de packaging),
-// avec la cible de déploiement choisie (on-premise / GetExp).
+// avec la cible de déploiement choisie (on-premise / iasser).
 export async function enregistrerCadrageTechnique(
   useCaseId: string,
   cadrage: CadrageTechnique,

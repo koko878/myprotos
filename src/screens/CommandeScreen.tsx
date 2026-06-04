@@ -51,7 +51,7 @@ export default function CommandeScreen({ useCaseId }: { useCaseId: string }) {
             <Text style={styles.confTitre}>✅ Commande validée</Text>
             <Ligne label="Référence" v={b.reference} />
             <Ligne label="Projet" v={uc.titre} />
-            <Ligne label="Déploiement" v={b.cible === 'getexp' ? 'Hébergé par GetExp' : 'On-premise (chez le client)'} />
+            <Ligne label="Déploiement" v={b.cible === 'getexp' ? 'Hébergé par iasser' : 'On-premise (chez le client)'} />
             <Ligne label="Prix du projet" v={mad(b.prixProjetEur)} />
             <Ligne label="Coût de fonctionnement" v={b.coutRunMensuelEur ? mad(b.coutRunMensuelEur) + ' /mois' : '—'} />
             <Ligne label="Validé par" v={b.signataire} />
@@ -106,7 +106,7 @@ export default function CommandeScreen({ useCaseId }: { useCaseId: string }) {
           <CibleCard
             actif={cible === 'getexp'}
             onPress={() => { setCible('getexp'); setErreur(null); }}
-            titre="☁️ Hébergé par GetExp (clé en main)"
+            titre="☁️ Hébergé par iasser (clé en main)"
             desc="Nous hébergeons et exploitons l’application pour vous. Rien à gérer côté technique."
             run={uc.coutRun?.cloudMensuelEur}
           />
@@ -137,7 +137,7 @@ export default function CommandeScreen({ useCaseId }: { useCaseId: string }) {
             </View>
             <Text style={styles.checkTxt}>
               J’accepte le périmètre et le prix indiqués ci-dessus. Ce bon de commande vaut
-              engagement ; les modalités de paiement seront convenues avec l’équipe GetExp.
+              engagement ; les modalités de paiement seront convenues avec l’équipe iasser.
             </Text>
           </Pressable>
 

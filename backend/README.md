@@ -1,4 +1,4 @@
-# GetExp — Backend de génération de prototypes (Claude agentique)
+# iasser — Backend de génération de prototypes (Claude agentique)
 
 Génère les prototypes HTML via une **boucle agentique Claude** (outils fichiers +
 bash dans un workspace isolé), exactement le mécanisme de Claude Code : l'agent

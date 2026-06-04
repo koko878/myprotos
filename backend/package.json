@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "private": true,
   "type": "commonjs",
-  "description": "Backend GetExp : génération de prototypes via une boucle agentique Claude (outils fichiers + bash), façon Claude Code.",
+  "description": "Backend iasser : génération de prototypes via une boucle agentique Claude (outils fichiers + bash), façon Claude Code.",
   "main": "server.js",
   "scripts": {
     "start": "node server.js"

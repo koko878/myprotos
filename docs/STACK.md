@@ -1,9 +1,9 @@
-# GetExp — Standard technique des applications livrées
+# iasser — Standard technique des applications livrées
 
 > Document de référence **normatif**. Toute application finale produite pour un client
-> GetExp DOIT suivre ce standard, sauf dérogation explicite documentée dans le projet.
+> iasser DOIT suivre ce standard, sauf dérogation explicite documentée dans le projet.
 > Objectif : livrer des apps **fiables, sécurisées et identiques** que le déploiement
-> soit **on-premise** (infra du client) ou **chez GetExp** (Azure).
+> soit **on-premise** (infra du client) ou **chez iasser** (Azure).
 
 ---
 
@@ -14,11 +14,11 @@ microservices, Kafka, flottes Kubernetes) : c'est calibré pour des millions
 d'utilisateurs et des milliers d'ingénieurs. On copie leurs **fondations** :
 conteneurisation, base SQL solide, API claire, auth standard, observabilité, CI/CD.
 
-**Architecture cible GetExp : « monolithe modulaire conteneurisé ».**
+**Architecture cible iasser : « monolithe modulaire conteneurisé ».**
 Simple, robuste, et surtout **portable à l'identique** entre l'infra du client et
 Azure — c'est ce qui rend le « plug-and-play » réellement possible.
 
-Règle d'or : **le même artefact Docker tourne chez le client ET chez GetExp.**
+Règle d'or : **le même artefact Docker tourne chez le client ET chez iasser.**
 Seule la configuration (variables d'environnement) change, jamais le code.
 
 ---
@@ -32,11 +32,11 @@ Seule la configuration (variables d'environnement) change, jamais le code.
 | **Backend (variante IA/data)** | **Python + FastAPI** | Si le projet est fortement IA / ML / traitement de documents / NLP / data lourde. |
 | **Base de données** | **PostgreSQL** | Standard SQL fiable, présent partout, managé sur Azure. |
 | **Cache / files (si besoin)** | **Redis** | Sessions, jobs, rate-limiting. À n'ajouter que si nécessaire. |
-| **Stockage fichiers/objets** | **API compatible S3** | **MinIO** en on-premise ↔ **Azure Blob Storage** chez GetExp. Même code. |
+| **Stockage fichiers/objets** | **API compatible S3** | **MinIO** en on-premise ↔ **Azure Blob Storage** chez iasser. Même code. |
 | **Auth** | **JWT / OAuth2 / OIDC** | S'intègre au SSO/LDAP/Active Directory du client si requis (capté par l'IA architecte). |
 | **Conteneurisation** | **Docker** (obligatoire) | Tout service = une image. `docker-compose` pour l'assemblage. |
 | **Reverse proxy / TLS** | **Caddy** ou **Traefik** | TLS automatique, simple à configurer. |
-| **Observabilité** | logs JSON structurés + `/health` + métriques | Indispensable pour exploiter (surtout chez GetExp). |
+| **Observabilité** | logs JSON structurés + `/health` + métriques | Indispensable pour exploiter (surtout chez iasser). |
 | **CI/CD** | build + test + image Docker | GitHub Actions par défaut. |
 
 ### Quand choisir TypeScript vs Python (règle de décision)
@@ -69,7 +69,7 @@ Seule la configuration (variables d'environnement) change, jamais le code.
 │   └── init/                   # schéma initial + seed de démo
 └── deploy/
     ├── on-premise/             # docker-compose + Caddy (TLS) autonome
-    └── azure/                  # IaC / instructions Azure (chez GetExp)
+    └── azure/                  # IaC / instructions Azure (chez iasser)
 ```
 
 **Configuration = 100% via variables d'environnement** (`.env`). Aucune valeur
@@ -90,16 +90,16 @@ auth/SSO, réseau/proxy/ports, ressources, conformité). Le livrable :
   - Auth : si SSO/LDAP/AD → connecteur OIDC/LDAP configuré ; sinon auth JWT intégrée.
   - Stockage : MinIO embarqué (compatible S3) sauf stockage objet existant.
   - Réseau : ports/proxy/TLS configurés selon ce qui a été capté.
-- **Livrables** : le ZIP (déjà géré par GetExp) + `README` de déploiement + script de
+- **Livrables** : le ZIP (déjà géré par iasser) + `README` de déploiement + script de
   vérification post-installation (`make check`).
 - **Contrainte** : aucune dépendance à un service cloud externe non validé par le client
   (tout doit pouvoir tourner dans son réseau, y compris hors-ligne si exigé).
 
 ---
 
-## 4. Cible B — Déploiement CHEZ GETEXP (Azure)
+## 4. Cible B — Déploiement CHEZ IASSER (Azure)
 
-Hébergement et exploitation par GetExp. Le **même artefact Docker** est déployé sur
+Hébergement et exploitation par iasser. Le **même artefact Docker** est déployé sur
 Azure. Structure recommandée (à détailler projet par projet) :
 
 | Besoin | Service Azure |
@@ -113,7 +113,7 @@ Azure. Structure recommandée (à détailler projet par projet) :
 | Nom de domaine + TLS | géré par Container Apps (certificats managés) |
 | Supervision | **Azure Monitor / Application Insights** |
 
-Multi-tenant : chaque client GetExp = un namespace/instance isolé (au minimum une
+Multi-tenant : chaque client iasser = un namespace/instance isolé (au minimum une
 base ou un schéma dédié) pour cloisonner les données.
 
 > La structure Azure détaillée (IaC, coûts, dimensionnement) sera définie avec toi
@@ -125,7 +125,7 @@ base ou un schéma dédié) pour cloisonner les données.
 
 > Principe : la sécurité n'est PAS une étape finale, elle est intégrée à l'architecture,
 > à la stack, au code et au process. **Référentiel par défaut : OWASP ASVS Niveau 2.**
-> Toute app GetExp vise ce niveau ; on monte au L3 seulement pour données très sensibles
+> Toute app iasser vise ce niveau ; on monte au L3 seulement pour données très sensibles
 > (santé, finance critique).
 
 ### 5.1 Couche ARCHITECTURE
@@ -165,7 +165,7 @@ Grille = **OWASP Top 10 + ASVS L2** :
 - **Sauvegardes BDD automatiques** + chiffrement au repos (Azure) + journalisation.
 
 ### 5.5 Porte de certification (avant toute mise en prod)
-Aucune app ne part en production sans la **certification sécurité GetExp** : audit de la
+Aucune app ne part en production sans la **certification sécurité iasser** : audit de la
 checklist ASVS L2, revue du threat model, vérification des scans CI au vert. C'est l'étape
 finale du parcours client — elle ATTESTE que les points ci-dessus sont réellement respectés.
 
@@ -175,9 +175,9 @@ finale du parcours client — elle ATTESTE que les points ci-dessus sont réelle
 
 ### Organisation des dépôts
 - **1 repo Git PRIVÉ par application client**, regroupés dans une **organisation GitHub
-  « GetExp »** (séparée du compte perso). Jamais public (code propriétaire client).
-- Convention de nommage : `getexp/app-<slug-client>-<slug-projet>`
-  (ex. `getexp/app-institut-beaute-rdv`).
+  « iasser »** (séparée du compte perso). Jamais public (code propriétaire client).
+- Convention de nommage : `iasser/app-<slug-client>-<slug-projet>`
+  (ex. `iasser/app-institut-beaute-rdv`).
 - Description du repo = nom du client + référence du bon de commande (ex. `GETX-AB12CD`).
 - Le **README** rappelle : client, cible de déploiement (on-premise/Azure), date de livraison.
 
@@ -194,7 +194,7 @@ finale du parcours client — elle ATTESTE que les points ci-dessus sont réelle
 - Chaque livraison client = un **tag Git** + une **GitHub Release** (notes de version =
   ce qui change pour le client).
 - L'**image Docker** est taguée avec la même version (`app:1.0.0`) et poussée sur l'ACR
-  (chez GetExp) — l'image déployée correspond donc exactement à un commit/tag traçable.
+  (chez iasser) — l'image déployée correspond donc exactement à un commit/tag traçable.
 
 ### Historisation & traçabilité
 - Tout est dans Git : historique complet, qui a changé quoi et quand.
@@ -205,7 +205,7 @@ finale du parcours client — elle ATTESTE que les points ci-dessus sont réelle
 
 ### CI/CD par repo
 - GitHub Actions : à chaque PR → build + tests ; sur tag `v*` → build image Docker +
-  push ACR (+ déploiement Azure si client hébergé GetExp).
+  push ACR (+ déploiement Azure si client hébergé iasser).
 - Une CI rouge bloque le merge.
 
 ### Livraison du code au client (on-premise)
