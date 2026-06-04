@@ -2,8 +2,8 @@ import React from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 import { colors } from '../theme';
 
-// Logo GetExp (fallback natif) : deux anneaux entrelacés (approximés sans SVG),
-// wordmark « GET » vert + « EXP » rouge, tagline SQL optionnel.
+// Logo « iasser » (fallback natif) : « i » vert + « asser » blanc, étoile rouge
+// approchée par le caractère ★ en guise de point du i. Slogan optionnel.
 export default function Logo({
   size = 'md',
   symboleSeul = false,
@@ -13,34 +13,32 @@ export default function Logo({
   symboleSeul?: boolean;
   tagline?: boolean;
 }) {
-  const d = size === 'lg' ? 44 : size === 'sm' ? 22 : 32; // diamètre anneau
-  const mot = size === 'lg' ? 40 : size === 'sm' ? 19 : 29;
-  const sw = Math.max(3, d * 0.14);
+  const mot = size === 'lg' ? 46 : size === 'sm' ? 22 : 34;
 
-  const anneaux = (
-    <View style={{ flexDirection: 'row' }}>
-      <View style={[styles.ring, { width: d, height: d, borderRadius: d / 2, borderWidth: sw, borderColor: colors.primary, marginRight: -d * 0.35, zIndex: 1 }]} />
-      <View style={[styles.ring, { width: d, height: d, borderRadius: d / 2, borderWidth: sw, borderColor: colors.accent }]} />
+  const iEtoile = (
+    <View>
+      <Text style={[styles.etoile, { fontSize: mot * 0.42 }]}>★</Text>
+      <Text style={[styles.mot, { fontSize: mot, color: colors.accent }]}>i</Text>
     </View>
   );
 
-  if (symboleSeul) return <View style={styles.wrap}>{anneaux}</View>;
+  if (symboleSeul) return <View style={styles.wrap}>{iEtoile}</View>;
 
   return (
     <View style={styles.wrap}>
-      {anneaux}
-      <Text style={[styles.mot, { fontSize: mot }]}>
-        <Text style={{ color: colors.accent }}>GET</Text>
-        <Text style={{ color: colors.primary }}>EXP</Text>
-      </Text>
-      {tagline && <Text style={[styles.tagline, { fontSize: mot * 0.3 }]}>SELECT (TECH) FROM MOROCCO</Text>}
+      <View style={styles.row}>
+        {iEtoile}
+        <Text style={[styles.mot, { fontSize: mot, color: colors.text }]}>asser</Text>
+      </View>
+      {tagline && <Text style={[styles.tagline, { fontSize: mot * 0.28 }]}>SELECT (tech) FROM MOROCCO</Text>}
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  wrap: { alignSelf: 'flex-start', alignItems: 'flex-start', gap: 8 },
-  ring: { borderColor: colors.text, backgroundColor: 'transparent' },
+  wrap: { alignSelf: 'flex-start', alignItems: 'flex-start', gap: 4 },
+  row: { flexDirection: 'row', alignItems: 'flex-end' },
   mot: { fontWeight: '900', letterSpacing: -0.5 },
-  tagline: { color: colors.textMuted, letterSpacing: 2, fontWeight: '600' },
+  etoile: { color: colors.primary, position: 'absolute', alignSelf: 'center', top: -6, zIndex: 1 },
+  tagline: { color: colors.textMuted, fontWeight: '600', letterSpacing: 1 },
 });

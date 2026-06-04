@@ -1,10 +1,22 @@
 import React from 'react';
 import { colors } from '../theme';
 
-// Logo GetExp (web) — reprend l'identité Looka : deux anneaux entrelacés (lien /
-// continuité), wordmark « GET » vert + « EXP » rouge, et le tagline SQL
-// « SELECT (tech) FROM MOROCCO ». Construit en SVG/DOM pour rester net à toute
-// taille (favicon → héros) et propre en monochrome.
+// Logo « iasser » (web) — IA qui facilite la tech, depuis le Maroc.
+// Wordmark « iasser » : le « i » en vert, son point remplacé par l'étoile
+// marocaine à 5 branches en rouge. Slogan SQL inchangé (police marqueur).
+
+// Étoile marocaine à 5 branches (pointe en haut), viewBox 0 0 100 100.
+const ETOILE =
+  'M50 2 L61.76 33.82 L95.66 35.17 L69.02 56.18 L78.21 88.83 ' +
+  'L50 70 L21.79 88.83 L30.98 56.18 L4.34 35.17 L38.24 33.82 Z';
+
+function Star({ taille, couleur }: { taille: number | string; couleur: string }) {
+  return React.createElement(
+    'svg',
+    { width: taille, height: taille, viewBox: '0 0 100 100', style: { display: 'block' } },
+    React.createElement('path', { d: ETOILE, fill: couleur })
+  );
+}
 
 export default function Logo({
   size = 'md',
@@ -15,8 +27,7 @@ export default function Logo({
   symboleSeul?: boolean;
   tagline?: boolean;
 }) {
-  const ring = size === 'lg' ? 58 : size === 'sm' ? 26 : 40; // hauteur du symbole
-  const mot = size === 'lg' ? 42 : size === 'sm' ? 19 : 30; // taille du wordmark
+  const mot = size === 'lg' ? 52 : size === 'sm' ? 24 : 36; // taille du wordmark
 
   // Charge la police « marqueur » du slogan (proche du rendu Looka), une fois.
   React.useEffect(() => {
@@ -28,42 +39,46 @@ export default function Logo({
     document.head.appendChild(l);
   }, []);
 
-  // Deux anneaux entrelacés (l'anneau gauche passe devant à droite).
-  const symbole = React.createElement(
-    'svg',
-    {
-      width: ring * 1.9,
-      height: ring,
-      viewBox: '0 0 120 64',
-      role: 'img',
-      'aria-label': 'GetExp',
-      style: { display: 'block' },
-    },
-    // Anneau droit = vert (derrière)
-    React.createElement('circle', {
-      cx: 74, cy: 32, r: 23, fill: 'none', stroke: colors.accent, strokeWidth: 6.5,
-    }),
-    // Anneau gauche = rouge (devant) — rouge+vert du drapeau marocain
-    React.createElement('circle', {
-      cx: 46, cy: 32, r: 23, fill: 'none', stroke: colors.primary, strokeWidth: 6.5,
-    })
-  );
+  // Symbole seul = monogramme « i » : tige verte (pilule) + étoile rouge.
+  if (symboleSeul) {
+    return React.createElement(
+      'svg',
+      { width: mot * 1.1, height: mot * 1.4, viewBox: '0 0 100 100', role: 'img', 'aria-label': 'iasser', style: { display: 'block' } },
+      React.createElement('rect', { x: 42, y: 50, width: 16, height: 42, rx: 8, fill: colors.accent }),
+      React.createElement(
+        'g',
+        { transform: 'translate(28 4) scale(0.44)' },
+        React.createElement('path', { d: ETOILE, fill: colors.primary })
+      )
+    );
+  }
 
-  if (symboleSeul) return symbole;
-
+  // Wordmark « iasser » : « i » vert avec étoile rouge en guise de point.
   const wordmark = React.createElement(
     'span',
     {
       style: {
         fontFamily: '"Inter", "Segoe UI", system-ui, -apple-system, sans-serif',
-        fontWeight: 900,
+        fontWeight: 800,
         fontSize: mot,
         letterSpacing: '-0.02em',
         lineHeight: 1,
+        display: 'inline-flex',
+        alignItems: 'baseline',
       },
     },
-    React.createElement('span', { style: { color: colors.accent } }, 'GET'),
-    React.createElement('span', { style: { color: colors.primary } }, 'EXP')
+    React.createElement(
+      'span',
+      { style: { position: 'relative', display: 'inline-block', color: colors.accent } },
+      'i',
+      // Étoile rouge posée sur le point du « i ».
+      React.createElement(
+        'span',
+        { style: { position: 'absolute', left: '50%', top: '-0.06em', transform: 'translateX(-50%)' } },
+        React.createElement(Star, { taille: '0.4em', couleur: colors.primary })
+      )
+    ),
+    React.createElement('span', { style: { color: colors.text } }, 'asser')
   );
 
   const slogan =
@@ -73,10 +88,10 @@ export default function Logo({
       {
         style: {
           fontFamily: '"Permanent Marker", "Comic Sans MS", cursive',
-          fontSize: mot * 0.34,
+          fontSize: mot * 0.28,
           letterSpacing: '0.03em',
           color: colors.text,
-          marginTop: mot * 0.22,
+          marginTop: mot * 0.2,
         },
       },
       'SELECT (tech) FROM MOROCCO'
@@ -84,8 +99,7 @@ export default function Logo({
 
   return React.createElement(
     'div',
-    { style: { display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: ring * 0.18 } },
-    symbole,
+    { style: { display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: 2 } },
     wordmark,
     slogan
   );
