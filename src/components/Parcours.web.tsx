@@ -9,10 +9,10 @@ import { colors, gradients } from '../theme';
 type Etape = { icone: string; titre: string; texte: string; couleur: string };
 
 const ETAPES: Etape[] = [
-  { icone: '🎯', titre: 'Cadrage métier', texte: 'L’IA structure votre besoin et son ROI.', couleur: colors.primary },
-  { icone: '🎨', titre: 'Prototype', texte: 'Un prototype interactif à valider (ou challenger).', couleur: colors.accent },
-  { icone: '🏗️', titre: 'Cadrage technique', texte: 'L’IA architecte prépare la livraison plug-and-play.', couleur: colors.primary },
-  { icone: '🛡️', titre: 'Certification', texte: 'Sécurité vérifiée avant déploiement.', couleur: colors.accent },
+  { icone: '🎯', titre: 'Cadrage métier', texte: 'L’IA et nos consultants structurent votre besoin et son ROI.', couleur: colors.primary },
+  { icone: '🎨', titre: 'Prototype', texte: 'Un prototype interactif à valider (ou challenger) avec nos experts.', couleur: colors.accent },
+  { icone: '🏗️', titre: 'Cadrage technique', texte: 'Nos architectes (assistés par l’IA) préparent la livraison plug-and-play.', couleur: colors.primary },
+  { icone: '🛡️', titre: 'Certification', texte: 'Nos experts testent, sécurisent et garantissent que ça marche en conditions réelles.', couleur: colors.accent },
 ];
 
 const CSS = `

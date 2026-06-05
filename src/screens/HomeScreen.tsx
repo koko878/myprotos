@@ -89,14 +89,15 @@ export default function HomeScreen() {
           <Text style={{ color: colors.accent }}>clé en main.</Text>
         </Text>
         <Text style={styles.sous}>
-          Démocratiser l’accès à la tech : décrivez votre besoin, notre IA le cadre, génère un
-          prototype interactif, puis prépare une application déployée, certifiée et garantie.
+          Démocratiser l’accès à la tech : décrivez votre besoin. Notre IA accélère le cadrage et
+          le prototype, puis <Text style={{ color: colors.text, fontWeight: '700' }}>nos experts
+          construisent, testent et livrent</Text> une application fiable — qui marche dans la vraie vie.
         </Text>
 
         <Carte style={{ marginTop: spacing.xl, gap: spacing.md }}>
           <Text style={styles.cardTitre}>Vous êtes client</Text>
           <Text style={styles.cardTexte}>
-            Pas besoin d’être technique. Décrivez votre idée, l’IA vous accompagne.
+            Pas besoin d’être technique. Décrivez votre idée : l’IA et notre équipe d’experts vous accompagnent.
           </Text>
           <Bouton titre="✨ Exprimer une idée" onPress={() => aller({ nom: 'cadrage' })} />
           <Bouton
