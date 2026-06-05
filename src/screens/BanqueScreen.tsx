@@ -8,16 +8,18 @@ import { chargerUseCases } from '../storage';
 import { grouperParDomaine, pairesSimilaires, trouverSimilaires } from '../similarite';
 import { colors, font, radius, spacing } from '../theme';
 import { UseCase } from '../types';
+import { useTr } from '../i18n';
 
-const VERDICT_LIB: Record<string, { texte: string; couleur: string }> = {
-  existe_deja: { texte: 'Existe déjà', couleur: colors.danger },
-  partiellement: { texte: 'Partiellement', couleur: colors.warn },
-  original: { texte: 'Original', couleur: colors.success },
+const VERDICT_LIB: Record<string, { fr: string; en: string; couleur: string }> = {
+  existe_deja: { fr: 'Existe déjà', en: 'Already exists', couleur: colors.danger },
+  partiellement: { fr: 'Partiellement', en: 'Partially', couleur: colors.warn },
+  original: { fr: 'Original', en: 'Original', couleur: colors.success },
 };
 
 // Banque d'idées (admin) : tous les use cases classés par domaine, avec
 // détection des idées quasi-similaires (doublons potentiels) + analyse IA.
 export default function BanqueScreen() {
+  const tr = useTr();
   const { aller, retour } = useNav();
   const [tous, setTous] = useState<UseCase[] | null>(null);
   const [domaineActif, setDomaineActif] = useState<string | null>(null);
@@ -40,9 +42,9 @@ export default function BanqueScreen() {
     try {
       const r = await analyserBanque(tous);
       if (r) setAnalyse(r);
-      else setAnalyseErreur('L’analyse IA a échoué (moteurs indisponibles). Réessayez.');
+      else setAnalyseErreur(tr('L’analyse IA a échoué (moteurs indisponibles). Réessayez.', 'AI analysis failed (engines unavailable). Please try again.'));
     } catch {
-      setAnalyseErreur('L’analyse IA a échoué. Réessayez.');
+      setAnalyseErreur(tr('L’analyse IA a échoué. Réessayez.', 'AI analysis failed. Please try again.'));
     } finally {
       setAnalyseEnCours(false);
     }
@@ -51,7 +53,7 @@ export default function BanqueScreen() {
   if (!tous) {
     return (
       <SafeAreaView style={styles.safe}>
-        <Text style={styles.chargement}>Chargement…</Text>
+        <Text style={styles.chargement}>{tr('Chargement…', 'Loading…')}</Text>
       </SafeAreaView>
     );
   }
@@ -61,7 +63,7 @@ export default function BanqueScreen() {
     const similaires = trouverSimilaires(detail, tous, 0.18);
     return (
       <SafeAreaView style={styles.safe}>
-        <EnTete titre="Idée" onRetour={() => setDetail(null)} />
+        <EnTete titre={tr('Idée', 'Idea')} onRetour={() => setDetail(null)} />
         <ScrollView contentContainerStyle={styles.content}>
           <Carte style={{ gap: spacing.sm }}>
             <Etiquette texte={detail.domaine} couleur={colors.accent} />
@@ -71,20 +73,23 @@ export default function BanqueScreen() {
 
           <Text style={styles.sectionTitre}>
             {similaires.length > 0
-              ? `🔗 ${similaires.length} idée${similaires.length > 1 ? 's' : ''} similaire${similaires.length > 1 ? 's' : ''}`
-              : 'Aucune idée similaire détectée'}
+              ? tr(
+                  `🔗 ${similaires.length} idée${similaires.length > 1 ? 's' : ''} similaire${similaires.length > 1 ? 's' : ''}`,
+                  `🔗 ${similaires.length} similar idea${similaires.length > 1 ? 's' : ''}`
+                )
+              : tr('Aucune idée similaire détectée', 'No similar ideas detected')}
           </Text>
           {similaires.map((s) => (
             <Carte key={s.uc.id} style={{ gap: spacing.xs }} onPress={() => setDetail(s.uc)}>
               <View style={styles.simTop}>
                 <Etiquette texte={s.uc.domaine} />
-                <Text style={styles.simScore}>{Math.round(s.score * 100)}% proche</Text>
+                <Text style={styles.simScore}>{tr(`${Math.round(s.score * 100)}% proche`, `${Math.round(s.score * 100)}% match`)}</Text>
               </View>
               <Text style={styles.simTitre}>{s.uc.titre}</Text>
             </Carte>
           ))}
           <Pressable onPress={() => aller({ nom: 'adminDetail', useCaseId: detail.id })} style={styles.lien}>
-            <Text style={styles.lienTxt}>Ouvrir le projet complet →</Text>
+            <Text style={styles.lienTxt}>{tr('Ouvrir le projet complet →', 'Open the full project →')}</Text>
           </Pressable>
         </ScrollView>
       </SafeAreaView>
@@ -97,30 +102,34 @@ export default function BanqueScreen() {
 
   return (
     <SafeAreaView style={styles.safe}>
-      <EnTete titre="Banque d’idées" onRetour={retour} />
+      <EnTete titre={tr('Banque d’idées', 'Idea bank')} onRetour={retour} />
 
       <ScrollView contentContainerStyle={styles.content}>
         <Text style={styles.intro}>
-          {tous.length} idée{tous.length > 1 ? 's' : ''} · {groupes.length} domaine
-          {groupes.length > 1 ? 's' : ''}.
+          {tr(
+            `${tous.length} idée${tous.length > 1 ? 's' : ''} · ${groupes.length} domaine${groupes.length > 1 ? 's' : ''}.`,
+            `${tous.length} idea${tous.length > 1 ? 's' : ''} · ${groupes.length} domain${groupes.length > 1 ? 's' : ''}.`
+          )}
         </Text>
 
         {/* Analyse IA : idées déjà existantes + potentiel licorne */}
         {iaDisponible() && tous.length > 0 && (
           <Carte style={{ gap: spacing.md, borderColor: colors.primary + '55' }}>
-            <Text style={styles.h}>🤖 Analyse IA de la banque</Text>
+            <Text style={styles.h}>{tr('🤖 Analyse IA de la banque', '🤖 AI analysis of the bank')}</Text>
             <Text style={styles.txt}>
-              Vérifie les idées qui existent déjà ailleurs (avec évidences) et repère
-              les éventuelles pépites à fort potentiel.
+              {tr(
+                'Vérifie les idées qui existent déjà ailleurs (avec évidences) et repère les éventuelles pépites à fort potentiel.',
+                'Checks which ideas already exist elsewhere (with evidence) and spots any high-potential gems.'
+              )}
             </Text>
             {analyseEnCours ? (
               <View style={styles.analyseLoad}>
                 <ActivityIndicator color={colors.primary} />
-                <Text style={styles.txt}>Analyse en cours…</Text>
+                <Text style={styles.txt}>{tr('Analyse en cours…', 'Analyzing…')}</Text>
               </View>
             ) : (
               <Bouton
-                titre={analyse ? '↻ Relancer l’analyse' : '🔎 Analyser la banque'}
+                titre={analyse ? tr('↻ Relancer l’analyse', '↻ Rerun analysis') : tr('🔎 Analyser la banque', '🔎 Analyze the bank')}
                 variante="secondaire"
                 onPress={lancerAnalyse}
               />
@@ -130,10 +139,10 @@ export default function BanqueScreen() {
             {analyse && (
               <View style={{ gap: spacing.md }}>
                 {/* Licornes */}
-                <Text style={styles.sousSection}>🦄 Potentiel licorne</Text>
+                <Text style={styles.sousSection}>{tr('🦄 Potentiel licorne', '🦄 Unicorn potential')}</Text>
                 {analyse.licornes.length === 0 ? (
                   <Text style={styles.txt}>
-                    {analyse.syntheseLicornes || 'Aucune idée à potentiel licorne identifiée.'}
+                    {analyse.syntheseLicornes || tr('Aucune idée à potentiel licorne identifiée.', 'No unicorn-potential idea identified.')}
                   </Text>
                 ) : (
                   <>
@@ -152,20 +161,20 @@ export default function BanqueScreen() {
                         <View style={styles.simTop}>
                           <Text style={styles.licorneTitre}>🦄 {l.titre}</Text>
                           <Text style={styles.licornePot}>
-                            {l.potentiel === 'tres_fort' ? 'Très fort' : 'Fort'}
+                            {l.potentiel === 'tres_fort' ? tr('Très fort', 'Very strong') : tr('Fort', 'Strong')}
                           </Text>
                         </View>
                         <Text style={styles.txt}>{l.raison}</Text>
-                        {!!l.marche && <Text style={styles.marche}>Marché : {l.marche}</Text>}
+                        {!!l.marche && <Text style={styles.marche}>{tr('Marché : ', 'Market: ')}{l.marche}</Text>}
                       </Pressable>
                     ))}
                   </>
                 )}
 
                 {/* Existant */}
-                <Text style={styles.sousSection}>🌍 Déjà sur le marché ?</Text>
+                <Text style={styles.sousSection}>{tr('🌍 Déjà sur le marché ?', '🌍 Already on the market?')}</Text>
                 {analyse.existantes.length === 0 ? (
-                  <Text style={styles.txt}>Aucune analyse d’existant disponible.</Text>
+                  <Text style={styles.txt}>{tr('Aucune analyse d’existant disponible.', 'No market analysis available.')}</Text>
                 ) : (
                   analyse.existantes.map((e, i) => {
                     const v = VERDICT_LIB[e.verdict] ?? VERDICT_LIB.partiellement;
@@ -180,10 +189,10 @@ export default function BanqueScreen() {
                       >
                         <View style={styles.simTop}>
                           <Text style={styles.existantTitre} numberOfLines={1}>{e.titre}</Text>
-                          <Etiquette texte={v.texte} couleur={v.couleur} />
+                          <Etiquette texte={tr(v.fr, v.en)} couleur={v.couleur} />
                         </View>
                         {!!e.acteurs.length && (
-                          <Text style={styles.acteurs}>Existe déjà : {e.acteurs.join(', ')}</Text>
+                          <Text style={styles.acteurs}>{tr('Existe déjà : ', 'Already exists: ')}{e.acteurs.join(', ')}</Text>
                         )}
                         <Text style={styles.txt}>{e.explication}</Text>
                       </Pressable>
@@ -198,7 +207,10 @@ export default function BanqueScreen() {
         {/* Doublons potentiels */}
         {paires.length > 0 && (
           <Carte style={{ gap: spacing.sm, borderColor: colors.warn + '66' }}>
-            <Text style={styles.h}>⚠️ {paires.length} paire{paires.length > 1 ? 's' : ''} d’idées quasi-similaires</Text>
+            <Text style={styles.h}>{tr(
+              `⚠️ ${paires.length} paire${paires.length > 1 ? 's' : ''} d’idées quasi-similaires`,
+              `⚠️ ${paires.length} pair${paires.length > 1 ? 's' : ''} of near-similar ideas`
+            )}</Text>
             {paires.slice(0, 6).map((p, i) => (
               <Pressable key={i} onPress={() => setDetail(p.a)} style={styles.paire}>
                 <Text style={styles.paireScore}>{Math.round(p.score * 100)}%</Text>
@@ -216,7 +228,7 @@ export default function BanqueScreen() {
             onPress={() => setDomaineActif(null)}
             style={[styles.filtre, !domaineActif && styles.filtreActif]}
           >
-            <Text style={[styles.filtreTxt, !domaineActif && styles.filtreTxtActif]}>Tous</Text>
+            <Text style={[styles.filtreTxt, !domaineActif && styles.filtreTxtActif]}>{tr('Tous', 'All')}</Text>
           </Pressable>
           {groupes.map((g) => {
             const actif = domaineActif === g.domaine;
@@ -235,7 +247,7 @@ export default function BanqueScreen() {
         </View>
 
         {tous.length === 0 && (
-          <Text style={styles.vide}>La banque se remplit au fur et à mesure des cadrages clients.</Text>
+          <Text style={styles.vide}>{tr('La banque se remplit au fur et à mesure des cadrages clients.', 'The bank fills up as client scoping sessions happen.')}</Text>
         )}
 
         {/* Groupes par domaine */}
@@ -248,7 +260,7 @@ export default function BanqueScreen() {
                 <Text style={styles.itemTxt} numberOfLines={2}>{uc.probleme}</Text>
                 <View style={styles.itemTags}>
                   <Etiquette texte={uc.complexite} />
-                  {uc.client?.secteur && <Etiquette texte={`client: ${uc.client.secteur}`} />}
+                  {uc.client?.secteur && <Etiquette texte={tr(`client: ${uc.client.secteur}`, `client: ${uc.client.secteur}`)} />}
                 </View>
               </Carte>
             ))}

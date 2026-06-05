@@ -1,5 +1,6 @@
 import React, { useEffect, useRef } from 'react';
 import { Animated, StyleSheet, Text, View } from 'react-native';
+import { useTr } from '../i18n';
 import { colors, font, spacing } from '../theme';
 import { StatutUseCase } from '../types';
 
@@ -7,11 +8,11 @@ import { StatutUseCase } from '../types';
 // 4 jalons : Cadrage → Prototype → Technique → Certification. Le jalon courant
 // pulse en rouge, les jalons franchis sont verts (✓), les suivants sont en gris.
 
-const JALONS = [
-  { label: 'Cadrage', icone: '🎯' },
-  { label: 'Prototype', icone: '🎨' },
-  { label: 'Technique', icone: '🏗️' },
-  { label: 'Certification', icone: '🛡️' },
+const JALONS: { label: [string, string]; icone: string }[] = [
+  { label: ['Cadrage', 'Scoping'], icone: '🎯' },
+  { label: ['Prototype', 'Prototype'], icone: '🎨' },
+  { label: ['Technique', 'Technical'], icone: '🏗️' },
+  { label: ['Certification', 'Certification'], icone: '🛡️' },
 ];
 
 // Position courante (0..4) selon le statut du cycle de vie.
@@ -29,6 +30,7 @@ const ORDRE: Record<StatutUseCase, number> = {
 };
 
 export default function FriseStatut({ statut }: { statut: StatutUseCase }) {
+  const tr = useTr();
   const current = ORDRE[statut] ?? 0;
   const pulse = useRef(new Animated.Value(0)).current;
 
@@ -51,7 +53,7 @@ export default function FriseStatut({ statut }: { statut: StatutUseCase }) {
     <View style={styles.wrap}>
       <View style={styles.eyebrowRow}>
         <View style={styles.bar} />
-        <Text style={styles.eyebrow}>Avancement du projet</Text>
+        <Text style={styles.eyebrow}>{tr('Avancement du projet', 'Project progress')}</Text>
       </View>
       <View style={styles.row}>
         <View style={styles.trackBg} />
@@ -60,7 +62,7 @@ export default function FriseStatut({ statut }: { statut: StatutUseCase }) {
           const done = i < current;
           const actif = i === current && current < JALONS.length;
           return (
-            <View key={j.label} style={styles.step}>
+            <View key={j.label[0]} style={styles.step}>
               <View style={styles.nodeBox}>
                 {actif && (
                   <Animated.View style={[styles.pulseRing, { transform: [{ scale }], opacity }]} />
@@ -83,7 +85,7 @@ export default function FriseStatut({ statut }: { statut: StatutUseCase }) {
                 ]}
                 numberOfLines={1}
               >
-                {j.label}
+                {tr(j.label[0], j.label[1])}
               </Text>
             </View>
           );

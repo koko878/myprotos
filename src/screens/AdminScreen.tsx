@@ -7,6 +7,7 @@ import { marquerIdeesVues } from '../notifications';
 import { chargerUseCases, definirAvorte } from '../storage';
 import { colors, font, radius, spacing } from '../theme';
 import { StatutUseCase, UseCase } from '../types';
+import { useTr } from '../i18n';
 
 // Colonnes du Kanban admin. Chaque colonne regroupe un ou plusieurs statuts.
 interface Colonne {
@@ -24,7 +25,29 @@ const COLONNES: Colonne[] = [
   { titre: '🧾 Commande passée', statuts: ['commande_validee', 'certifie'], couleur: colors.success },
 ];
 
+// Traduit le titre d'une colonne Kanban (utilisé comme clé interne + affiché).
+function trColonne(tr: (fr: string, en: string) => string, titre: string): string {
+  switch (titre) {
+    case '📥 Soumis': return tr('📥 Soumis', '📥 Submitted');
+    case '📤 Proto envoyé': return tr('📤 Proto envoyé', '📤 Proto sent');
+    case '🔔 Révision demandée': return tr('🔔 Révision demandée', '🔔 Revision requested');
+    case '✅ Proto validé': return tr('✅ Proto validé', '✅ Proto approved');
+    case '🧾 Commande passée': return tr('🧾 Commande passée', '🧾 Order placed');
+    default: return titre;
+  }
+}
+
+// Traduit le libellé d'action d'une colonne Kanban.
+function trAction(tr: (fr: string, en: string) => string, action: string): string {
+  switch (action) {
+    case '⚙️ À générer': return tr('⚙️ À générer', '⚙️ To generate');
+    case 'À revoir': return tr('À revoir', 'To review');
+    default: return action;
+  }
+}
+
 export default function AdminScreen() {
+  const tr = useTr();
   const { aller, retour } = useNav();
   const [liste, setListe] = useState<UseCase[] | null>(null);
   const [avortesVisibles, setAvortesVisibles] = useState(false);
@@ -47,16 +70,19 @@ export default function AdminScreen() {
       if (typeof confirm === 'undefined' || confirm(`${titre}\n\n${message}`)) onOui();
     } else {
       Alert.alert(titre, message, [
-        { text: 'Annuler', style: 'cancel' },
-        { text: 'Confirmer', style: 'destructive', onPress: onOui },
+        { text: tr('Annuler', 'Cancel'), style: 'cancel' },
+        { text: tr('Confirmer', 'Confirm'), style: 'destructive', onPress: onOui },
       ]);
     }
   }
 
   async function avorter(uc: UseCase) {
     confirmer(
-      'Marquer comme avorté ?',
-      `« ${uc.titre} » disparaîtra de l’espace admin. Il reste conservé en base et dans la banque d’idées.`,
+      tr('Marquer comme avorté ?', 'Mark as aborted?'),
+      tr(
+        `« ${uc.titre} » disparaîtra de l’espace admin. Il reste conservé en base et dans la banque d’idées.`,
+        `“${uc.titre}” will disappear from the admin area. It stays saved in the database and the idea bank.`
+      ),
       async () => { await definirAvorte(uc.id, true); recharger(); }
     );
   }
@@ -72,18 +98,23 @@ export default function AdminScreen() {
 
   return (
     <SafeAreaView style={styles.safe}>
-      <EnTete titre="Espace admin" onRetour={retour} />
+      <EnTete titre={tr('Espace admin', 'Admin area')} onRetour={retour} />
 
       <View style={styles.topContent}>
         <Text style={styles.intro}>
-          {aTraiter > 0 ? `${aTraiter} projet${aTraiter > 1 ? 's' : ''} en attente de prototype.` : 'Aucun nouveau projet à traiter.'}
+          {aTraiter > 0
+            ? tr(
+                `${aTraiter} projet${aTraiter > 1 ? 's' : ''} en attente de prototype.`,
+                `${aTraiter} project${aTraiter > 1 ? 's' : ''} awaiting a prototype.`
+              )
+            : tr('Aucun nouveau projet à traiter.', 'No new projects to process.')}
         </Text>
         <View style={styles.liensRow}>
           <Pressable onPress={() => aller({ nom: 'banque' })} style={styles.lienBtn}>
-            <Text style={styles.lienTxt}>📚 Banque d’idées & analyse IA</Text>
+            <Text style={styles.lienTxt}>{tr('📚 Banque d’idées & analyse IA', '📚 Idea bank & AI analysis')}</Text>
           </Pressable>
           <Pressable onPress={() => aller({ nom: 'prompts' })} style={styles.lienBtn}>
-            <Text style={styles.lienTxt}>⚙️ Prompts IA</Text>
+            <Text style={styles.lienTxt}>{tr('⚙️ Prompts IA', '⚙️ AI prompts')}</Text>
           </Pressable>
         </View>
       </View>
@@ -95,7 +126,7 @@ export default function AdminScreen() {
           return (
             <View key={col.titre} style={styles.colonne}>
               <View style={styles.colHead}>
-                <Text style={styles.colTitre}>{col.titre}</Text>
+                <Text style={styles.colTitre}>{trColonne(tr, col.titre)}</Text>
                 <View style={[styles.compteur, { backgroundColor: col.couleur + '33' }]}>
                   <Text style={[styles.compteurTxt, { color: col.couleur }]}>{items.length}</Text>
                 </View>
@@ -115,10 +146,10 @@ export default function AdminScreen() {
                           {uc.client ? `\n👤 ${identiteClient(uc.client)}` : ''}
                         </Text>
                       )}
-                      {col.action && <Text style={[styles.action, { color: col.couleur }]}>{col.action}</Text>}
+                      {col.action && <Text style={[styles.action, { color: col.couleur }]}>{trAction(tr, col.action)}</Text>}
                     </Pressable>
                     <Pressable onPress={() => avorter(uc)} hitSlop={8} style={styles.avorterBtn}>
-                      <Text style={styles.avorterTxt}>✕ Avorter</Text>
+                      <Text style={styles.avorterTxt}>{tr('✕ Avorter', '✕ Abort')}</Text>
                     </Pressable>
                   </View>
                 ))}
@@ -133,7 +164,7 @@ export default function AdminScreen() {
         <View style={styles.avortesZone}>
           <Pressable onPress={() => setAvortesVisibles((v) => !v)} style={styles.avortesHead}>
             <Text style={styles.avortesTitre}>
-              {avortesVisibles ? '▾' : '▸'} 🗑️ Projets avortés ({avortes.length})
+              {avortesVisibles ? '▾' : '▸'} {tr('🗑️ Projets avortés', '🗑️ Aborted projects')} ({avortes.length})
             </Text>
           </Pressable>
           {avortesVisibles && (
@@ -142,7 +173,7 @@ export default function AdminScreen() {
                 <View key={uc.id} style={styles.avorteCarte}>
                   <Text style={styles.avorteTitre} numberOfLines={2}>{uc.titre}</Text>
                   <Pressable onPress={() => reactiver(uc)} hitSlop={8} style={styles.reactiverBtn}>
-                    <Text style={styles.reactiverTxt}>↩︎ Réactiver</Text>
+                    <Text style={styles.reactiverTxt}>{tr('↩︎ Réactiver', '↩︎ Reactivate')}</Text>
                   </Pressable>
                 </View>
               ))}

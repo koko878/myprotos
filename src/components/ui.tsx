@@ -10,6 +10,7 @@ import {
   StyleProp,
   ViewStyle,
 } from 'react-native';
+import { useTr } from '../i18n';
 import { colors, font, radius, spacing } from '../theme';
 import { Complexite } from '../types';
 
@@ -124,11 +125,12 @@ export function couleurComplexite(c: Complexite): string {
 
 // Jauge de score de cadrage (0-100).
 export function ScoreCadrage({ score }: { score: number }) {
+  const tr = useTr();
   const couleur = score >= 75 ? colors.success : score >= 50 ? colors.warn : colors.danger;
   return (
     <View style={styles.scoreWrap}>
       <View style={styles.scoreHeader}>
-        <Text style={styles.scoreLabel}>Maturité du cadrage</Text>
+        <Text style={styles.scoreLabel}>{tr('Maturité du cadrage', 'Scoping maturity')}</Text>
         <Text style={[styles.scoreVal, { color: couleur }]}>{score}/100</Text>
       </View>
       <View style={styles.scoreBarBg}>

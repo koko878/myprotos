@@ -12,6 +12,7 @@ import {
 } from 'react-native';
 import { lireFichierTexte } from '../fichiers';
 import { BoutonAccueil, EnTete } from './ui';
+import { useTr } from '../i18n';
 import { useNav } from '../navigation';
 import { colors, font, radius, spacing } from '../theme';
 import { Message } from '../types';
@@ -52,6 +53,7 @@ export interface ChatIAProps {
  */
 export default function ChatIA({ titre, ouverture, jouerTour, onTermine, progression, relanceAuto, partageDocs }: ChatIAProps) {
   const { retour, aller } = useNav();
+  const tr = useTr();
   const [messages, setMessages] = useState<Message[]>(ouverture);
   const [saisie, setSaisie] = useState('');
   const [termine, setTermine] = useState(false);
@@ -202,10 +204,11 @@ export default function ChatIA({ titre, ouverture, jouerTour, onTermine, progres
           {echec && !loading && (
             <View style={styles.echecBox}>
               <Text style={styles.echecTxt}>
-                ⚠️ L’IA est momentanément surchargée. Votre conversation est intacte.
+                {tr('⚠️ L’IA est momentanément surchargée. Votre conversation est intacte.',
+                    '⚠️ The AI is momentarily overloaded. Your conversation is safe.')}
               </Text>
               <Pressable style={styles.reessayer} onPress={reessayer}>
-                <Text style={styles.reessayerTxt}>↻ Réessayer</Text>
+                <Text style={styles.reessayerTxt}>{tr('↻ Réessayer', '↻ Retry')}</Text>
               </Pressable>
             </View>
           )}
@@ -213,7 +216,7 @@ export default function ChatIA({ titre, ouverture, jouerTour, onTermine, progres
 
         {!termine && partageDocs && (
           <Pressable onPress={joindreDoc} disabled={loading} style={styles.joindreDoc}>
-            <Text style={styles.joindreDocTxt}>📎 Partager un document pour affiner mon besoin</Text>
+            <Text style={styles.joindreDocTxt}>{tr('📎 Partager un document pour affiner mon besoin', '📎 Share a document to refine my need')}</Text>
           </Pressable>
         )}
         {!termine && (
@@ -230,7 +233,7 @@ export default function ChatIA({ titre, ouverture, jouerTour, onTermine, progres
             <TextInput
               style={styles.input}
               placeholder={
-                dictee ? 'Parlez…' : loading ? 'L’assistant réfléchit…' : 'Votre réponse…'
+                dictee ? tr('Parlez…', 'Speak…') : loading ? tr('L’assistant réfléchit…', 'The assistant is thinking…') : tr('Votre réponse…', 'Your answer…')
               }
               placeholderTextColor={colors.textMuted}
               value={saisie}
@@ -254,9 +257,10 @@ export default function ChatIA({ titre, ouverture, jouerTour, onTermine, progres
 }
 
 function Typing() {
+  const tr = useTr();
   return (
     <View style={[styles.bulle, styles.bulleAssistant, { flexDirection: 'row', gap: 6, alignItems: 'center' }]}>
-      <Text style={styles.bulleTexte}>✨ l’IA rédige</Text>
+      <Text style={styles.bulleTexte}>{tr('✨ l’IA rédige', '✨ AI is writing')}</Text>
       <Text style={[styles.bulleTexte, { color: colors.accent }]}>…</Text>
     </View>
   );

@@ -1,18 +1,19 @@
 import React from 'react';
 import { colors, gradients } from '../theme';
+import { useTr } from '../i18n';
 
 // Frise « Comment ça marche » — version web illustrée + animée.
 // Chaque étape : pastille colorée avec icône, reliée par un fil où circule un
 // point lumineux (le « flux » du pipeline), apparition en cascade au montage.
 // Rouge/vert marocain en alternance pour le rythme visuel.
 
-type Etape = { icone: string; titre: string; texte: string; couleur: string };
+type Etape = { icone: string; titre: [string, string]; texte: [string, string]; couleur: string };
 
 const ETAPES: Etape[] = [
-  { icone: '🎯', titre: 'Cadrage métier', texte: 'L’IA et nos consultants structurent votre besoin et son ROI.', couleur: colors.primary },
-  { icone: '🎨', titre: 'Prototype', texte: 'Un prototype interactif à valider (ou challenger) avec nos experts.', couleur: colors.accent },
-  { icone: '🏗️', titre: 'Cadrage technique', texte: 'Nos architectes (assistés par l’IA) préparent la livraison plug-and-play.', couleur: colors.primary },
-  { icone: '🛡️', titre: 'Certification', texte: 'Nos experts testent, sécurisent et garantissent que ça marche en conditions réelles.', couleur: colors.accent },
+  { icone: '🎯', titre: ['Cadrage métier', 'Business scoping'], texte: ['L’IA et nos consultants structurent votre besoin et son ROI.', 'Our AI and consultants structure your need and its ROI.'], couleur: colors.primary },
+  { icone: '🎨', titre: ['Prototype', 'Prototype'], texte: ['Un prototype interactif à valider (ou challenger) avec nos experts.', 'An interactive prototype to validate (or challenge) with our experts.'], couleur: colors.accent },
+  { icone: '🏗️', titre: ['Cadrage technique', 'Technical scoping'], texte: ['Nos architectes (assistés par l’IA) préparent la livraison plug-and-play.', 'Our architects (AI-assisted) prepare the plug-and-play delivery.'], couleur: colors.primary },
+  { icone: '🛡️', titre: ['Certification', 'Certification'], texte: ['Nos experts testent, sécurisent et garantissent que ça marche en conditions réelles.', 'Our experts test, secure and guarantee it works in real-world conditions.'], couleur: colors.accent },
 ];
 
 const CSS = `
@@ -41,6 +42,7 @@ const CSS = `
 `;
 
 export default function Parcours() {
+  const tr = useTr();
   return React.createElement(
     'div',
     { className: 'gx-parcours' },
@@ -49,13 +51,13 @@ export default function Parcours() {
       'div',
       { className: 'gx-eyebrow' },
       React.createElement('span', { className: 'gx-bar' }),
-      'Comment ça marche'
+      tr('Comment ça marche', 'How it works')
     ),
     ETAPES.map((e, i) => {
       const suivante = ETAPES[i + 1];
       return React.createElement(
         'div',
-        { key: e.titre, className: 'gx-step', style: { animationDelay: `${i * 0.12}s` } },
+        { key: e.titre[0], className: 'gx-step', style: { animationDelay: `${i * 0.12}s` } },
         React.createElement(
           'div',
           { className: 'gx-rail' },
@@ -77,8 +79,8 @@ export default function Parcours() {
         React.createElement(
           'div',
           { className: 'gx-body' },
-          React.createElement('div', { className: 'gx-title' }, e.titre),
-          React.createElement('div', { className: 'gx-text' }, e.texte)
+          React.createElement('div', { className: 'gx-title' }, tr(e.titre[0], e.titre[1])),
+          React.createElement('div', { className: 'gx-text' }, tr(e.texte[0], e.texte[1]))
         )
       );
     })

@@ -3,6 +3,7 @@ import { KeyboardAvoidingView, Platform, Pressable, SafeAreaView, ScrollView, St
 import { connexion, inscription, reinitialiserMotDePasse } from '../auth';
 import Logo from '../components/Logo';
 import { Bouton, Carte } from '../components/ui';
+import { useTr } from '../i18n';
 import { colors, font, radius, spacing } from '../theme';
 
 type Mode = 'connexion' | 'inscription' | 'reset';
@@ -12,6 +13,7 @@ const emailValide = (e: string) => /^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(e);
 // Authentification email + mot de passe : onglets Connexion / Inscription
 // séparés (UX claire, pas de création de compte par erreur) + mot de passe oublié.
 export default function LoginScreen() {
+  const tr = useTr();
   const [mode, setMode] = useState<Mode>('connexion');
   const [email, setEmail] = useState('');
   const [mdp, setMdp] = useState('');
@@ -27,8 +29,8 @@ export default function LoginScreen() {
 
   async function seConnecter() {
     const e = email.trim();
-    if (!emailValide(e)) return setErreur('Entrez une adresse email valide.');
-    if (mdp.length < 6) return setErreur('Le mot de passe doit faire au moins 6 caractères.');
+    if (!emailValide(e)) return setErreur(tr('Entrez une adresse email valide.', 'Enter a valid email address.'));
+    if (mdp.length < 6) return setErreur(tr('Le mot de passe doit faire au moins 6 caractères.', 'Your password must be at least 6 characters.'));
     setErreur(null);
     setLoading(true);
     const err = await connexion(e, mdp);
@@ -39,8 +41,8 @@ export default function LoginScreen() {
 
   async function sInscrire() {
     const e = email.trim();
-    if (!emailValide(e)) return setErreur('Entrez une adresse email valide.');
-    if (mdp.length < 6) return setErreur('Le mot de passe doit faire au moins 6 caractères.');
+    if (!emailValide(e)) return setErreur(tr('Entrez une adresse email valide.', 'Enter a valid email address.'));
+    if (mdp.length < 6) return setErreur(tr('Le mot de passe doit faire au moins 6 caractères.', 'Your password must be at least 6 characters.'));
     setErreur(null);
     setLoading(true);
     const res = await inscription(e, mdp);
@@ -48,7 +50,7 @@ export default function LoginScreen() {
     if (res.erreur) {
       setErreur(res.erreur);
     } else if (res.besoinConfirmation) {
-      setInfo('Compte créé ! Vérifiez votre boîte mail pour confirmer votre inscription, puis connectez-vous.');
+      setInfo(tr('Compte créé ! Vérifiez votre boîte mail pour confirmer votre inscription, puis connectez-vous.', 'Account created! Check your inbox to confirm your sign-up, then log in.'));
       setMode('connexion');
     }
     // Sinon : session ouverte, l'app bascule automatiquement.
@@ -56,7 +58,7 @@ export default function LoginScreen() {
 
   async function envoyerReset() {
     const e = email.trim();
-    if (!emailValide(e)) return setErreur('Entrez votre adresse email.');
+    if (!emailValide(e)) return setErreur(tr('Entrez votre adresse email.', 'Enter your email address.'));
     setErreur(null);
     setLoading(true);
     const err = await reinitialiserMotDePasse(e);
@@ -64,7 +66,7 @@ export default function LoginScreen() {
     if (err) {
       setErreur(err);
     } else {
-      setInfo('Si un compte existe pour cet email, un lien de réinitialisation vient d’être envoyé.');
+      setInfo(tr('Si un compte existe pour cet email, un lien de réinitialisation vient d’être envoyé.', 'If an account exists for this email, a reset link has just been sent.'));
       setMode('connexion');
     }
   }
@@ -79,23 +81,26 @@ export default function LoginScreen() {
 
           {mode !== 'reset' && (
             <View style={styles.onglets}>
-              <Onglet actif={mode === 'connexion'} titre="Connexion" onPress={() => changerMode('connexion')} />
-              <Onglet actif={mode === 'inscription'} titre="Inscription" onPress={() => changerMode('inscription')} />
+              <Onglet actif={mode === 'connexion'} titre={tr('Connexion', 'Sign in')} onPress={() => changerMode('connexion')} />
+              <Onglet actif={mode === 'inscription'} titre={tr('Inscription', 'Sign up')} onPress={() => changerMode('inscription')} />
             </View>
           )}
 
           <Carte style={{ gap: spacing.md }}>
             {mode === 'reset' ? (
               <>
-                <Text style={styles.titre}>Mot de passe oublié</Text>
+                <Text style={styles.titre}>{tr('Mot de passe oublié', 'Forgot password')}</Text>
                 <Text style={styles.txt}>
-                  Entrez votre email : nous vous enverrons un lien pour réinitialiser votre mot de passe.
+                  {tr(
+                    'Entrez votre email : nous vous enverrons un lien pour réinitialiser votre mot de passe.',
+                    'Enter your email and we’ll send you a link to reset your password.'
+                  )}
                 </Text>
                 <TextInput
                   style={styles.input}
                   value={email}
                   onChangeText={(t) => { setEmail(t); setErreur(null); }}
-                  placeholder="vous@exemple.com"
+                  placeholder={tr('vous@exemple.com', 'you@example.com')}
                   placeholderTextColor={colors.textMuted}
                   keyboardType="email-address"
                   autoCapitalize="none"
@@ -103,18 +108,18 @@ export default function LoginScreen() {
                   onSubmitEditing={envoyerReset}
                 />
                 {erreur && <Text style={styles.err}>{erreur}</Text>}
-                <Bouton titre={loading ? 'Envoi…' : 'Envoyer le lien'} onPress={envoyerReset} loading={loading} />
+                <Bouton titre={loading ? tr('Envoi…', 'Sending…') : tr('Envoyer le lien', 'Send the link')} onPress={envoyerReset} loading={loading} />
                 <Pressable onPress={() => changerMode('connexion')} hitSlop={8} style={styles.lien}>
-                  <Text style={styles.lienTxt}>‹ Retour à la connexion</Text>
+                  <Text style={styles.lienTxt}>{tr('‹ Retour à la connexion', '‹ Back to sign in')}</Text>
                 </Pressable>
               </>
             ) : (
               <>
-                <Text style={styles.titre}>{mode === 'connexion' ? 'Se connecter' : 'Créer un compte'}</Text>
+                <Text style={styles.titre}>{mode === 'connexion' ? tr('Se connecter', 'Sign in') : tr('Créer un compte', 'Create an account')}</Text>
                 <Text style={styles.txt}>
                   {mode === 'connexion'
-                    ? 'Entrez votre email et votre mot de passe.'
-                    : 'Choisissez un email et un mot de passe (6 caractères minimum).'}
+                    ? tr('Entrez votre email et votre mot de passe.', 'Enter your email and password.')
+                    : tr('Choisissez un email et un mot de passe (6 caractères minimum).', 'Choose an email and a password (at least 6 characters).')}
                 </Text>
 
                 {info && <Text style={styles.info}>{info}</Text>}
@@ -123,7 +128,7 @@ export default function LoginScreen() {
                   style={styles.input}
                   value={email}
                   onChangeText={(t) => { setEmail(t); setErreur(null); }}
-                  placeholder="vous@exemple.com"
+                  placeholder={tr('vous@exemple.com', 'you@example.com')}
                   placeholderTextColor={colors.textMuted}
                   keyboardType="email-address"
                   autoCapitalize="none"
@@ -133,7 +138,7 @@ export default function LoginScreen() {
                   style={styles.input}
                   value={mdp}
                   onChangeText={(t) => { setMdp(t); setErreur(null); }}
-                  placeholder="Mot de passe"
+                  placeholder={tr('Mot de passe', 'Password')}
                   placeholderTextColor={colors.textMuted}
                   secureTextEntry
                   autoComplete={mode === 'connexion' ? 'current-password' : 'new-password'}
@@ -143,14 +148,14 @@ export default function LoginScreen() {
                 {erreur && <Text style={styles.err}>{erreur}</Text>}
 
                 <Bouton
-                  titre={loading ? 'Veuillez patienter…' : mode === 'connexion' ? 'Se connecter' : 'Créer mon compte'}
+                  titre={loading ? tr('Veuillez patienter…', 'Please wait…') : mode === 'connexion' ? tr('Se connecter', 'Sign in') : tr('Créer mon compte', 'Create my account')}
                   onPress={mode === 'connexion' ? seConnecter : sInscrire}
                   loading={loading}
                 />
 
                 {mode === 'connexion' && (
                   <Pressable onPress={() => changerMode('reset')} hitSlop={8} style={styles.lien}>
-                    <Text style={styles.lienTxt}>Mot de passe oublié ?</Text>
+                    <Text style={styles.lienTxt}>{tr('Mot de passe oublié ?', 'Forgot password?')}</Text>
                   </Pressable>
                 )}
               </>

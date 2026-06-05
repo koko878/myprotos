@@ -3,6 +3,7 @@ import { SafeAreaView, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { tourChallengeIA } from '../cadrageAssistant';
 import ChatIA, { ResultatTour, uidMessage } from '../components/ChatIA';
 import { Bouton, Carte } from '../components/ui';
+import { useLang, useTr } from '../i18n';
 import { iaDisponible } from '../llm';
 import { useNav } from '../navigation';
 import { ajouterRemarques, trouverUseCase } from '../storage';
@@ -13,6 +14,8 @@ import { Message, UseCase } from '../types';
 // demandes d'amélioration claires et actionnables, puis on les envoie en révision.
 export default function ChallengeScreen({ useCaseId }: { useCaseId: string }) {
   const { aller, retour } = useNav();
+  const { lang } = useLang();
+  const tr = useTr();
   const [uc, setUc] = useState<UseCase | null>(null);
   const [remarques, setRemarques] = useState<string[] | null>(null); // récap final
   const [envoye, setEnvoye] = useState(false);
@@ -25,7 +28,7 @@ export default function ChallengeScreen({ useCaseId }: { useCaseId: string }) {
   if (!uc) {
     return (
       <SafeAreaView style={styles.safe}>
-        <Text style={styles.chargement}>Chargement…</Text>
+        <Text style={styles.chargement}>{tr('Chargement…', 'Loading…')}</Text>
       </SafeAreaView>
     );
   }
@@ -35,12 +38,12 @@ export default function ChallengeScreen({ useCaseId }: { useCaseId: string }) {
     return (
       <SafeAreaView style={styles.safe}>
         <View style={styles.centre}>
-          <Text style={styles.titre}>Améliorer le prototype</Text>
+          <Text style={styles.titre}>{tr('Améliorer le prototype', 'Improve the prototype')}</Text>
           <Text style={styles.txt}>
-            L’assistant n’est pas disponible pour le moment. Vous pouvez quand même laisser
-            une remarque libre depuis l’écran du prototype.
+            {tr('L’assistant n’est pas disponible pour le moment. Vous pouvez quand même laisser une remarque libre depuis l’écran du prototype.',
+                'The assistant is unavailable right now. You can still leave a free-form note from the prototype screen.')}
           </Text>
-          <Bouton titre="Retour au prototype" variante="secondaire" onPress={retour} />
+          <Bouton titre={tr('Retour au prototype', 'Back to prototype')} variante="secondaire" onPress={retour} />
         </View>
       </SafeAreaView>
     );
@@ -51,12 +54,12 @@ export default function ChallengeScreen({ useCaseId }: { useCaseId: string }) {
     return (
       <SafeAreaView style={styles.safe}>
         <View style={styles.centre}>
-          <Text style={styles.titre}>📝 Demandes envoyées</Text>
+          <Text style={styles.titre}>{tr('📝 Demandes envoyées', '📝 Requests sent')}</Text>
           <Text style={styles.txt}>
-            Merci ! Notre équipe va retravailler le prototype en intégrant vos demandes. Vous
-            serez notifié dès que la nouvelle version est prête.
+            {tr('Merci ! Notre équipe va retravailler le prototype en intégrant vos demandes. Vous serez notifié dès que la nouvelle version est prête.',
+                'Thank you! Our team will rework the prototype to incorporate your requests. You’ll be notified as soon as the new version is ready.')}
           </Text>
-          <Bouton titre="Voir mon projet" onPress={() => aller({ nom: 'detail', useCaseId })} />
+          <Bouton titre={tr('Voir mon projet', 'View my project')} onPress={() => aller({ nom: 'detail', useCaseId })} />
         </View>
       </SafeAreaView>
     );
@@ -67,11 +70,12 @@ export default function ChallengeScreen({ useCaseId }: { useCaseId: string }) {
     return (
       <SafeAreaView style={styles.safe}>
         <View style={styles.header}>
-          <Text style={styles.headerTitre}>Vos demandes d’amélioration</Text>
+          <Text style={styles.headerTitre}>{tr('Vos demandes d’amélioration', 'Your improvement requests')}</Text>
         </View>
         <ScrollView contentContainerStyle={styles.content}>
           <Text style={styles.intro}>
-            Voici ce que j’ai retenu. Vous pouvez l’envoyer tel quel à notre équipe.
+            {tr('Voici ce que j’ai retenu. Vous pouvez l’envoyer tel quel à notre équipe.',
+                'Here’s what I captured. You can send it as-is to our team.')}
           </Text>
           <Carte style={{ gap: spacing.md }}>
             {remarques.map((r, i) => (
@@ -84,13 +88,13 @@ export default function ChallengeScreen({ useCaseId }: { useCaseId: string }) {
         </ScrollView>
         <View style={styles.footer}>
           <Bouton
-            titre="📨 Envoyer à l’équipe"
+            titre={tr('📨 Envoyer à l’équipe', '📨 Send to the team')}
             onPress={async () => {
               await ajouterRemarques(useCaseId, remarques);
               setEnvoye(true);
             }}
           />
-          <Bouton titre="Continuer à préciser" variante="secondaire" onPress={() => setRemarques(null)} />
+          <Bouton titre={tr('Continuer à préciser', 'Keep refining')} variante="secondaire" onPress={() => setRemarques(null)} />
         </View>
       </SafeAreaView>
     );
@@ -98,23 +102,37 @@ export default function ChallengeScreen({ useCaseId }: { useCaseId: string }) {
 
   const contexte = `${uc.titre} — ${uc.probleme}. Objectif : ${uc.objectif}. Utilisateurs : ${uc.utilisateurs}.`;
 
-  const ouverture: Message[] = [
-    {
-      id: uidMessage(),
-      role: 'assistant',
-      texte:
-        'Vous voulez faire évoluer le prototype 👍 Dites-moi ce qui vous gêne ou ce qu’il manque — même vaguement, je vous aide à préciser.',
-      suggestions: [
-        'Le design ne correspond pas à mon image de marque',
-        'Il manque une fonctionnalité',
-        'Un écran n’est pas clair',
-      ],
-    },
-  ];
+  const ouverture: Message[] = lang === 'en'
+    ? [
+        {
+          id: uidMessage(),
+          role: 'assistant',
+          texte:
+            'You’d like to evolve the prototype 👍 Tell me what bothers you or what’s missing — even vaguely, I’ll help you make it precise.',
+          suggestions: [
+            'The design doesn’t match my brand',
+            'A feature is missing',
+            'One screen isn’t clear',
+          ],
+        },
+      ]
+    : [
+        {
+          id: uidMessage(),
+          role: 'assistant',
+          texte:
+            'Vous voulez faire évoluer le prototype 👍 Dites-moi ce qui vous gêne ou ce qu’il manque — même vaguement, je vous aide à préciser.',
+          suggestions: [
+            'Le design ne correspond pas à mon image de marque',
+            'Il manque une fonctionnalité',
+            'Un écran n’est pas clair',
+          ],
+        },
+      ];
 
   async function jouerTour(historique: Message[]): Promise<ResultatTour | null> {
     const nbUser = historique.filter((m) => m.role === 'user').length;
-    const tour = await tourChallengeIA(contexte, historique, nbUser >= 4);
+    const tour = await tourChallengeIA(contexte, historique, nbUser >= 4, lang);
     if (!tour) return null;
     if (tour.done && tour.remarques?.length) dernieres.current = tour.remarques;
     return { reply: tour.reply, suggestions: tour.suggestions, done: tour.done };
@@ -127,7 +145,7 @@ export default function ChallengeScreen({ useCaseId }: { useCaseId: string }) {
 
   return (
     <ChatIA
-      titre="Améliorer le prototype"
+      titre={tr('Améliorer le prototype', 'Improve the prototype')}
       ouverture={ouverture}
       jouerTour={jouerTour}
       onTermine={onTermine}

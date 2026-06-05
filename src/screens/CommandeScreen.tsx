@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { KeyboardAvoidingView, Platform, Pressable, SafeAreaView, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { Bouton, Carte, EnTete, BoutonAccueil } from '../components/ui';
+import { useTr } from '../i18n';
 import { useNav } from '../navigation';
 import { enregistrerBonCommande, trouverUseCase } from '../storage';
 import { colors, font, radius, spacing } from '../theme';
@@ -16,6 +17,7 @@ function reference(): string {
 // (prix détaillé + coût RUN), accepte les conditions, signe (nom) et valide.
 // Le paiement est géré hors-app (virement/facture).
 export default function CommandeScreen({ useCaseId }: { useCaseId: string }) {
+  const tr = useTr();
   const { aller, retour } = useNav();
   const [uc, setUc] = useState<UseCase | null>(null);
   const [cible, setCible] = useState<CibleDeploiement | null>(null);
@@ -35,7 +37,7 @@ export default function CommandeScreen({ useCaseId }: { useCaseId: string }) {
   if (!uc) {
     return (
       <SafeAreaView style={styles.safe}>
-        <Text style={styles.chargement}>Chargement…</Text>
+        <Text style={styles.chargement}>{tr('Chargement…', 'Loading…')}</Text>
       </SafeAreaView>
     );
   }
@@ -45,22 +47,25 @@ export default function CommandeScreen({ useCaseId }: { useCaseId: string }) {
     const b = uc.bonCommande;
     return (
       <SafeAreaView style={styles.safe}>
-        <EnTete titre="Bon de commande" onRetour={retour} droite={<BoutonAccueil onPress={() => aller({ nom: 'home' })} />} />
+        <EnTete titre={tr('Bon de commande', 'Purchase order')} onRetour={retour} droite={<BoutonAccueil onPress={() => aller({ nom: 'home' })} />} />
         <ScrollView contentContainerStyle={styles.content}>
           <Carte style={{ gap: spacing.sm, borderColor: colors.success + '66' }}>
-            <Text style={styles.confTitre}>✅ Commande validée</Text>
-            <Ligne label="Référence" v={b.reference} />
-            <Ligne label="Projet" v={uc.titre} />
-            <Ligne label="Déploiement" v={b.cible === 'getexp' ? 'Hébergé par iasser' : 'On-premise (chez le client)'} />
-            <Ligne label="Prix du projet" v={mad(b.prixProjetEur)} />
-            <Ligne label="Coût de fonctionnement" v={b.coutRunMensuelEur ? mad(b.coutRunMensuelEur) + ' /mois' : '—'} />
-            <Ligne label="Validé par" v={b.signataire} />
-            <Ligne label="Date" v={new Date(b.valideLe).toLocaleString('fr-FR')} />
+            <Text style={styles.confTitre}>{tr('✅ Commande validée', '✅ Order confirmed')}</Text>
+            <Ligne label={tr('Référence', 'Reference')} v={b.reference} />
+            <Ligne label={tr('Projet', 'Project')} v={uc.titre} />
+            <Ligne label={tr('Déploiement', 'Deployment')} v={b.cible === 'getexp' ? tr('Hébergé par iasser', 'Hosted by iasser') : tr('On-premise (chez le client)', 'On-premise (at the client)')} />
+            <Ligne label={tr('Prix du projet', 'Project price')} v={mad(b.prixProjetEur)} />
+            <Ligne label={tr('Coût de fonctionnement', 'Running cost')} v={b.coutRunMensuelEur ? mad(b.coutRunMensuelEur) + tr(' /mois', ' /month') : '—'} />
+            <Ligne label={tr('Validé par', 'Validated by')} v={b.signataire} />
+            <Ligne label={tr('Date', 'Date')} v={new Date(b.valideLe).toLocaleString('fr-FR')} />
           </Carte>
           <Text style={styles.note}>
-            Notre équipe vous contacte pour les modalités de paiement et le lancement.
+            {tr(
+              'Notre équipe vous contacte pour les modalités de paiement et le lancement.',
+              'Our team will reach out to you about payment terms and the kickoff.'
+            )}
           </Text>
-          <Bouton titre="Voir mon projet" onPress={() => aller({ nom: 'detail', useCaseId })} />
+          <Bouton titre={tr('Voir mon projet', 'View my project')} onPress={() => aller({ nom: 'detail', useCaseId })} />
         </ScrollView>
       </SafeAreaView>
     );
@@ -71,9 +76,9 @@ export default function CommandeScreen({ useCaseId }: { useCaseId: string }) {
     cible === 'getexp' ? uc.coutRun?.cloudMensuelEur : uc.coutRun?.onPremiseMensuelEur;
 
   async function valider() {
-    if (!cible) return setErreur('Choisissez où déployer votre application.');
-    if (!conditions) return setErreur('Veuillez accepter les conditions pour valider.');
-    if (signataire.trim().length < 2) return setErreur('Indiquez votre nom pour signer.');
+    if (!cible) return setErreur(tr('Choisissez où déployer votre application.', 'Choose where to deploy your application.'));
+    if (!conditions) return setErreur(tr('Veuillez accepter les conditions pour valider.', 'Please accept the terms to confirm.'));
+    if (signataire.trim().length < 2) return setErreur(tr('Indiquez votre nom pour signer.', 'Enter your name to sign.'));
     setErreur(null);
     setLoading(true);
     const bon: BonCommande = {
@@ -93,39 +98,47 @@ export default function CommandeScreen({ useCaseId }: { useCaseId: string }) {
 
   return (
     <SafeAreaView style={styles.safe}>
-      <EnTete titre="Bon de commande" onRetour={retour} droite={<BoutonAccueil onPress={() => aller({ nom: 'home' })} />} />
+      <EnTete titre={tr('Bon de commande', 'Purchase order')} onRetour={retour} droite={<BoutonAccueil onPress={() => aller({ nom: 'home' })} />} />
       <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
         <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
           <Text style={styles.intro}>
-            Dernière étape : choisissez où déployer votre application, relisez le récapitulatif,
-            puis validez votre commande.
+            {tr(
+              'Dernière étape : choisissez où déployer votre application, relisez le récapitulatif, puis validez votre commande.',
+              'Last step: choose where to deploy your application, review the summary, then confirm your order.'
+            )}
           </Text>
 
           {/* Choix de la cible */}
-          <Text style={styles.section}>Où déployer votre application ?</Text>
+          <Text style={styles.section}>{tr('Où déployer votre application ?', 'Where to deploy your application?')}</Text>
           <CibleCard
             actif={cible === 'getexp'}
             onPress={() => { setCible('getexp'); setErreur(null); }}
-            titre="☁️ Hébergé par iasser (clé en main)"
-            desc="Nous hébergeons et exploitons l’application pour vous. Rien à gérer côté technique."
+            titre={tr('☁️ Hébergé par iasser (clé en main)', '☁️ Hosted by iasser (turnkey)')}
+            desc={tr(
+              'Nous hébergeons et exploitons l’application pour vous. Rien à gérer côté technique.',
+              'We host and operate the application for you. Nothing to manage on the technical side.'
+            )}
             run={uc.coutRun?.cloudMensuelEur}
           />
           <CibleCard
             actif={cible === 'on_premise'}
             onPress={() => { setCible('on_premise'); setErreur(null); }}
-            titre="🏢 Sur votre infrastructure (on-premise)"
-            desc="Livraison d’un package clé en main à déployer sur vos serveurs / votre cloud."
+            titre={tr('🏢 Sur votre infrastructure (on-premise)', '🏢 On your own infrastructure (on-premise)')}
+            desc={tr(
+              'Livraison d’un package clé en main à déployer sur vos serveurs / votre cloud.',
+              'Delivery of a turnkey package to deploy on your servers / your cloud.'
+            )}
             run={uc.coutRun?.onPremiseMensuelEur}
           />
 
           {/* Récapitulatif financier */}
           <Carte style={{ gap: spacing.sm, marginTop: spacing.md }}>
-            <Text style={styles.section}>Récapitulatif</Text>
-            <Ligne label="Projet" v={uc.titre} />
-            <Ligne label="Prix du projet (one-shot)" v={mad(prix)} />
+            <Text style={styles.section}>{tr('Récapitulatif', 'Summary')}</Text>
+            <Ligne label={tr('Projet', 'Project')} v={uc.titre} />
+            <Ligne label={tr('Prix du projet (one-shot)', 'Project price (one-time)')} v={mad(prix)} />
             <Ligne
-              label="Coût de fonctionnement"
-              v={cible ? (runMensuel ? mad(runMensuel) + ' /mois' : '—') : 'Choisissez le déploiement'}
+              label={tr('Coût de fonctionnement', 'Running cost')}
+              v={cible ? (runMensuel ? mad(runMensuel) + tr(' /mois', ' /month') : '—') : tr('Choisissez le déploiement', 'Choose the deployment')}
             />
             {uc.ventilationPrix?.note && <Text style={styles.note}>{uc.ventilationPrix.note}</Text>}
           </Carte>
@@ -136,28 +149,30 @@ export default function CommandeScreen({ useCaseId }: { useCaseId: string }) {
               {conditions && <Text style={styles.checkMark}>✓</Text>}
             </View>
             <Text style={styles.checkTxt}>
-              J’accepte le périmètre et le prix indiqués ci-dessus. Ce bon de commande vaut
-              engagement ; les modalités de paiement seront convenues avec l’équipe iasser.
+              {tr(
+                'J’accepte le périmètre et le prix indiqués ci-dessus. Ce bon de commande vaut engagement ; les modalités de paiement seront convenues avec l’équipe iasser.',
+                'I accept the scope and price stated above. This purchase order constitutes a commitment; payment terms will be agreed with the iasser team.'
+              )}
             </Text>
           </Pressable>
 
-          <Text style={styles.label}>Votre nom (signature)</Text>
+          <Text style={styles.label}>{tr('Votre nom (signature)', 'Your name (signature)')}</Text>
           <TextInput
             style={styles.input}
             value={signataire}
             onChangeText={(t) => { setSignataire(t); setErreur(null); }}
-            placeholder="Prénom Nom"
+            placeholder={tr('Prénom Nom', 'First and last name')}
             placeholderTextColor={colors.textMuted}
           />
 
           {erreur && <Text style={styles.err}>{erreur}</Text>}
 
           <Bouton
-            titre={loading ? 'Validation…' : '✅ Valider ma commande'}
+            titre={loading ? tr('Validation…', 'Confirming…') : tr('✅ Valider ma commande', '✅ Confirm my order')}
             onPress={valider}
             loading={loading}
           />
-          <Text style={styles.note}>Aucun paiement en ligne. Notre équipe vous contacte ensuite.</Text>
+          <Text style={styles.note}>{tr('Aucun paiement en ligne. Notre équipe vous contacte ensuite.', 'No online payment. Our team will then contact you.')}</Text>
         </ScrollView>
       </KeyboardAvoidingView>
     </SafeAreaView>
@@ -167,6 +182,7 @@ export default function CommandeScreen({ useCaseId }: { useCaseId: string }) {
 function CibleCard({ actif, onPress, titre, desc, run }: {
   actif: boolean; onPress: () => void; titre: string; desc: string; run?: number;
 }) {
+  const tr = useTr();
   return (
     <Pressable onPress={onPress} style={[styles.cible, actif && styles.cibleActif]}>
       <View style={styles.cibleTop}>
@@ -174,7 +190,7 @@ function CibleCard({ actif, onPress, titre, desc, run }: {
         <View style={[styles.radio, actif && styles.radioOn]}>{actif && <View style={styles.radioDot} />}</View>
       </View>
       <Text style={styles.cibleDesc}>{desc}</Text>
-      {typeof run === 'number' && <Text style={styles.cibleRun}>≈ {mad(run)} /mois de fonctionnement</Text>}
+      {typeof run === 'number' && <Text style={styles.cibleRun}>≈ {mad(run)}{tr(' /mois de fonctionnement', ' /month of running cost')}</Text>}
     </Pressable>
   );
 }

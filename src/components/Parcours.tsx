@@ -1,25 +1,27 @@
 import React from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 import { colors, font, radius, spacing } from '../theme';
+import { useTr } from '../i18n';
 
 // Frise « Comment ça marche » — fallback natif (statique) : pastilles à icônes
 // reliées par un fil, rouge/vert marocain en alternance.
 const ETAPES = [
-  { icone: '🎯', titre: 'Cadrage métier', texte: 'L’IA et nos consultants structurent votre besoin et son ROI.', couleur: colors.primary },
-  { icone: '🎨', titre: 'Prototype', texte: 'Un prototype interactif à valider (ou challenger) avec nos experts.', couleur: colors.accent },
-  { icone: '🏗️', titre: 'Cadrage technique', texte: 'Nos architectes (assistés par l’IA) préparent la livraison plug-and-play.', couleur: colors.primary },
-  { icone: '🛡️', titre: 'Certification', texte: 'Nos experts testent, sécurisent et garantissent que ça marche en conditions réelles.', couleur: colors.accent },
-];
+  { icone: '🎯', titre: ['Cadrage métier', 'Business scoping'], texte: ['L’IA et nos consultants structurent votre besoin et son ROI.', 'Our AI and consultants structure your need and its ROI.'], couleur: colors.primary },
+  { icone: '🎨', titre: ['Prototype', 'Prototype'], texte: ['Un prototype interactif à valider (ou challenger) avec nos experts.', 'An interactive prototype to validate (or challenge) with our experts.'], couleur: colors.accent },
+  { icone: '🏗️', titre: ['Cadrage technique', 'Technical scoping'], texte: ['Nos architectes (assistés par l’IA) préparent la livraison plug-and-play.', 'Our architects (AI-assisted) prepare the plug-and-play delivery.'], couleur: colors.primary },
+  { icone: '🛡️', titre: ['Certification', 'Certification'], texte: ['Nos experts testent, sécurisent et garantissent que ça marche en conditions réelles.', 'Our experts test, secure and guarantee it works in real-world conditions.'], couleur: colors.accent },
+] as const;
 
 export default function Parcours() {
+  const tr = useTr();
   return (
     <View style={styles.wrap}>
       <View style={styles.eyebrowRow}>
         <View style={styles.bar} />
-        <Text style={styles.eyebrow}>Comment ça marche</Text>
+        <Text style={styles.eyebrow}>{tr('Comment ça marche', 'How it works')}</Text>
       </View>
       {ETAPES.map((e, i) => (
-        <View key={e.titre} style={styles.step}>
+        <View key={e.titre[0]} style={styles.step}>
           <View style={styles.rail}>
             <View style={[styles.node, { backgroundColor: e.couleur + '22', borderColor: e.couleur }]}>
               <Text style={styles.icone}>{e.icone}</Text>
@@ -27,8 +29,8 @@ export default function Parcours() {
             {i < ETAPES.length - 1 && <View style={styles.line} />}
           </View>
           <View style={styles.body}>
-            <Text style={styles.titre}>{e.titre}</Text>
-            <Text style={styles.texte}>{e.texte}</Text>
+            <Text style={styles.titre}>{tr(e.titre[0], e.titre[1])}</Text>
+            <Text style={styles.texte}>{tr(e.texte[0], e.texte[1])}</Text>
           </View>
         </View>
       ))}

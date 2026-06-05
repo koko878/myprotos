@@ -713,7 +713,8 @@ function normaliserUseCase(j: any): UseCase {
 export async function tourCadrageIA(
   messages: Message[],
   forceFinish: boolean,
-  contexteClient?: { paysClient?: string; secteur?: string }
+  contexteClient?: { paysClient?: string; secteur?: string },
+  langue: 'fr' | 'en' = 'fr'
 ): Promise<TourIA | null> {
   if (!iaDisponible()) return null;
   const premierUser = messages.findIndex((m) => m.role === 'user');
@@ -729,7 +730,11 @@ export async function tourCadrageIA(
     ? `\n\nINFOS CLIENT DÉJÀ CONNUES (ne les redemande pas, réutilise-les) :${contexteClient.paysClient ? ` pays du client = ${contexteClient.paysClient} (utilise-le comme paysClient par défaut, et demande seulement le pays de DÉPLOIEMENT s'il diffère).` : ''}${contexteClient.secteur ? ` secteur = ${contexteClient.secteur}.` : ''}`
     : '';
 
-  const base = (await promptEffectif(CLE_CADRAGE, SYSTEM_CADRAGE)) + CONFIDENTIALITE + infosClient;
+  const instructionLangue =
+    langue === 'en'
+      ? '\n\nLANGUAGE: Converse ENTIRELY in English. Your "reply", your questions and all "suggestions" MUST be in English (the client chose English).'
+      : '\n\nLANGUE : converse entièrement en français.';
+  const base = (await promptEffectif(CLE_CADRAGE, SYSTEM_CADRAGE)) + CONFIDENTIALITE + infosClient + instructionLangue;
   const sys = forceFinish
     ? base +
       '\n\nIMPORTANT : tu as recueilli assez d\'informations. Termine maintenant ("done": true) en produisant le use case.'
@@ -998,7 +1003,8 @@ function normaliserCadrageTechnique(j: any): CadrageTechnique {
  */
 export async function tourArchitecteIA(
   messages: Message[],
-  forceFinish: boolean
+  forceFinish: boolean,
+  langue: 'fr' | 'en' = 'fr'
 ): Promise<TourArchitecte | null> {
   if (!iaDisponible()) return null;
   const premierUser = messages.findIndex((m) => m.role === 'user');
@@ -1009,10 +1015,14 @@ export async function tourArchitecteIA(
     text: m.texte,
   }));
 
-  const sys = forceFinish
+  const instructionLangue =
+    langue === 'en'
+      ? '\n\nLANGUAGE: Converse ENTIRELY in English. Your "reply", questions and all "suggestions" MUST be in English.'
+      : '\n\nLANGUE : converse entièrement en français.';
+  const sys = (forceFinish
     ? SYSTEM_ARCHITECTE + CONFIDENTIALITE +
       '\n\nIMPORTANT : tu as recueilli assez d\'informations. Termine maintenant ("done": true) en produisant le plan de packaging.'
-    : SYSTEM_ARCHITECTE + CONFIDENTIALITE;
+    : SYSTEM_ARCHITECTE + CONFIDENTIALITE) + instructionLangue;
 
   const brut = await chatGemini(sys, historique, { json: true, temperature: 0.5 });
   if (!brut) return null;
@@ -1075,7 +1085,8 @@ export interface TourChallenge {
 export async function tourChallengeIA(
   contexte: string,
   messages: Message[],
-  forceFinish: boolean
+  forceFinish: boolean,
+  langue: 'fr' | 'en' = 'fr'
 ): Promise<TourChallenge | null> {
   if (!iaDisponible()) return null;
   const premierUser = messages.findIndex((m) => m.role === 'user');
@@ -1090,6 +1101,9 @@ export async function tourChallengeIA(
   const sys =
     baseChallenge +
     `\n\nContexte du projet (pour t'aider à comprendre) : ${contexte}` +
+    (langue === 'en'
+      ? '\n\nLANGUAGE: Converse ENTIRELY in English (reply, questions, suggestions and the final remarks list).'
+      : '\n\nLANGUE : converse entièrement en français.') +
     (forceFinish
       ? '\n\nIMPORTANT : tu as assez d\'éléments. Termine maintenant ("done": true) en produisant la liste des remarques.'
       : '');
@@ -1169,7 +1183,8 @@ export interface TourChallengeCadrage {
 export async function tourChallengeCadrageIA(
   actuel: UseCase,
   messages: Message[],
-  forceFinish: boolean
+  forceFinish: boolean,
+  langue: 'fr' | 'en' = 'fr'
 ): Promise<TourChallengeCadrage | null> {
   if (!iaDisponible()) return null;
   const premierUser = messages.findIndex((m) => m.role === 'user');
@@ -1186,6 +1201,9 @@ export async function tourChallengeCadrageIA(
   const sys =
     baseCC +
     `\n\n${resume}` +
+    (langue === 'en'
+      ? '\n\nLANGUAGE: Converse ENTIRELY in English (reply, questions, suggestions).'
+      : '\n\nLANGUE : converse entièrement en français.') +
     (forceFinish ? '\n\nIMPORTANT : termine maintenant ("done": true) avec le use case mis à jour.' : '');
 
   const brut = await chatGemini(sys, historique, { json: true, temperature: 0.5 });

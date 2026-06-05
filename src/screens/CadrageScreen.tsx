@@ -1,6 +1,7 @@
 import React, { useEffect, useRef } from 'react';
 import { tourCadrageIA } from '../cadrageAssistant';
 import ChatIA, { ResultatTour, uidMessage } from '../components/ChatIA';
+import { useLang } from '../i18n';
 import { iaDisponible } from '../llm';
 import { useNav } from '../navigation';
 import { chargerProfil } from '../profil';
@@ -9,27 +10,47 @@ import { Message, UseCase } from '../types';
 import CadrageScripte from './CadrageScripte';
 
 // Ouverture commune : l'IA prend ensuite la main sur tout le dialogue.
-const ouverture = (): Message[] => [
-  {
-    id: uidMessage(),
-    role: 'assistant',
-    texte:
-      'Bonjour 👋 Je suis votre consultant. On va transformer votre idée en projet clair en quelques questions.',
-  },
-  {
-    id: uidMessage(),
-    role: 'assistant',
-    texte: 'En une phrase, quelle est l’idée ou le besoin que vous aimeriez explorer ?',
-    suggestions: [
-      'Prédire le risque de churn de mes clients',
-      'Automatiser le tri de documents entrants',
-      'Un assistant IA pour mon support client',
-    ],
-  },
-];
+const ouverture = (lang: 'fr' | 'en'): Message[] =>
+  lang === 'en'
+    ? [
+        {
+          id: uidMessage(),
+          role: 'assistant',
+          texte: 'Hi 👋 I’m your consultant. We’ll turn your idea into a clear project in a few questions.',
+        },
+        {
+          id: uidMessage(),
+          role: 'assistant',
+          texte: 'In one sentence, what’s the idea or need you’d like to explore?',
+          suggestions: [
+            'Predict customer churn risk',
+            'Automate sorting of incoming documents',
+            'An AI assistant for my customer support',
+          ],
+        },
+      ]
+    : [
+        {
+          id: uidMessage(),
+          role: 'assistant',
+          texte:
+            'Bonjour 👋 Je suis votre consultant. On va transformer votre idée en projet clair en quelques questions.',
+        },
+        {
+          id: uidMessage(),
+          role: 'assistant',
+          texte: 'En une phrase, quelle est l’idée ou le besoin que vous aimeriez explorer ?',
+          suggestions: [
+            'Prédire le risque de churn de mes clients',
+            'Automatiser le tri de documents entrants',
+            'Un assistant IA pour mon support client',
+          ],
+        },
+      ];
 
 export default function CadrageScreen() {
   const { aller } = useNav();
+  const { lang } = useLang();
   const useCaseFinal = useRef<UseCase | null>(null);
   const profil = useRef<{ paysClient?: string; secteur?: string }>({});
 
@@ -45,7 +66,7 @@ export default function CadrageScreen() {
 
   async function jouerTour(historique: Message[]): Promise<ResultatTour | null> {
     const nbUser = historique.filter((m) => m.role === 'user').length;
-    const tour = await tourCadrageIA(historique, nbUser >= 9, profil.current);
+    const tour = await tourCadrageIA(historique, nbUser >= 9, profil.current, lang);
     if (!tour) return null;
     if (tour.done && tour.useCase) useCaseFinal.current = tour.useCase;
     return { reply: tour.reply, suggestions: tour.suggestions, done: tour.done };
@@ -72,8 +93,8 @@ export default function CadrageScreen() {
 
   return (
     <ChatIA
-      titre="Cadrage métier"
-      ouverture={ouverture()}
+      titre={lang === 'en' ? 'Business scoping' : 'Cadrage métier'}
+      ouverture={ouverture(lang)}
       jouerTour={jouerTour}
       onTermine={onTermine}
       progression={(h) => h.filter((m) => m.role === 'user').length / 9}

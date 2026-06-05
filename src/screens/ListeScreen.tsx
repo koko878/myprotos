@@ -2,12 +2,14 @@ import React, { useEffect, useState } from 'react';
 import { SafeAreaView, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { Bouton, Carte, EnTete, Etiquette, couleurComplexite } from '../components/ui';
 import { libelleStatut } from '../components/UseCaseView';
+import { useTr } from '../i18n';
 import { useNav } from '../navigation';
 import { chargerUseCases } from '../storage';
 import { colors, font, spacing } from '../theme';
 import { UseCase } from '../types';
 
 export default function ListeScreen() {
+  const tr = useTr();
   const { aller, retour } = useNav();
   const [liste, setListe] = useState<UseCase[] | null>(null);
 
@@ -18,16 +20,19 @@ export default function ListeScreen() {
 
   return (
     <SafeAreaView style={styles.safe}>
-      <EnTete titre="Mes projets" onRetour={retour} />
+      <EnTete titre={tr('Mes projets', 'My projects')} onRetour={retour} />
 
       <ScrollView contentContainerStyle={styles.content}>
         {liste && liste.length === 0 && (
           <View style={styles.vide}>
-            <Text style={styles.videTitre}>Aucun projet pour l’instant</Text>
+            <Text style={styles.videTitre}>{tr('Aucun projet pour l’instant', 'No projects yet')}</Text>
             <Text style={styles.videTxt}>
-              Exprimez votre première idée, l’assistant IA vous aide à la cadrer.
+              {tr(
+                'Exprimez votre première idée, l’assistant IA vous aide à la cadrer.',
+                'Share your first idea and the AI assistant will help you shape it.'
+              )}
             </Text>
-            <Bouton titre="✨ Exprimer une idée" onPress={() => aller({ nom: 'cadrage' })} />
+            <Bouton titre={tr('✨ Exprimer une idée', '✨ Share an idea')} onPress={() => aller({ nom: 'cadrage' })} />
           </View>
         )}
 
@@ -49,14 +54,14 @@ export default function ListeScreen() {
               <Etiquette texte={uc.complexite} couleur={couleurComplexite(uc.complexite)} />
               <Etiquette texte={uc.budgetEstime} />
             </View>
-            {prochaineAction(uc.statut) && (
-              <Text style={styles.action}>{prochaineAction(uc.statut)}</Text>
+            {prochaineAction(uc.statut, tr) && (
+              <Text style={styles.action}>{prochaineAction(uc.statut, tr)}</Text>
             )}
           </Carte>
         ))}
 
         {liste && liste.length > 0 && (
-          <Bouton titre="✨ Nouvelle idée" onPress={() => aller({ nom: 'cadrage' })} />
+          <Bouton titre={tr('✨ Nouvelle idée', '✨ New idea')} onPress={() => aller({ nom: 'cadrage' })} />
         )}
       </ScrollView>
     </SafeAreaView>
@@ -68,24 +73,24 @@ function scoreCouleur(s: number) {
 }
 
 // Indique au client ce qu'il peut/doit faire ensuite, selon l'étape.
-function prochaineAction(statut: UseCase['statut']): string {
+function prochaineAction(statut: UseCase['statut'], tr: (fr: string, en: string) => string): string {
   switch (statut) {
     case 'brouillon':
-      return '👉 À soumettre pour lancer le prototype';
+      return tr('👉 À soumettre pour lancer le prototype', '👉 Submit it to start the prototype');
     case 'soumis':
-      return '⏳ Prototype en préparation';
+      return tr('⏳ Prototype en préparation', '⏳ Prototype in progress');
     case 'prototype_pret_admin':
-      return '⏳ Prototype en préparation';
+      return tr('⏳ Prototype en préparation', '⏳ Prototype in progress');
     case 'prototype_genere':
-      return '👉 Votre prototype est prêt — à voir et valider';
+      return tr('👉 Votre prototype est prêt — à voir et valider', '👉 Your prototype is ready — review and approve it');
     case 'revision_demandee':
-      return '⏳ Nouvelle version en préparation';
+      return tr('⏳ Nouvelle version en préparation', '⏳ New version in progress');
     case 'prototype_valide':
-      return '👉 Passez au cadrage technique';
+      return tr('👉 Passez au cadrage technique', '👉 Move on to technical scoping');
     case 'cadrage_technique':
-      return '👉 Reprendre le cadrage technique';
+      return tr('👉 Reprendre le cadrage technique', '👉 Resume technical scoping');
     case 'pret_a_packager':
-      return '✅ Prêt à packager';
+      return tr('✅ Prêt à packager', '✅ Ready to package');
     default:
       return '';
   }

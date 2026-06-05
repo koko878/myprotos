@@ -3,6 +3,7 @@ import { Pressable, SafeAreaView, ScrollView, StyleSheet, Text, View } from 'rea
 import UseCaseView from '../components/UseCaseView';
 import { Bouton, Carte, EnTete } from '../components/ui';
 import { choisirFichiers, tailleLisible } from '../fichiers';
+import { useTr } from '../i18n';
 import { iaDisponible } from '../llm';
 import { useNav } from '../navigation';
 import { ajouterPiecesJointes, definirLangues, soumettreProjet, supprimerPieceJointe, trouverUseCase } from '../storage';
@@ -11,9 +12,17 @@ import { colors, font, radius, spacing } from '../theme';
 import { UseCase } from '../types';
 
 const LANGUES = ['Français', 'Arabe', 'Anglais', 'Espagnol', 'Amazigh'];
+const LANGUES_EN: Record<string, string> = {
+  Français: 'French',
+  Arabe: 'Arabic',
+  Anglais: 'English',
+  Espagnol: 'Spanish',
+  Amazigh: 'Amazigh',
+};
 
 export default function RecapScreen({ useCaseId }: { useCaseId: string }) {
   const { aller, retour } = useNav();
+  const tr = useTr();
   const [uc, setUc] = useState<UseCase | null>(null);
 
   const [introuvable, setIntrouvable] = useState(false);
@@ -82,11 +91,11 @@ export default function RecapScreen({ useCaseId }: { useCaseId: string }) {
       <SafeAreaView style={styles.safe}>
         {introuvable ? (
           <View style={{ flex: 1, justifyContent: 'center', padding: spacing.xl, gap: spacing.lg }}>
-            <Text style={styles.chargement}>Projet introuvable pour le moment.</Text>
-            <Bouton titre="Voir mes projets" onPress={() => aller({ nom: 'liste' })} />
+            <Text style={styles.chargement}>{tr('Projet introuvable pour le moment.', 'Project not found at the moment.')}</Text>
+            <Bouton titre={tr('Voir mes projets', 'View my projects')} onPress={() => aller({ nom: 'liste' })} />
           </View>
         ) : (
-          <Text style={styles.chargement}>Chargement…</Text>
+          <Text style={styles.chargement}>{tr('Chargement…', 'Loading…')}</Text>
         )}
       </SafeAreaView>
     );
@@ -94,19 +103,21 @@ export default function RecapScreen({ useCaseId }: { useCaseId: string }) {
 
   return (
     <SafeAreaView style={styles.safe}>
-      <EnTete titre="Récapitulatif" onRetour={retour} />
+      <EnTete titre={tr('Récapitulatif', 'Summary')} onRetour={retour} />
 
       <ScrollView contentContainerStyle={styles.content}>
         <View style={styles.banniere}>
           <Text style={styles.banniereTxt}>
-            ✅ Voici votre idée transformée en use case structuré par l’IA.
-            Relisez-le, puis soumettez-le : nous préparons votre prototype.
+            {tr(
+              '✅ Voici votre idée transformée en use case structuré par l’IA. Relisez-le, puis soumettez-le : nous préparons votre prototype.',
+              '✅ Here’s your idea turned into a structured use case by the AI. Review it, then submit it: we’ll prepare your prototype.'
+            )}
           </Text>
         </View>
         {/* Challenger / affiner le cadrage avant de soumettre */}
         {uc.statut === 'brouillon' && iaDisponible() && (
           <Bouton
-            titre="✏️ Challenger / affiner le cadrage"
+            titre={tr('✏️ Challenger / affiner le cadrage', '✏️ Challenge / refine the scoping')}
             variante="secondaire"
             onPress={() => aller({ nom: 'challengeCadrage', useCaseId })}
           />
@@ -117,9 +128,12 @@ export default function RecapScreen({ useCaseId }: { useCaseId: string }) {
 
         {/* Langues de l'application */}
         <Carte style={{ marginTop: spacing.lg, gap: spacing.md }}>
-          <Text style={styles.pjTitre}>🌐 Langues de l’application</Text>
+          <Text style={styles.pjTitre}>{tr('🌐 Langues de l’application', '🌐 App languages')}</Text>
           <Text style={styles.pjSous}>
-            Dans quelle(s) langue(s) votre application doit-elle être disponible ?
+            {tr(
+              'Dans quelle(s) langue(s) votre application doit-elle être disponible ?',
+              'In which language(s) should your application be available?'
+            )}
           </Text>
           <View style={styles.langues}>
             {LANGUES.map((l) => {
@@ -131,7 +145,7 @@ export default function RecapScreen({ useCaseId }: { useCaseId: string }) {
                   style={[styles.langue, actif && styles.langueActif]}
                 >
                   <Text style={[styles.langueTxt, actif && styles.langueTxtActif]}>
-                    {actif ? '✓ ' : ''}{l}
+                    {actif ? '✓ ' : ''}{tr(l, LANGUES_EN[l] ?? l)}
                   </Text>
                 </Pressable>
               );
@@ -141,10 +155,12 @@ export default function RecapScreen({ useCaseId }: { useCaseId: string }) {
 
         {/* Pièces jointes : logo, charte graphique, documents… */}
         <Carte style={{ marginTop: spacing.lg, gap: spacing.md }}>
-          <Text style={styles.pjTitre}>📎 Logo, charte, documents (optionnel)</Text>
+          <Text style={styles.pjTitre}>{tr('📎 Logo, charte, documents (optionnel)', '📎 Logo, brand guidelines, documents (optional)')}</Text>
           <Text style={styles.pjSous}>
-            Ajoutez votre logo, votre charte graphique ou tout document utile : nous nous en
-            servirons pour que le prototype respecte votre identité.
+            {tr(
+              'Ajoutez votre logo, votre charte graphique ou tout document utile : nous nous en servirons pour que le prototype respecte votre identité.',
+              'Add your logo, brand guidelines or any useful document: we’ll use them so the prototype matches your identity.'
+            )}
           </Text>
           {(uc.piecesJointes ?? []).map((p) => (
             <View key={p.id} style={styles.pjLigne}>
@@ -156,16 +172,16 @@ export default function RecapScreen({ useCaseId }: { useCaseId: string }) {
               </Pressable>
             </View>
           ))}
-          <Bouton titre="+ Ajouter un fichier" variante="secondaire" onPress={joindre} />
+          <Bouton titre={tr('+ Ajouter un fichier', '+ Add a file')} variante="secondaire" onPress={joindre} />
         </Carte>
       </ScrollView>
 
       <View style={styles.footer}>
         {uc.statut === 'brouillon' ? (
-          <Bouton titre="📤 Soumettre mon projet" onPress={soumettre} />
+          <Bouton titre={tr('📤 Soumettre mon projet', '📤 Submit my project')} onPress={soumettre} />
         ) : (
           <Bouton
-            titre="Voir mes projets"
+            titre={tr('Voir mes projets', 'View my projects')}
             variante="secondaire"
             onPress={() => aller({ nom: 'liste' })}
           />

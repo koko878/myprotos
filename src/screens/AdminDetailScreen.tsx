@@ -12,8 +12,10 @@ import { deposerPrototypeHtml, enregistrerPrototype, envoyerPrototypeAuClient, t
 import { ouvrirHtmlNouvelOnglet } from '../ouvrir';
 import { colors, font, radius, spacing } from '../theme';
 import { UseCase } from '../types';
+import { useTr } from '../i18n';
 
 export default function AdminDetailScreen({ useCaseId }: { useCaseId: string }) {
+  const tr = useTr();
   const { retour } = useNav();
   const [uc, setUc] = useState<UseCase | null>(null);
   const [loading, setLoading] = useState(false);
@@ -41,7 +43,10 @@ export default function AdminDetailScreen({ useCaseId }: { useCaseId: string }) 
   // Dépose le HTML (collé ou importé) comme nouvelle version du prototype.
   async function deposerHtml(html: string) {
     if (!/<html[\s>]/i.test(html) && !/<!doctype html/i.test(html)) {
-      setErreur('Le fichier ne ressemble pas à un document HTML (balise <html> manquante).');
+      setErreur(tr(
+        'Le fichier ne ressemble pas à un document HTML (balise <html> manquante).',
+        'The file does not look like an HTML document (missing <html> tag).'
+      ));
       return;
     }
     setErreur(null);
@@ -71,20 +76,29 @@ export default function AdminDetailScreen({ useCaseId }: { useCaseId: string }) 
     setMoteur(null);
     setDiag(null);
     if (!iaDisponible() && !backendDisponible()) {
-      setErreur('Aucun moteur de génération configuré (backend ou IA).');
+      setErreur(tr(
+        'Aucun moteur de génération configuré (backend ou IA).',
+        'No generation engine configured (backend or AI).'
+      ));
       return;
     }
     setLoading(true);
     const res = await genererPrototypeHtml(uc);
     setLoading(false);
     if (!res) {
-      setErreur('La génération a échoué (moteur indisponible ou réponse invalide). Réessayez.');
+      setErreur(tr(
+        'La génération a échoué (moteur indisponible ou réponse invalide). Réessayez.',
+        'Generation failed (engine unavailable or invalid response). Please try again.'
+      ));
       return;
     }
     setMoteur(res.moteur);
     if (res.moteur === 'gemini' && res.backendErreur) {
       // Important : on voulait Claude mais le backend a échoué -> on l'affiche.
-      setDiag('Backend Claude indisponible (' + res.backendErreur + ') → repli Gemini.');
+      setDiag(tr(
+        'Backend Claude indisponible (' + res.backendErreur + ') → repli Gemini.',
+        'Claude backend unavailable (' + res.backendErreur + ') → falling back to Gemini.'
+      ));
     }
     const liste = await enregistrerPrototype(useCaseId, res.html);
     setUc((prev) => liste.find((u) => u.id === useCaseId) ?? prev);
@@ -93,7 +107,7 @@ export default function AdminDetailScreen({ useCaseId }: { useCaseId: string }) 
   if (!uc) {
     return (
       <SafeAreaView style={styles.safe}>
-        <Text style={styles.chargement}>Chargement…</Text>
+        <Text style={styles.chargement}>{tr('Chargement…', 'Loading…')}</Text>
       </SafeAreaView>
     );
   }
@@ -113,47 +127,49 @@ export default function AdminDetailScreen({ useCaseId }: { useCaseId: string }) 
         {/* Commande validée -> production de l'application finale */}
         {uc.statut === 'commande_validee' && (
           <Carte style={{ gap: spacing.md, borderColor: colors.success + '66' }}>
-            <Text style={styles.h}>🏗️ Application finale — à produire</Text>
+            <Text style={styles.h}>{tr('🏗️ Application finale — à produire', '🏗️ Final application — to build')}</Text>
             <Text style={styles.sub}>
-              Commande validée{uc.bonCommande?.reference ? ` (réf. ${uc.bonCommande.reference})` : ''}.
-              Cible : {uc.cibleDeploiement === 'getexp' ? 'hébergée par iasser (Azure)' : 'on-premise (infra client)'}.
-              Téléchargez le package (brief full-stack conforme au standard + pièces jointes) et
-              générez l’application avec Claude Code.
+              {tr('Commande validée', 'Order confirmed')}{uc.bonCommande?.reference ? tr(` (réf. ${uc.bonCommande.reference})`, ` (ref. ${uc.bonCommande.reference})`) : ''}.
+              {' '}{tr('Cible', 'Target')} : {uc.cibleDeploiement === 'getexp' ? tr('hébergée par iasser (Azure)', 'hosted by iasser (Azure)') : tr('on-premise (infra client)', 'on-premise (client infrastructure)')}.
+              {' '}{tr(
+                'Téléchargez le package (brief full-stack conforme au standard + pièces jointes) et générez l’application avec Claude Code.',
+                'Download the package (standard-compliant full-stack brief + attachments) and generate the application with Claude Code.'
+              )}
             </Text>
-            <Bouton titre="⬇️ Télécharger le package App finale" onPress={telechargerAppFinale} />
+            <Bouton titre={tr('⬇️ Télécharger le package App finale', '⬇️ Download final app package')} onPress={telechargerAppFinale} />
           </Carte>
         )}
 
         {/* Identité du client + soumission */}
         {(uc.client || uc.soumisLe) && (
           <Carte style={{ gap: spacing.sm, borderColor: colors.accent + '44' }}>
-            <Text style={styles.h}>👤 Client</Text>
-            {uc.client?.email && <Ligne label="Email" v={uc.client.email} />}
-            {uc.client?.entreprise && <Ligne label="Entreprise" v={uc.client.entreprise} />}
-            {uc.client?.secteur && <Ligne label="Secteur du client" v={uc.client.secteur} />}
-            {typeof uc.client?.age === 'number' && <Ligne label="Âge" v={String(uc.client.age)} />}
-            {uc.soumisLe && <Ligne label="Soumis le" v={dateHeure(uc.soumisLe)} />}
+            <Text style={styles.h}>{tr('👤 Client', '👤 Client')}</Text>
+            {uc.client?.email && <Ligne label={tr('Email', 'Email')} v={uc.client.email} />}
+            {uc.client?.entreprise && <Ligne label={tr('Entreprise', 'Company')} v={uc.client.entreprise} />}
+            {uc.client?.secteur && <Ligne label={tr('Secteur du client', 'Client industry')} v={uc.client.secteur} />}
+            {typeof uc.client?.age === 'number' && <Ligne label={tr('Âge', 'Age')} v={String(uc.client.age)} />}
+            {uc.soumisLe && <Ligne label={tr('Soumis le', 'Submitted on')} v={dateHeure(uc.soumisLe)} />}
           </Carte>
         )}
 
         {/* Brief métier condensé pour l'admin */}
         <Carte style={{ gap: spacing.sm }}>
-          <Text style={styles.h}>Brief</Text>
-          <Ligne label="Domaine" v={uc.domaine} />
-          <Ligne label="Problème" v={uc.probleme} />
-          <Ligne label="Objectif" v={uc.objectif} />
-          <Ligne label="Approche" v={uc.approcheSuggeree} />
-          {uc.spec && <Ligne label="Prototype" v={uc.spec.resume} />}
+          <Text style={styles.h}>{tr('Brief', 'Brief')}</Text>
+          <Ligne label={tr('Domaine', 'Domain')} v={uc.domaine} />
+          <Ligne label={tr('Problème', 'Problem')} v={uc.probleme} />
+          <Ligne label={tr('Objectif', 'Goal')} v={uc.objectif} />
+          <Ligne label={tr('Approche', 'Approach')} v={uc.approcheSuggeree} />
+          {uc.spec && <Ligne label={tr('Prototype', 'Prototype')} v={uc.spec.resume} />}
         </Carte>
 
         {/* Remarques du client (révisions) */}
         {remarques.length > 0 && (
           <Carte style={{ gap: spacing.sm, borderColor: colors.warn + '66' }}>
-            <Text style={styles.h}>📝 Remarques du client ({remarques.length})</Text>
+            <Text style={styles.h}>{tr('📝 Remarques du client', '📝 Client feedback')} ({remarques.length})</Text>
             {remarques.map((r) => (
               <View key={r.id} style={styles.remarque}>
                 <Text style={styles.remarqueTxt}>“{r.texte}”</Text>
-                <Text style={styles.remarqueMeta}>sur version {r.versionPrototype}</Text>
+                <Text style={styles.remarqueMeta}>{tr(`sur version ${r.versionPrototype}`, `on version ${r.versionPrototype}`)}</Text>
               </View>
             ))}
           </Carte>
@@ -162,35 +178,41 @@ export default function AdminDetailScreen({ useCaseId }: { useCaseId: string }) 
         {/* Pièces jointes fournies par le client */}
         {(uc.piecesJointes?.length ?? 0) > 0 && (
           <Carte style={{ gap: spacing.sm }}>
-            <Text style={styles.h}>📎 Pièces jointes ({uc.piecesJointes!.length})</Text>
+            <Text style={styles.h}>{tr('📎 Pièces jointes', '📎 Attachments')} ({uc.piecesJointes!.length})</Text>
             {uc.piecesJointes!.map((p) => (
               <Text key={p.id} style={styles.pj}>• {p.nom} <Text style={styles.pjType}>({p.type})</Text></Text>
             ))}
-            <Text style={styles.sub}>Incluses dans le ZIP ci-dessous.</Text>
+            <Text style={styles.sub}>{tr('Incluses dans le ZIP ci-dessous.', 'Included in the ZIP below.')}</Text>
           </Carte>
         )}
 
         {/* MODE MANUEL (principal) : dossier ZIP -> génération ici -> dépôt HTML */}
         <Carte style={{ gap: spacing.md }}>
-          <Text style={styles.h}>Prototype — workflow</Text>
+          <Text style={styles.h}>{tr('Prototype — workflow', 'Prototype — workflow')}</Text>
           <Text style={styles.sub}>
             {dejaGenere
-              ? `Version actuelle : v${uc.prototypeVersion ?? 1}. ${enRevision ? 'Le client a demandé des changements.' : 'En attente de validation client.'}`
-              : 'Téléchargez le dossier, faites générer le prototype, puis collez le HTML ici.'}
+              ? tr(
+                  `Version actuelle : v${uc.prototypeVersion ?? 1}. ${enRevision ? 'Le client a demandé des changements.' : 'En attente de validation client.'}`,
+                  `Current version: v${uc.prototypeVersion ?? 1}. ${enRevision ? 'The client requested changes.' : 'Awaiting client approval.'}`
+                )
+              : tr(
+                  'Téléchargez le dossier, faites générer le prototype, puis collez le HTML ici.',
+                  'Download the folder, have the prototype generated, then paste the HTML here.'
+                )}
           </Text>
 
-          <View style={styles.etapeNum}><Text style={styles.etapeNumTxt}>1</Text><Text style={styles.etapeTxt}>Télécharger le prompt (+ pièces jointes) à passer à l’agent de code</Text></View>
-          <Bouton titre="⬇️ Télécharger le prompt + fichiers" variante="secondaire" onPress={telecharger} />
+          <View style={styles.etapeNum}><Text style={styles.etapeNumTxt}>1</Text><Text style={styles.etapeTxt}>{tr('Télécharger le prompt (+ pièces jointes) à passer à l’agent de code', 'Download the prompt (+ attachments) to pass to the coding agent')}</Text></View>
+          <Bouton titre={tr('⬇️ Télécharger le prompt + fichiers', '⬇️ Download the prompt + files')} variante="secondaire" onPress={telecharger} />
 
-          <View style={styles.etapeNum}><Text style={styles.etapeNumTxt}>2</Text><Text style={styles.etapeTxt}>Générer le prototype, puis déposer le fichier HTML obtenu :</Text></View>
+          <View style={styles.etapeNum}><Text style={styles.etapeNumTxt}>2</Text><Text style={styles.etapeTxt}>{tr('Générer le prototype, puis déposer le fichier HTML obtenu :', 'Generate the prototype, then upload the resulting HTML file:')}</Text></View>
           {erreur && <Text style={styles.erreur}>⚠️ {erreur}</Text>}
 
           {/* Méthode principale : upload d'un fichier .html */}
-          <FileButton titre="📄 Importer un fichier .html" onTexte={(_n, contenu) => deposerHtml(contenu)} />
+          <FileButton titre={tr('📄 Importer un fichier .html', '📄 Import a .html file')} onTexte={(_n, contenu) => deposerHtml(contenu)} />
 
           {/* Méthode de secours : coller le code */}
           <Pressable onPress={() => setColleVisible((v) => !v)} hitSlop={6} style={styles.toggleColle}>
-            <Text style={styles.toggleColleTxt}>{colleVisible ? '▾ ' : '▸ '}ou coller le code HTML</Text>
+            <Text style={styles.toggleColleTxt}>{colleVisible ? '▾ ' : '▸ '}{tr('ou coller le code HTML', 'or paste the HTML code')}</Text>
           </Pressable>
           {colleVisible && (
             <>
@@ -202,7 +224,7 @@ export default function AdminDetailScreen({ useCaseId }: { useCaseId: string }) 
                 placeholder="<!DOCTYPE html> … </html>"
                 placeholderTextColor={colors.textMuted}
               />
-              <Bouton titre="✅ Déposer le code collé" variante="secondaire" onPress={deposer} />
+              <Bouton titre={tr('✅ Déposer le code collé', '✅ Submit the pasted code')} variante="secondaire" onPress={deposer} />
             </>
           )}
         </Carte>
@@ -210,19 +232,24 @@ export default function AdminDetailScreen({ useCaseId }: { useCaseId: string }) 
         {/* ENVOI AU CLIENT */}
         {pretAEnvoyer && (
           <Carte style={{ gap: spacing.md, borderColor: colors.warn + '66' }}>
-            <Text style={styles.h}>📤 Prototype prêt à envoyer</Text>
+            <Text style={styles.h}>{tr('📤 Prototype prêt à envoyer', '📤 Prototype ready to send')}</Text>
             <Text style={styles.sub}>
-              Le prototype (v{uc.prototypeVersion ?? 1}) est déposé. Vérifiez l’aperçu ci-dessous,
-              puis envoyez-le au client pour validation.
+              {tr(
+                `Le prototype (v${uc.prototypeVersion ?? 1}) est déposé. Vérifiez l’aperçu ci-dessous, puis envoyez-le au client pour validation.`,
+                `The prototype (v${uc.prototypeVersion ?? 1}) has been uploaded. Check the preview below, then send it to the client for approval.`
+              )}
             </Text>
-            <Bouton titre="📤 Envoyer au client" onPress={envoyer} />
+            <Bouton titre={tr('📤 Envoyer au client', '📤 Send to client')} onPress={envoyer} />
           </Carte>
         )}
         {envoye && (
           <Carte style={{ gap: spacing.sm, borderColor: colors.success + '66' }}>
-            <Text style={styles.h}>✅ Envoyé au client</Text>
+            <Text style={styles.h}>{tr('✅ Envoyé au client', '✅ Sent to client')}</Text>
             <Text style={styles.sub}>
-              Le client peut voir et valider le prototype (v{uc.prototypeVersion ?? 1}).
+              {tr(
+                `Le client peut voir et valider le prototype (v${uc.prototypeVersion ?? 1}).`,
+                `The client can view and approve the prototype (v${uc.prototypeVersion ?? 1}).`
+              )}
             </Text>
           </Carte>
         )}
@@ -230,27 +257,29 @@ export default function AdminDetailScreen({ useCaseId }: { useCaseId: string }) 
         {/* GÉNÉRATION AUTO (option repliée) */}
         <Carte style={{ gap: spacing.md }}>
           <Pressable onPress={() => setAutoVisible((v) => !v)}>
-            <Text style={styles.h}>{autoVisible ? '▾' : '▸'} Génération automatique (option)</Text>
+            <Text style={styles.h}>{autoVisible ? '▾' : '▸'} {tr('Génération automatique (option)', 'Automatic generation (optional)')}</Text>
           </Pressable>
           {autoVisible && (
             <>
               <Text style={styles.sub}>
-                Génère directement via l’IA (backend Claude si dispo, sinon Gemini). Moins fiable
-                que le workflow manuel ci-dessus.
+                {tr(
+                  'Génère directement via l’IA (backend Claude si dispo, sinon Gemini). Moins fiable que le workflow manuel ci-dessus.',
+                  'Generates directly via AI (Claude backend if available, otherwise Gemini). Less reliable than the manual workflow above.'
+                )}
               </Text>
               {moteur && (
                 <Text style={[styles.moteur, { color: moteur === 'claude' ? colors.success : colors.warn }]}>
-                  {moteur === 'claude' ? '✨ Généré par Claude' : '⚡ Généré par Gemini (repli)'}
+                  {moteur === 'claude' ? tr('✨ Généré par Claude', '✨ Generated by Claude') : tr('⚡ Généré par Gemini (repli)', '⚡ Generated by Gemini (fallback)')}
                 </Text>
               )}
               {diag && <Text style={styles.diag}>ℹ️ {diag}</Text>}
               {loading ? (
                 <View style={styles.loadingBox}>
                   <ActivityIndicator color={colors.primary} />
-                  <Text style={styles.loadingTxt}>Génération en cours… (jusqu’à 2 min)</Text>
+                  <Text style={styles.loadingTxt}>{tr('Génération en cours… (jusqu’à 2 min)', 'Generating… (up to 2 min)')}</Text>
                 </View>
               ) : (
-                <Bouton titre="⚙️ Générer automatiquement" variante="secondaire" onPress={generer} />
+                <Bouton titre={tr('⚙️ Générer automatiquement', '⚙️ Generate automatically')} variante="secondaire" onPress={generer} />
               )}
             </>
           )}
@@ -259,10 +288,10 @@ export default function AdminDetailScreen({ useCaseId }: { useCaseId: string }) 
         {/* Aperçu admin du prototype généré */}
         {dejaGenere && (
           <Carte style={{ gap: spacing.sm }}>
-            <Text style={styles.h}>Aperçu (v{uc.prototypeVersion ?? 1})</Text>
+            <Text style={styles.h}>{tr(`Aperçu (v${uc.prototypeVersion ?? 1})`, `Preview (v${uc.prototypeVersion ?? 1})`)}</Text>
             {Platform.OS === 'web' && (
               <Bouton
-                titre="🔗 Ouvrir dans le navigateur (plein écran)"
+                titre={tr('🔗 Ouvrir dans le navigateur (plein écran)', '🔗 Open in browser (full screen)')}
                 variante="secondaire"
                 onPress={() => ouvrirHtmlNouvelOnglet(uc.prototypeHtml!)}
               />

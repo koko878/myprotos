@@ -2,6 +2,7 @@ import { StatusBar } from 'expo-status-bar';
 import React, { useEffect, useState } from 'react';
 import { ActivityIndicator, SafeAreaView, StyleSheet, View } from 'react-native';
 import { AuthProvider, useAuth } from './src/authContext';
+import { LangProvider } from './src/i18n';
 import { NavigationProvider, useNav } from './src/navigation';
 import { profilComplet } from './src/profil';
 import ProfilScreen from './src/screens/ProfilScreen';
@@ -110,10 +111,12 @@ function Porte() {
 
 export default function App() {
   return (
-    <AuthProvider>
-      <StatusBar style="light" />
-      <Porte />
-    </AuthProvider>
+    <LangProvider>
+      <AuthProvider>
+        <StatusBar style="light" />
+        <Porte />
+      </AuthProvider>
+    </LangProvider>
   );
 }
 

@@ -11,6 +11,7 @@ import {
 } from 'react-native';
 import HtmlPreview from '../components/HtmlPreview';
 import { Bouton, Carte, EnTete } from '../components/ui';
+import { useTr } from '../i18n';
 import { iaDisponible } from '../llm';
 import { useNav } from '../navigation';
 import { ouvrirHtmlNouvelOnglet } from '../ouvrir';
@@ -20,6 +21,7 @@ import { UseCase } from '../types';
 
 export default function PrototypeScreen({ useCaseId }: { useCaseId: string }) {
   const { aller, retour } = useNav();
+  const tr = useTr();
   const [uc, setUc] = useState<UseCase | null>(null);
   const [challenge, setChallenge] = useState(false); // formulaire de remarque ouvert
   const [remarque, setRemarque] = useState('');
@@ -48,7 +50,7 @@ export default function PrototypeScreen({ useCaseId }: { useCaseId: string }) {
   if (!uc) {
     return (
       <SafeAreaView style={styles.safe}>
-        <Text style={styles.chargement}>Chargement…</Text>
+        <Text style={styles.chargement}>{tr('Chargement…', 'Loading…')}</Text>
       </SafeAreaView>
     );
   }
@@ -60,12 +62,14 @@ export default function PrototypeScreen({ useCaseId }: { useCaseId: string }) {
     return (
       <SafeAreaView style={styles.safe}>
         <View style={styles.centre}>
-          <Text style={styles.confTitre}>📝 Remarques envoyées</Text>
+          <Text style={styles.confTitre}>{tr('📝 Remarques envoyées', '📝 Feedback sent')}</Text>
           <Text style={styles.confTxt}>
-            Merci ! Notre équipe va retravailler le prototype en intégrant vos demandes.
-            Vous serez notifié dès que la nouvelle version est prête.
+            {tr(
+              'Merci ! Notre équipe va retravailler le prototype en intégrant vos demandes. Vous serez notifié dès que la nouvelle version est prête.',
+              'Thank you! Our team will rework the prototype to incorporate your requests. You’ll be notified as soon as the new version is ready.'
+            )}
           </Text>
-          <Bouton titre="Voir mon projet" onPress={() => aller({ nom: 'detail', useCaseId })} />
+          <Bouton titre={tr('Voir mon projet', 'View my project')} onPress={() => aller({ nom: 'detail', useCaseId })} />
         </View>
       </SafeAreaView>
     );
@@ -73,12 +77,14 @@ export default function PrototypeScreen({ useCaseId }: { useCaseId: string }) {
 
   return (
     <SafeAreaView style={styles.safe}>
-      <EnTete titre={`Prototype${uc.prototypeVersion ? ` v${uc.prototypeVersion}` : ''}`} onRetour={retour} />
+      <EnTete titre={`${tr('Prototype', 'Prototype')}${uc.prototypeVersion ? ` v${uc.prototypeVersion}` : ''}`} onRetour={retour} />
 
       <View style={styles.banniere}>
         <Text style={styles.banniereTxt}>
-          🎨 Voici votre prototype interactif. Explorez-le, puis validez — ou demandez des
-          ajustements.
+          {tr(
+            '🎨 Voici votre prototype interactif. Explorez-le, puis validez — ou demandez des ajustements.',
+            '🎨 Here’s your interactive prototype. Explore it, then approve it — or request adjustments.'
+          )}
         </Text>
       </View>
 
@@ -86,46 +92,46 @@ export default function PrototypeScreen({ useCaseId }: { useCaseId: string }) {
         {uc.prototypeHtml ? (
           <HtmlPreview html={uc.prototypeHtml} />
         ) : (
-          <Text style={styles.chargement}>Prototype indisponible.</Text>
+          <Text style={styles.chargement}>{tr('Prototype indisponible.', 'Prototype unavailable.')}</Text>
         )}
       </View>
 
       {Platform.OS === 'web' && !!uc.prototypeHtml && (
         <Pressable onPress={pleinEcran} style={styles.ouvrir}>
-          <Text style={styles.ouvrirTxt}>🔗 Ouvrir dans le navigateur (plein écran)</Text>
+          <Text style={styles.ouvrirTxt}>{tr('🔗 Ouvrir dans le navigateur (plein écran)', '🔗 Open in browser (full screen)')}</Text>
         </Pressable>
       )}
 
       <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
         {challenge && !dejaValide && (
           <Carte style={styles.challengeBox}>
-            <Text style={styles.challengeTitre}>Qu’aimeriez-vous ajuster ou ajouter ?</Text>
+            <Text style={styles.challengeTitre}>{tr('Qu’aimeriez-vous ajuster ou ajouter ?', 'What would you like to adjust or add?')}</Text>
             <TextInput
               style={styles.input}
               value={remarque}
               onChangeText={setRemarque}
               multiline
-              placeholder="Ex. Ajouter un filtre par date, changer les couleurs, manque l’écran de connexion…"
+              placeholder={tr('Ex. Ajouter un filtre par date, changer les couleurs, manque l’écran de connexion…', 'E.g. Add a date filter, change the colors, the login screen is missing…')}
               placeholderTextColor={colors.textMuted}
             />
-            <Bouton titre="📨 Envoyer mes remarques" onPress={envoyerRemarque} />
+            <Bouton titre={tr('📨 Envoyer mes remarques', '📨 Send my feedback')} onPress={envoyerRemarque} />
           </Carte>
         )}
 
         {!dejaValide ? (
           <View style={styles.footer}>
-            <Bouton titre="✅ Valider le prototype" onPress={valider} />
+            <Bouton titre={tr('✅ Valider le prototype', '✅ Approve the prototype')} onPress={valider} />
             {iaDisponible() ? (
               // Assistant IA qui aide à challenger/affiner le prototype.
               <Bouton
-                titre="✏️ Challenger / affiner le prototype"
+                titre={tr('✏️ Challenger / affiner le prototype', '✏️ Challenge / refine the prototype')}
                 variante="secondaire"
                 onPress={() => aller({ nom: 'challenge', useCaseId })}
               />
             ) : (
               // Repli sans IA : champ libre.
               <Bouton
-                titre={challenge ? 'Annuler' : '✏️ Demander des ajustements'}
+                titre={challenge ? tr('Annuler', 'Cancel') : tr('✏️ Demander des ajustements', '✏️ Request adjustments')}
                 variante="secondaire"
                 onPress={() => setChallenge((c) => !c)}
               />
@@ -133,7 +139,7 @@ export default function PrototypeScreen({ useCaseId }: { useCaseId: string }) {
           </View>
         ) : (
           <View style={styles.footer}>
-            <Bouton titre="🏗️ Aller au cadrage technique" onPress={() => aller({ nom: 'technique', useCaseId })} />
+            <Bouton titre={tr('🏗️ Aller au cadrage technique', '🏗️ Go to technical scoping')} onPress={() => aller({ nom: 'technique', useCaseId })} />
           </View>
         )}
       </KeyboardAvoidingView>

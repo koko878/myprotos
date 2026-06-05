@@ -1,46 +1,57 @@
 import React, { useState } from 'react';
 import { Modal, Pressable, StyleSheet, Text, View } from 'react-native';
 import { colors, font, radius, spacing } from '../theme';
-import { CoutRun, EstimationROI, MakeOrBuy, PertinenceDigitale, StatutUseCase, UseCase, VentilationPrix } from '../types';
+import { Complexite, CoutRun, EstimationROI, MakeOrBuy, PertinenceDigitale, StatutUseCase, UseCase, VentilationPrix } from '../types';
+import { useTr } from '../i18n';
 import { Carte, Etiquette, ScoreCadrage, couleurComplexite } from './ui';
 
 // Affichage des montants en MAD (dirhams marocains), devise par défaut.
 const eur = (n: number) => n.toLocaleString('fr-FR') + ' MAD';
 
-export const LIBELLE_STATUT: Record<StatutUseCase, { texte: string; couleur: string }> = {
-  brouillon: { texte: 'Cadré · à soumettre', couleur: colors.textMuted },
-  soumis: { texte: 'Soumis', couleur: colors.accent },
-  prototype_pret_admin: { texte: 'À envoyer au client', couleur: colors.warn },
-  prototype_genere: { texte: 'Prototype prêt', couleur: colors.warn },
-  revision_demandee: { texte: 'Révision demandée', couleur: colors.warn },
-  prototype_valide: { texte: 'Prototype validé', couleur: colors.success },
-  cadrage_technique: { texte: 'Cadrage technique', couleur: colors.warn },
-  pret_a_packager: { texte: 'Prêt à packager', couleur: colors.success },
-  commande_validee: { texte: 'Commande validée', couleur: colors.success },
-  certifie: { texte: 'Certifié', couleur: colors.success },
+export const LIBELLE_STATUT: Record<StatutUseCase, { texte: string; texteEn: string; couleur: string }> = {
+  brouillon: { texte: 'Cadré · à soumettre', texteEn: 'Scoped · to submit', couleur: colors.textMuted },
+  soumis: { texte: 'Soumis', texteEn: 'Submitted', couleur: colors.accent },
+  prototype_pret_admin: { texte: 'À envoyer au client', texteEn: 'To send to the client', couleur: colors.warn },
+  prototype_genere: { texte: 'Prototype prêt', texteEn: 'Prototype ready', couleur: colors.warn },
+  revision_demandee: { texte: 'Révision demandée', texteEn: 'Revision requested', couleur: colors.warn },
+  prototype_valide: { texte: 'Prototype validé', texteEn: 'Prototype approved', couleur: colors.success },
+  cadrage_technique: { texte: 'Cadrage technique', texteEn: 'Technical scoping', couleur: colors.warn },
+  pret_a_packager: { texte: 'Prêt à packager', texteEn: 'Ready to package', couleur: colors.success },
+  commande_validee: { texte: 'Commande validée', texteEn: 'Order confirmed', couleur: colors.success },
+  certifie: { texte: 'Certifié', texteEn: 'Certified', couleur: colors.success },
 };
 
 // Accès sûr au libellé : tolère d'anciens statuts (projets créés par d'anciennes
 // versions) sans planter — renvoie une étiquette neutre par défaut.
-export function libelleStatut(statut: string): { texte: string; couleur: string } {
+export function libelleStatut(statut: string): { texte: string; texteEn: string; couleur: string } {
   return (
-    (LIBELLE_STATUT as Record<string, { texte: string; couleur: string }>)[statut] ?? {
+    (LIBELLE_STATUT as Record<string, { texte: string; texteEn: string; couleur: string }>)[statut] ?? {
       texte: statut || 'Projet',
+      texteEn: statut || 'Project',
       couleur: colors.textMuted,
     }
   );
 }
 
+// Libellé traduit du niveau de complexité (valeur d'enum FR -> texte affiché).
+function trComplexite(tr: (fr: string, en: string) => string, c: Complexite): string {
+  if (c === 'Faible') return tr('Faible', 'Low');
+  if (c === 'Moyenne') return tr('Moyenne', 'Medium');
+  return tr('Élevée', 'High');
+}
+
 export default function UseCaseView({ uc }: { uc: UseCase }) {
+  const tr = useTr();
   const statut = libelleStatut(uc.statut);
+  const statutTexte = tr(statut.texte, statut.texteEn);
   const [detailPrix, setDetailPrix] = useState(false);
   return (
     <View style={{ gap: spacing.lg }}>
       <View style={{ gap: spacing.sm }}>
         <View style={styles.tagRow}>
           <Etiquette texte={uc.domaine} />
-          <Etiquette texte={uc.complexite} couleur={couleurComplexite(uc.complexite)} />
-          <Etiquette texte={statut.texte} couleur={statut.couleur} />
+          <Etiquette texte={trComplexite(tr, uc.complexite)} couleur={couleurComplexite(uc.complexite)} />
+          <Etiquette texte={statutTexte} couleur={statut.couleur} />
         </View>
         <Text style={styles.titre}>{uc.titre}</Text>
       </View>
@@ -51,11 +62,11 @@ export default function UseCaseView({ uc }: { uc: UseCase }) {
 
       {uc.pertinenceDigitale && <PertinenceBloc p={uc.pertinenceDigitale} />}
 
-      <Bloc titre="🎯 Objectif business">{uc.objectif || '—'}</Bloc>
-      <Bloc titre="🧩 Problème à résoudre">{uc.probleme || '—'}</Bloc>
+      <Bloc titre={tr('🎯 Objectif business', '🎯 Business objective')}>{uc.objectif || '—'}</Bloc>
+      <Bloc titre={tr('🧩 Problème à résoudre', '🧩 Problem to solve')}>{uc.probleme || '—'}</Bloc>
 
       <Carte style={{ gap: spacing.sm }}>
-        <Text style={styles.blocTitre}>📊 KPIs de succès</Text>
+        <Text style={styles.blocTitre}>{tr('📊 KPIs de succès', '📊 Success KPIs')}</Text>
         {uc.kpis.map((k) => (
           <View key={k} style={styles.kpiRow}>
             <View style={styles.puce} />
@@ -66,7 +77,7 @@ export default function UseCaseView({ uc }: { uc: UseCase }) {
 
       {!!uc.processusADigitaliser?.length && (
         <Carte style={{ gap: spacing.sm }}>
-          <Text style={styles.blocTitre}>⚙️ Processus à digitaliser</Text>
+          <Text style={styles.blocTitre}>{tr('⚙️ Processus à digitaliser', '⚙️ Processes to digitize')}</Text>
           {uc.processusADigitaliser.map((p, i) => (
             <View key={i} style={styles.kpiRow}>
               <View style={styles.puce} />
@@ -78,7 +89,7 @@ export default function UseCaseView({ uc }: { uc: UseCase }) {
 
       {!!uc.parcoursUtilisateur?.length && (
         <Carte style={{ gap: spacing.sm }}>
-          <Text style={styles.blocTitre}>🧭 Parcours utilisateur</Text>
+          <Text style={styles.blocTitre}>{tr('🧭 Parcours utilisateur', '🧭 User journey')}</Text>
           {uc.parcoursUtilisateur.map((etape, i) => (
             <View key={i} style={styles.etapeRow}>
               <Text style={styles.etapeNum}>{i + 1}</Text>
@@ -88,31 +99,31 @@ export default function UseCaseView({ uc }: { uc: UseCase }) {
         </Carte>
       )}
 
-      <Bloc titre="🗄️ Données disponibles">{uc.donnees || '—'}</Bloc>
-      <Bloc titre="👥 Utilisateurs cibles">{uc.utilisateurs || '—'}</Bloc>
+      <Bloc titre={tr('🗄️ Données disponibles', '🗄️ Available data')}>{uc.donnees || '—'}</Bloc>
+      <Bloc titre={tr('👥 Utilisateurs cibles', '👥 Target users')}>{uc.utilisateurs || '—'}</Bloc>
       {(uc.paysClient || uc.paysDeploiement) && (
         <Carte style={{ gap: spacing.sm }}>
-          <Text style={styles.blocTitre}>🌍 Localisation</Text>
-          {!!uc.paysClient && <Ligne2 label="Pays du client" v={uc.paysClient} />}
-          {!!uc.paysDeploiement && <Ligne2 label="Pays de déploiement" v={uc.paysDeploiement} />}
+          <Text style={styles.blocTitre}>{tr('🌍 Localisation', '🌍 Location')}</Text>
+          {!!uc.paysClient && <Ligne2 label={tr('Pays du client', 'Client country')} v={uc.paysClient} />}
+          {!!uc.paysDeploiement && <Ligne2 label={tr('Pays de déploiement', 'Deployment country')} v={uc.paysDeploiement} />}
         </Carte>
       )}
-      <Bloc titre="⚙️ Contraintes (dont légales locales)">{uc.contraintes || '—'}</Bloc>
+      <Bloc titre={tr('⚙️ Contraintes (dont légales locales)', '⚙️ Constraints (including local legal ones)')}>{uc.contraintes || '—'}</Bloc>
 
       <Carte style={{ borderColor: colors.primary + '66', backgroundColor: colors.primarySoft }}>
-        <Text style={styles.blocTitre}>🤖 Approche suggérée par l’IA</Text>
+        <Text style={styles.blocTitre}>{tr('🤖 Approche suggérée par l’IA', '🤖 AI-suggested approach')}</Text>
         <Text style={[styles.blocTexte, { marginTop: spacing.sm }]}>{uc.approcheSuggeree}</Text>
         {uc.ventilationPrix ? (
           <Pressable style={styles.budgetRow} onPress={() => setDetailPrix(true)}>
             <View>
-              <Text style={styles.budgetLabel}>Prix du projet</Text>
-              <Text style={styles.budgetDetailLien}>Voir le détail du calcul ›</Text>
+              <Text style={styles.budgetLabel}>{tr('Prix du projet', 'Project price')}</Text>
+              <Text style={styles.budgetDetailLien}>{tr('Voir le détail du calcul ›', 'See the calculation breakdown ›')}</Text>
             </View>
             <Text style={styles.budgetVal}>{eur(uc.ventilationPrix.totalEur)}</Text>
           </Pressable>
         ) : (
           <View style={styles.budgetRow}>
-            <Text style={styles.budgetLabel}>Budget indicatif</Text>
+            <Text style={styles.budgetLabel}>{tr('Budget indicatif', 'Indicative budget')}</Text>
             <Text style={styles.budgetVal}>{uc.budgetEstime}</Text>
           </View>
         )}
@@ -120,7 +131,7 @@ export default function UseCaseView({ uc }: { uc: UseCase }) {
 
       {!!uc.solutionsMarche?.length && (
         <Carte style={{ gap: spacing.md, borderColor: colors.warn + '44' }}>
-          <Text style={styles.blocTitre}>🔎 Solutions existantes sur le marché</Text>
+          <Text style={styles.blocTitre}>{tr('🔎 Solutions existantes sur le marché', '🔎 Existing solutions on the market')}</Text>
           {uc.solutionsMarche.map((sol, i) => (
             <View key={i} style={styles.solItem}>
               <View style={styles.solHead}>
@@ -128,7 +139,7 @@ export default function UseCaseView({ uc }: { uc: UseCase }) {
                 {!!sol.prixIndicatif && <Text style={styles.solPrix}>{sol.prixIndicatif}</Text>}
               </View>
               <Text style={styles.solDesc}>{sol.description}</Text>
-              {!!sol.limite && <Text style={styles.solLimite}>Limite : {sol.limite}</Text>}
+              {!!sol.limite && <Text style={styles.solLimite}>{tr('Limite : ', 'Limitation: ')}{sol.limite}</Text>}
             </View>
           ))}
         </Carte>
@@ -153,16 +164,17 @@ export default function UseCaseView({ uc }: { uc: UseCase }) {
 
 // Détail factuel du prix : un poste par ligne (jours × TJM = montant).
 function ModalPrix({ visible, onClose, v }: { visible: boolean; onClose: () => void; v: VentilationPrix }) {
+  const tr = useTr();
   return (
     <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
       <Pressable style={styles.modalFond} onPress={onClose}>
         <Pressable style={styles.modalCarte} onPress={() => {}}>
-          <Text style={styles.modalTitre}>Détail du prix</Text>
+          <Text style={styles.modalTitre}>{tr('Détail du prix', 'Price breakdown')}</Text>
           <View style={styles.tEntete}>
-            <Text style={[styles.tCol, styles.tPoste]}>Poste</Text>
-            <Text style={[styles.tCol, styles.tNum]}>Jours</Text>
-            <Text style={[styles.tCol, styles.tNum]}>TJM</Text>
-            <Text style={[styles.tCol, styles.tMontant]}>Montant</Text>
+            <Text style={[styles.tCol, styles.tPoste]}>{tr('Poste', 'Item')}</Text>
+            <Text style={[styles.tCol, styles.tNum]}>{tr('Jours', 'Days')}</Text>
+            <Text style={[styles.tCol, styles.tNum]}>{tr('TJM', 'Daily rate')}</Text>
+            <Text style={[styles.tCol, styles.tMontant]}>{tr('Montant', 'Amount')}</Text>
           </View>
           {v.postes.map((p, i) => (
             <View key={i} style={styles.tLigne}>
@@ -173,12 +185,12 @@ function ModalPrix({ visible, onClose, v }: { visible: boolean; onClose: () => v
             </View>
           ))}
           <View style={styles.tTotal}>
-            <Text style={styles.tTotalLabel}>Total</Text>
+            <Text style={styles.tTotalLabel}>{tr('Total', 'Total')}</Text>
             <Text style={styles.tTotalVal}>{eur(v.totalEur)}</Text>
           </View>
           {!!v.note && <Text style={styles.modalNote}>{v.note}</Text>}
           <Pressable style={styles.modalFermer} onPress={onClose}>
-            <Text style={styles.modalFermerTxt}>Fermer</Text>
+            <Text style={styles.modalFermerTxt}>{tr('Fermer', 'Close')}</Text>
           </Pressable>
         </Pressable>
       </Pressable>
@@ -188,10 +200,11 @@ function ModalPrix({ visible, onClose, v }: { visible: boolean; onClose: () => v
 
 // Verdict : une solution digitale est-elle vraiment la bonne réponse ?
 function PertinenceBloc({ p }: { p: PertinenceDigitale }) {
+  const tr = useTr();
   const lib =
-    p.verdict === 'digital_pertinent' ? { txt: '✅ Une solution digitale est pertinente', c: colors.success }
-    : p.verdict === 'pas_digital' ? { txt: '⚠️ Le problème n’est pas (d’abord) digital', c: colors.danger }
-    : { txt: '➗ Partiellement digital', c: colors.warn };
+    p.verdict === 'digital_pertinent' ? { txt: tr('✅ Une solution digitale est pertinente', '✅ A digital solution is relevant'), c: colors.success }
+    : p.verdict === 'pas_digital' ? { txt: tr('⚠️ Le problème n’est pas (d’abord) digital', '⚠️ The problem is not (primarily) digital'), c: colors.danger }
+    : { txt: tr('➗ Partiellement digital', '➗ Partially digital'), c: colors.warn };
   return (
     <Carte style={{ borderColor: lib.c + '66', backgroundColor: lib.c + '12', gap: spacing.sm }}>
       <Text style={[styles.blocTitre, { color: lib.c }]}>{lib.txt}</Text>
@@ -202,27 +215,28 @@ function PertinenceBloc({ p }: { p: PertinenceDigitale }) {
 
 // Recommandation Make (développer) vs Buy (acheter) pour aider à décider.
 function MakeBuyBloc({ mb }: { mb: MakeOrBuy }) {
+  const tr = useTr();
   const lib =
-    mb.recommandation === 'make' ? { txt: '🛠️ Développer (Make)', c: colors.primary }
-    : mb.recommandation === 'buy' ? { txt: '🛒 Acheter (Buy)', c: colors.warn }
-    : { txt: '🔀 Hybride', c: colors.accent };
+    mb.recommandation === 'make' ? { txt: tr('🛠️ Développer (Make)', '🛠️ Build (Make)'), c: colors.primary }
+    : mb.recommandation === 'buy' ? { txt: tr('🛒 Acheter (Buy)', '🛒 Buy'), c: colors.warn }
+    : { txt: tr('🔀 Hybride', '🔀 Hybrid'), c: colors.accent };
   return (
     <Carte style={{ gap: spacing.md, borderColor: lib.c + '66' }}>
-      <Text style={styles.blocTitre}>⚖️ Make vs Buy — recommandation</Text>
+      <Text style={styles.blocTitre}>{tr('⚖️ Make vs Buy — recommandation', '⚖️ Make vs Buy — recommendation')}</Text>
       <View style={[styles.mbBadge, { backgroundColor: lib.c + '22', borderColor: lib.c + '66' }]}>
         <Text style={[styles.mbBadgeTxt, { color: lib.c }]}>{lib.txt}</Text>
       </View>
       <Text style={styles.blocTexte}>{mb.justification}</Text>
       <View style={styles.mbCols}>
         <View style={styles.mbCol}>
-          <Text style={styles.mbColTitre}>Pour développer</Text>
+          <Text style={styles.mbColTitre}>{tr('Pour développer', 'For building')}</Text>
           {mb.argumentsMake.map((a, i) => (
             <View key={i} style={styles.kpiRow}><View style={styles.puce} /><Text style={styles.mbArg}>{a}</Text></View>
           ))}
           {mb.argumentsMake.length === 0 && <Text style={styles.mbArg}>—</Text>}
         </View>
         <View style={styles.mbCol}>
-          <Text style={styles.mbColTitre}>Pour acheter</Text>
+          <Text style={styles.mbColTitre}>{tr('Pour acheter', 'For buying')}</Text>
           {mb.argumentsBuy.map((a, i) => (
             <View key={i} style={styles.kpiRow}><View style={styles.puce} /><Text style={styles.mbArg}>{a}</Text></View>
           ))}
@@ -235,18 +249,19 @@ function MakeBuyBloc({ mb }: { mb: MakeOrBuy }) {
 
 // Coût de fonctionnement (RUN) mensuel : cloud vs on-premise.
 function RunBloc({ run }: { run: CoutRun }) {
+  const tr = useTr();
   return (
     <Carte style={{ borderColor: colors.accent + '44', gap: spacing.md }}>
-      <Text style={styles.blocTitre}>🖥️ Coût de fonctionnement (RUN) estimé</Text>
+      <Text style={styles.blocTitre}>{tr('🖥️ Coût de fonctionnement (RUN) estimé', '🖥️ Estimated running cost (RUN)')}</Text>
       <View style={styles.runGrid}>
         <View style={styles.runBox}>
           <Text style={styles.runMode}>☁️ Cloud</Text>
-          <Text style={styles.runVal}>{eur(run.cloudMensuelEur)}<Text style={styles.runMois}> /mois</Text></Text>
+          <Text style={styles.runVal}>{eur(run.cloudMensuelEur)}<Text style={styles.runMois}>{tr(' /mois', ' /month')}</Text></Text>
           <Text style={styles.runHypo}>{run.cloudHypotheses}</Text>
         </View>
         <View style={styles.runBox}>
           <Text style={styles.runMode}>🏢 On-premise</Text>
-          <Text style={styles.runVal}>{eur(run.onPremiseMensuelEur)}<Text style={styles.runMois}> /mois</Text></Text>
+          <Text style={styles.runVal}>{eur(run.onPremiseMensuelEur)}<Text style={styles.runMois}>{tr(' /mois', ' /month')}</Text></Text>
           <Text style={styles.runHypo}>{run.onPremiseHypotheses}</Text>
         </View>
       </View>
@@ -257,22 +272,23 @@ function RunBloc({ run }: { run: CoutRun }) {
 
 // Bloc ROI : indicateurs chiffrés pour juger la rentabilité avant d'investir.
 function RoiBloc({ roi }: { roi: EstimationROI }) {
+  const tr = useTr();
   const positif = roi.roiAn1Pct >= 0;
   return (
     <Carte style={{ borderColor: colors.success + '55', gap: spacing.md }}>
-      <Text style={styles.blocTitre}>💸 Retour sur investissement estimé</Text>
+      <Text style={styles.blocTitre}>{tr('💸 Retour sur investissement estimé', '💸 Estimated return on investment')}</Text>
       <View style={styles.roiGrid}>
-        <Kpi label="Gain / an" valeur={eur(roi.gainAnnuelEur)} couleur={colors.success} />
-        <Kpi label="Investissement" valeur={eur(roi.investissementEur)} />
+        <Kpi label={tr('Gain / an', 'Gain / year')} valeur={eur(roi.gainAnnuelEur)} couleur={colors.success} />
+        <Kpi label={tr('Investissement', 'Investment')} valeur={eur(roi.investissementEur)} />
         <Kpi
-          label="ROI an 1"
+          label={tr('ROI an 1', 'Year 1 ROI')}
           valeur={(positif ? '+' : '') + roi.roiAn1Pct + ' %'}
           couleur={positif ? colors.success : colors.danger}
         />
-        <Kpi label="Retour en" valeur={roi.retourMois + ' mois'} couleur={colors.accent} />
+        <Kpi label={tr('Retour en', 'Payback in')} valeur={roi.retourMois + tr(' mois', ' months')} couleur={colors.accent} />
       </View>
       <Text style={styles.roiDetail}>{roi.detail}</Text>
-      <Text style={styles.roiHypo}>Hypothèses : {roi.hypotheses}</Text>
+      <Text style={styles.roiHypo}>{tr('Hypothèses : ', 'Assumptions: ')}{roi.hypotheses}</Text>
     </Carte>
   );
 }

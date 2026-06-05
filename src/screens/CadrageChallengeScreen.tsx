@@ -2,6 +2,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import { SafeAreaView, StyleSheet, Text } from 'react-native';
 import { tourChallengeCadrageIA } from '../cadrageAssistant';
 import ChatIA, { ResultatTour, uidMessage } from '../components/ChatIA';
+import { useLang, useTr } from '../i18n';
 import { iaDisponible } from '../llm';
 import { useNav } from '../navigation';
 import { appliquerCadrage, trouverUseCase } from '../storage';
@@ -12,6 +13,8 @@ import { Message, UseCase } from '../types';
 // ensuite le use case mis à jour.
 export default function CadrageChallengeScreen({ useCaseId }: { useCaseId: string }) {
   const { aller } = useNav();
+  const { lang } = useLang();
+  const tr = useTr();
   const [uc, setUc] = useState<UseCase | null>(null);
   const majFinale = useRef<UseCase | null>(null);
 
@@ -22,7 +25,7 @@ export default function CadrageChallengeScreen({ useCaseId }: { useCaseId: strin
   if (!uc) {
     return (
       <SafeAreaView style={styles.safe}>
-        <Text style={styles.chargement}>Chargement…</Text>
+        <Text style={styles.chargement}>{tr('Chargement…', 'Loading…')}</Text>
       </SafeAreaView>
     );
   }
@@ -33,22 +36,35 @@ export default function CadrageChallengeScreen({ useCaseId }: { useCaseId: strin
   }
 
   const courant = uc;
-  const ouverture: Message[] = [
-    {
-      id: uidMessage(),
-      role: 'assistant',
-      texte: `On reprend votre cadrage « ${courant.titre} ». Qu’aimeriez-vous préciser ou corriger ?`,
-      suggestions: [
-        'Le problème n’est pas tout à fait ça',
-        'Changer l’objectif / les KPIs',
-        'Préciser les utilisateurs',
-      ],
-    },
-  ];
+  const ouverture: Message[] = lang === 'en'
+    ? [
+        {
+          id: uidMessage(),
+          role: 'assistant',
+          texte: `Let’s revisit your scoping “${courant.titre}”. What would you like to clarify or correct?`,
+          suggestions: [
+            'The problem isn’t quite that',
+            'Change the objective / KPIs',
+            'Clarify the users',
+          ],
+        },
+      ]
+    : [
+        {
+          id: uidMessage(),
+          role: 'assistant',
+          texte: `On reprend votre cadrage « ${courant.titre} ». Qu’aimeriez-vous préciser ou corriger ?`,
+          suggestions: [
+            'Le problème n’est pas tout à fait ça',
+            'Changer l’objectif / les KPIs',
+            'Préciser les utilisateurs',
+          ],
+        },
+      ];
 
   async function jouerTour(historique: Message[]): Promise<ResultatTour | null> {
     const nbUser = historique.filter((m) => m.role === 'user').length;
-    const tour = await tourChallengeCadrageIA(courant, historique, nbUser >= 4);
+    const tour = await tourChallengeCadrageIA(courant, historique, nbUser >= 4, lang);
     if (!tour) return null;
     if (tour.done && tour.useCase) majFinale.current = tour.useCase;
     return { reply: tour.reply, suggestions: tour.suggestions, done: tour.done };
@@ -79,7 +95,7 @@ export default function CadrageChallengeScreen({ useCaseId }: { useCaseId: strin
 
   return (
     <ChatIA
-      titre="Affiner le cadrage"
+      titre={tr('Affiner le cadrage', 'Refine the scoping')}
       ouverture={ouverture}
       jouerTour={jouerTour}
       onTermine={onTermine}

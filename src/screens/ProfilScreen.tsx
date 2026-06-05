@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { KeyboardAvoidingView, Platform, Pressable, SafeAreaView, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import Logo from '../components/Logo';
 import { Bouton, Carte } from '../components/ui';
+import { useTr } from '../i18n';
 import { enregistrerProfil } from '../profil';
 import { colors, font, radius, spacing } from '../theme';
 
@@ -16,6 +17,30 @@ const SECTEURS = [
 // Collecte du profil client après inscription : âge, secteur, entreprise.
 // `onTermine` est appelé une fois le profil enregistré (l'app continue).
 export default function ProfilScreen({ onTermine }: { onTermine: () => void }) {
+  const tr = useTr();
+  const labelSecteur = (s: string): string => {
+    switch (s) {
+      case 'Santé': return tr('Santé', 'Healthcare');
+      case 'Finance / Banque': return tr('Finance / Banque', 'Finance / Banking');
+      case 'Assurance': return tr('Assurance', 'Insurance');
+      case 'Commerce / Retail': return tr('Commerce / Retail', 'Commerce / Retail');
+      case 'Industrie': return tr('Industrie', 'Manufacturing');
+      case 'Logistique / Transport': return tr('Logistique / Transport', 'Logistics / Transport');
+      case 'Éducation': return tr('Éducation', 'Education');
+      case 'Immobilier': return tr('Immobilier', 'Real estate');
+      case 'Tourisme / Hôtellerie': return tr('Tourisme / Hôtellerie', 'Tourism / Hospitality');
+      case 'Agriculture': return tr('Agriculture', 'Agriculture');
+      case 'Énergie': return tr('Énergie', 'Energy');
+      case 'Télécoms': return tr('Télécoms', 'Telecoms');
+      case 'Administration / Public': return tr('Administration / Public', 'Government / Public sector');
+      case 'Juridique': return tr('Juridique', 'Legal');
+      case 'Marketing / Média': return tr('Marketing / Média', 'Marketing / Media');
+      case 'BTP / Construction': return tr('BTP / Construction', 'Construction');
+      case 'Tech / Logiciel': return tr('Tech / Logiciel', 'Tech / Software');
+      case 'Autre': return tr('Autre', 'Other');
+      default: return s;
+    }
+  };
   const [age, setAge] = useState('');
   const [secteur, setSecteur] = useState('');
   const [secteurLibre, setSecteurLibre] = useState('');
@@ -28,16 +53,16 @@ export default function ProfilScreen({ onTermine }: { onTermine: () => void }) {
 
   async function valider() {
     if (!secteurChoisi) {
-      setErreur('Indiquez votre secteur d’activité.');
+      setErreur(tr('Indiquez votre secteur d’activité.', 'Please specify your industry.'));
       return;
     }
     if (!pays.trim()) {
-      setErreur('Indiquez votre pays.');
+      setErreur(tr('Indiquez votre pays.', 'Please specify your country.'));
       return;
     }
     const ageNum = age.trim() ? parseInt(age.trim(), 10) : undefined;
     if (age.trim() && (isNaN(ageNum!) || ageNum! < 10 || ageNum! > 120)) {
-      setErreur('Entrez un âge valide (ou laissez vide).');
+      setErreur(tr('Entrez un âge valide (ou laissez vide).', 'Enter a valid age (or leave it blank).'));
       return;
     }
     setErreur(null);
@@ -60,14 +85,17 @@ export default function ProfilScreen({ onTermine }: { onTermine: () => void }) {
             <Logo size="md" />
           </View>
 
-          <Text style={styles.titre}>Bienvenue 👋</Text>
+          <Text style={styles.titre}>{tr('Bienvenue 👋', 'Welcome 👋')}</Text>
           <Text style={styles.sous}>
-            Quelques infos pour personnaliser votre accompagnement. Une seule fois.
+            {tr(
+              'Quelques infos pour personnaliser votre accompagnement. Une seule fois.',
+              'A few details to tailor your experience. Just once.'
+            )}
           </Text>
 
           <Carte style={{ gap: spacing.lg }}>
             <View style={{ gap: spacing.sm }}>
-              <Text style={styles.label}>Votre secteur d’activité *</Text>
+              <Text style={styles.label}>{tr('Votre secteur d’activité *', 'Your industry *')}</Text>
               <View style={styles.chips}>
                 {SECTEURS.map((s) => {
                   const actif = secteur === s;
@@ -77,7 +105,7 @@ export default function ProfilScreen({ onTermine }: { onTermine: () => void }) {
                       onPress={() => { setSecteur(s); setErreur(null); }}
                       style={[styles.chip, actif && styles.chipActif]}
                     >
-                      <Text style={[styles.chipTxt, actif && styles.chipTxtActif]}>{s}</Text>
+                      <Text style={[styles.chipTxt, actif && styles.chipTxtActif]}>{labelSecteur(s)}</Text>
                     </Pressable>
                   );
                 })}
@@ -87,41 +115,41 @@ export default function ProfilScreen({ onTermine }: { onTermine: () => void }) {
                   style={styles.input}
                   value={secteurLibre}
                   onChangeText={(t) => { setSecteurLibre(t); setErreur(null); }}
-                  placeholder="Précisez votre secteur"
+                  placeholder={tr('Précisez votre secteur', 'Specify your industry')}
                   placeholderTextColor={colors.textMuted}
                 />
               )}
             </View>
 
             <View style={{ gap: spacing.sm }}>
-              <Text style={styles.label}>Votre pays *</Text>
+              <Text style={styles.label}>{tr('Votre pays *', 'Your country *')}</Text>
               <TextInput
                 style={styles.input}
                 value={pays}
                 onChangeText={(t) => { setPays(t); setErreur(null); }}
-                placeholder="Ex. Maroc, France…"
+                placeholder={tr('Ex. Maroc, France…', 'e.g. Morocco, France…')}
                 placeholderTextColor={colors.textMuted}
               />
             </View>
 
             <View style={{ gap: spacing.sm }}>
-              <Text style={styles.label}>Votre entreprise (optionnel)</Text>
+              <Text style={styles.label}>{tr('Votre entreprise (optionnel)', 'Your company (optional)')}</Text>
               <TextInput
                 style={styles.input}
                 value={entreprise}
                 onChangeText={setEntreprise}
-                placeholder="Nom de votre entreprise"
+                placeholder={tr('Nom de votre entreprise', 'Your company name')}
                 placeholderTextColor={colors.textMuted}
               />
             </View>
 
             <View style={{ gap: spacing.sm }}>
-              <Text style={styles.label}>Votre âge (optionnel)</Text>
+              <Text style={styles.label}>{tr('Votre âge (optionnel)', 'Your age (optional)')}</Text>
               <TextInput
                 style={styles.input}
                 value={age}
                 onChangeText={(t) => { setAge(t.replace(/[^0-9]/g, '')); setErreur(null); }}
-                placeholder="Ex. 34"
+                placeholder={tr('Ex. 34', 'e.g. 34')}
                 placeholderTextColor={colors.textMuted}
                 keyboardType="number-pad"
                 maxLength={3}
@@ -130,7 +158,7 @@ export default function ProfilScreen({ onTermine }: { onTermine: () => void }) {
 
             {erreur && <Text style={styles.err}>{erreur}</Text>}
 
-            <Bouton titre={loading ? 'Enregistrement…' : 'Continuer'} onPress={valider} loading={loading} />
+            <Bouton titre={loading ? tr('Enregistrement…', 'Saving…') : tr('Continuer', 'Continue')} onPress={valider} loading={loading} />
           </Carte>
         </ScrollView>
       </KeyboardAvoidingView>

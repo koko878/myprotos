@@ -5,11 +5,13 @@ import { useNav } from '../navigation';
 import { AgentPrompt, listeAgents } from '../promptsAgents';
 import { chargerReglages, definirReglage, reglageBrut } from '../reglages';
 import { colors, font, radius, spacing } from '../theme';
+import { useTr } from '../i18n';
 
 // Réglage des prompts des agents IA (admin). Chaque agent a un prompt par défaut
 // (dans le code) que l'admin peut SURCHARGER. Les overrides sont partagés (DB)
 // pour atteindre aussi les clients. Vide = retour au prompt par défaut.
 export default function PromptsScreen() {
+  const tr = useTr();
   const { retour } = useNav();
   const agents = listeAgents();
   const [ouvert, setOuvert] = useState<string | null>(null);
@@ -22,19 +24,21 @@ export default function PromptsScreen() {
   if (!pret) {
     return (
       <SafeAreaView style={styles.safe}>
-        <Text style={styles.chargement}>Chargement…</Text>
+        <Text style={styles.chargement}>{tr('Chargement…', 'Loading…')}</Text>
       </SafeAreaView>
     );
   }
 
   return (
     <SafeAreaView style={styles.safe}>
-      <EnTete titre="Prompts des agents" onRetour={retour} />
+      <EnTete titre={tr('Prompts des agents', 'Agent prompts')} onRetour={retour} />
 
       <ScrollView contentContainerStyle={styles.content}>
         <Text style={styles.intro}>
-          Ajustez le comportement des agents IA. Laissez vide pour revenir au prompt par
-          défaut. Les changements s’appliquent à tous (clients inclus).
+          {tr(
+            'Ajustez le comportement des agents IA. Laissez vide pour revenir au prompt par défaut. Les changements s’appliquent à tous (clients inclus).',
+            'Adjust how the AI agents behave. Leave empty to revert to the default prompt. Changes apply to everyone (clients included).'
+          )}
         </Text>
         {agents.map((a) => (
           <AgentCarte
@@ -58,6 +62,7 @@ function AgentCarte({
   ouvert: boolean;
   onToggle: () => void;
 }) {
+  const tr = useTr();
   const [valeur, setValeur] = useState<string | null>(null); // null = pas encore chargé
   const [surcharge, setSurcharge] = useState(false);
   const [etat, setEtat] = useState<'idle' | 'saving' | 'ok' | 'err'>('idle');
@@ -101,7 +106,7 @@ function AgentCarte({
         <Text style={styles.chevron}>{ouvert ? '▾' : '▸'}</Text>
       </Pressable>
 
-      {surcharge && !ouvert && <Text style={styles.badge}>● Prompt personnalisé actif</Text>}
+      {surcharge && !ouvert && <Text style={styles.badge}>{tr('● Prompt personnalisé actif', '● Custom prompt active')}</Text>}
 
       {ouvert && (
         <>
@@ -110,27 +115,29 @@ function AgentCarte({
             value={valeur ?? ''}
             onChangeText={setValeur}
             multiline
-            placeholder="Prompt système de l’agent…"
+            placeholder={tr('Prompt système de l’agent…', 'Agent system prompt…')}
             placeholderTextColor={colors.textMuted}
             textAlignVertical="top"
           />
           <View style={styles.actions}>
             <View style={{ flex: 1 }}>
               <Bouton
-                titre={etat === 'saving' ? 'Enregistrement…' : '💾 Enregistrer'}
+                titre={etat === 'saving' ? tr('Enregistrement…', 'Saving…') : tr('💾 Enregistrer', '💾 Save')}
                 onPress={enregistrer}
                 loading={etat === 'saving'}
               />
             </View>
             <Pressable onPress={reinitialiser} hitSlop={8} style={styles.reset}>
-              <Text style={styles.resetTxt}>↺ Défaut</Text>
+              <Text style={styles.resetTxt}>{tr('↺ Défaut', '↺ Default')}</Text>
             </Pressable>
           </View>
-          {etat === 'ok' && <Text style={styles.ok}>✅ Enregistré (appliqué à tous).</Text>}
+          {etat === 'ok' && <Text style={styles.ok}>{tr('✅ Enregistré (appliqué à tous).', '✅ Saved (applied to everyone).')}</Text>}
           {etat === 'err' && (
             <Text style={styles.err}>
-              ⚠️ Échec de l’enregistrement partagé. Vérifiez que la table « reglages » existe
-              dans Supabase (voir schema.sql).
+              {tr(
+                '⚠️ Échec de l’enregistrement partagé. Vérifiez que la table « reglages » existe dans Supabase (voir schema.sql).',
+                '⚠️ Shared save failed. Check that the “reglages” table exists in Supabase (see schema.sql).'
+              )}
             </Text>
           )}
         </>

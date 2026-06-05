@@ -18,6 +18,7 @@ import {
 } from '../cadrageAssistant';
 import { uidMessage } from '../components/ChatIA';
 import { EnTete } from '../components/ui';
+import { useTr } from '../i18n';
 import { useNav } from '../navigation';
 import { creerEtId } from '../storage';
 import { colors, font, radius, spacing } from '../theme';
@@ -45,6 +46,7 @@ const OUVERTURE: Message[] = [
 // Parcours de cadrage scripté (mode sans IA) : questionnaire local à étapes.
 export default function CadrageScripte() {
   const { aller, retour } = useNav();
+  const tr = useTr();
   const [messages, setMessages] = useState<Message[]>(OUVERTURE);
   const [saisie, setSaisie] = useState('');
   const [termine, setTermine] = useState(false);
@@ -79,7 +81,7 @@ export default function CadrageScripte() {
       ]);
       setIndexEtape(suivant);
     } else {
-      setMessages([...apresUser, { id: uidMessage(), role: 'assistant', texte: '⏳ Je structure votre projet…' }]);
+      setMessages([...apresUser, { id: uidMessage(), role: 'assistant', texte: tr('⏳ Je structure votre projet…', '⏳ Structuring your project…') }]);
       setTermine(true);
       synthetiserUseCaseIA(nouvellesReponses).then((uc) =>
         creerEtId(uc).then((id) => aller({ nom: 'recap', useCaseId: id }))
@@ -90,7 +92,7 @@ export default function CadrageScripte() {
   return (
     <SafeAreaView style={styles.safe}>
       <EnTete
-        titre="Cadrage métier"
+        titre={tr('Cadrage métier', 'Business scoping')}
         onRetour={retour}
         droite={<Text style={styles.badge}>{Math.min(indexEtape + 1, ETAPES.length)}/{ETAPES.length}</Text>}
       />
@@ -109,7 +111,7 @@ export default function CadrageScripte() {
           <View style={styles.saisieZone}>
             <TextInput
               style={styles.input}
-              placeholder="Votre réponse…"
+              placeholder={tr('Votre réponse…', 'Your answer…')}
               placeholderTextColor={colors.textMuted}
               value={saisie}
               onChangeText={setSaisie}

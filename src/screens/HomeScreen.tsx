@@ -5,6 +5,7 @@ import { deconnexion } from '../auth';
 import { useAuth } from '../authContext';
 import Logo from '../components/Logo';
 import Parcours from '../components/Parcours';
+import { SelecteurLangue, useTr } from '../i18n';
 import { Bouton, Carte } from '../components/ui';
 import { useNav } from '../navigation';
 import { compterNouvelles, dernierVuLe } from '../notifications';
@@ -74,34 +75,43 @@ export default function HomeScreen() {
 
   const web = Platform.OS === 'web';
   const halo = web ? ({ backgroundImage: gradients.halo } as any) : null;
+  const tr = useTr();
+  const idees = (n: number) => tr(`${n} idée${n > 1 ? 's' : ''}`, `${n} idea${n > 1 ? 's' : ''}`);
 
   return (
     <SafeAreaView style={styles.safe}>
       <ScrollView contentContainerStyle={styles.content}>
         <View style={[styles.heroHalo, halo]} pointerEvents="none" />
 
-        <Pressable onPress={tapLogo} style={styles.logoRow}>
-          <Logo size="lg" tagline />
-        </Pressable>
+        <View style={styles.topRow}>
+          <Pressable onPress={tapLogo} style={styles.logoRow}>
+            <Logo size="lg" tagline />
+          </Pressable>
+          <SelecteurLangue />
+        </View>
 
         <Text style={styles.h1}>
-          De l’idée à l’application,{'\n'}
-          <Text style={{ color: colors.accent }}>clé en main.</Text>
+          {tr('De l’idée à l’application,', 'From idea to a live app,')}{'\n'}
+          <Text style={{ color: colors.accent }}>{tr('clé en main.', 'turnkey.')}</Text>
         </Text>
         <Text style={styles.sous}>
-          Démocratiser l’accès à la tech : décrivez votre besoin. Notre IA accélère le cadrage et
-          le prototype, puis <Text style={{ color: colors.text, fontWeight: '700' }}>nos experts
-          construisent, testent et livrent</Text> une application fiable — qui marche dans la vraie vie.
+          {tr('Démocratiser l’accès à la tech : décrivez votre besoin. Notre IA accélère le cadrage et le prototype, puis ',
+              'Democratizing access to tech: describe your need. Our AI speeds up scoping and the prototype, then ')}
+          <Text style={{ color: colors.text, fontWeight: '700' }}>
+            {tr('nos experts construisent, testent et livrent', 'our experts build, test and ship')}
+          </Text>
+          {tr(' une application fiable — qui marche dans la vraie vie.', ' a reliable app — one that works in real life.')}
         </Text>
 
         <Carte style={{ marginTop: spacing.xl, gap: spacing.md }}>
-          <Text style={styles.cardTitre}>Vous êtes client</Text>
+          <Text style={styles.cardTitre}>{tr('Vous êtes client', 'You’re a client')}</Text>
           <Text style={styles.cardTexte}>
-            Pas besoin d’être technique. Décrivez votre idée : l’IA et notre équipe d’experts vous accompagnent.
+            {tr('Pas besoin d’être technique. Décrivez votre idée : l’IA et notre équipe d’experts vous accompagnent.',
+                'No tech skills needed. Describe your idea: our AI and expert team guide you.')}
           </Text>
-          <Bouton titre="✨ Exprimer une idée" onPress={() => aller({ nom: 'cadrage' })} />
+          <Bouton titre={tr('✨ Exprimer une idée', '✨ Share an idea')} onPress={() => aller({ nom: 'cadrage' })} />
           <Bouton
-            titre="Voir mes projets"
+            titre={tr('Voir mes projets', 'View my projects')}
             variante="secondaire"
             onPress={() => aller({ nom: 'liste' })}
           />
@@ -113,16 +123,16 @@ export default function HomeScreen() {
         {adminOuvert && (
           <View style={styles.adminZone}>
             <Bouton
-              titre={nouvelles > 0 ? `🛠️ Espace admin · ${nouvelles} nouvelle${nouvelles > 1 ? 's' : ''} idée${nouvelles > 1 ? 's' : ''}` : '🛠️ Espace admin'}
+              titre={nouvelles > 0 ? tr(`🛠️ Espace admin · ${idees(nouvelles)}`, `🛠️ Admin space · ${idees(nouvelles)}`) : tr('🛠️ Espace admin', '🛠️ Admin space')}
               variante="secondaire"
               onPress={() => aller({ nom: 'admin' })}
             />
             {nouvelles > 0 && (
-              <Text style={styles.notif}>🔔 {nouvelles} idée{nouvelles > 1 ? 's' : ''} soumise{nouvelles > 1 ? 's' : ''} en attente</Text>
+              <Text style={styles.notif}>{tr(`🔔 ${idees(nouvelles)} soumise${nouvelles > 1 ? 's' : ''} en attente`, `🔔 ${idees(nouvelles)} awaiting review`)}</Text>
             )}
             {!authRequise && (
               <Pressable onPress={quitterAdmin} hitSlop={8} style={styles.adminLien}>
-                <Text style={styles.adminTxt}>Quitter le mode admin</Text>
+                <Text style={styles.adminTxt}>{tr('Quitter le mode admin', 'Exit admin mode')}</Text>
               </Pressable>
             )}
           </View>
@@ -131,7 +141,7 @@ export default function HomeScreen() {
         {/* Compte connecté : déconnexion. */}
         {authRequise && user && (
           <Pressable onPress={deconnexion} hitSlop={8} style={styles.adminLien}>
-            <Text style={styles.adminTxt}>{user.email} · Se déconnecter</Text>
+            <Text style={styles.adminTxt}>{user.email} · {tr('Se déconnecter', 'Sign out')}</Text>
           </Pressable>
         )}
       </ScrollView>
@@ -140,7 +150,7 @@ export default function HomeScreen() {
       <Modal visible={modalPin} transparent animationType="fade" onRequestClose={() => setModalPin(false)}>
         <View style={styles.modalFond}>
           <Carte style={styles.modalCarte}>
-            <Text style={styles.modalTitre}>Code administrateur</Text>
+            <Text style={styles.modalTitre}>{tr('Code administrateur', 'Admin code')}</Text>
             <TextInput
               style={[styles.pinInput, erreurPin && { borderColor: colors.danger }]}
               value={pin}
@@ -152,10 +162,10 @@ export default function HomeScreen() {
               autoFocus
               onSubmitEditing={validerPin}
             />
-            {erreurPin && <Text style={styles.pinErr}>Code incorrect.</Text>}
-            <Bouton titre="Déverrouiller" onPress={validerPin} />
+            {erreurPin && <Text style={styles.pinErr}>{tr('Code incorrect.', 'Wrong code.')}</Text>}
+            <Bouton titre={tr('Déverrouiller', 'Unlock')} onPress={validerPin} />
             <Pressable onPress={() => setModalPin(false)} hitSlop={8} style={styles.adminLien}>
-              <Text style={styles.adminTxt}>Annuler</Text>
+              <Text style={styles.adminTxt}>{tr('Annuler', 'Cancel')}</Text>
             </Pressable>
           </Carte>
         </View>
@@ -168,7 +178,8 @@ const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: colors.bg },
   content: { padding: spacing.xl, paddingTop: spacing.xxl },
   heroHalo: { position: 'absolute', top: 0, left: 0, right: 0, height: 460 },
-  logoRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm, marginBottom: spacing.xl },
+  topRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: spacing.xl },
+  logoRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
   logoDot: { width: 14, height: 14, borderRadius: 7, backgroundColor: colors.primary },
   marque: { color: colors.text, fontSize: font.h2, fontWeight: '800', letterSpacing: 0.5 },
   h1: { color: colors.text, fontSize: font.display, fontWeight: '900', lineHeight: 42, letterSpacing: -0.8, marginTop: spacing.xl },
